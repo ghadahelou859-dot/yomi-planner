@@ -79,7 +79,7 @@ if (ready) {
     finally {busy=false;if(user && navigator.onLine && pending() && badge.textContent.includes('جارٍ')) schedule()}
   }
   function schedule() {clearTimeout(timer);timer=setTimeout(()=>{timer=null;reconcile()},900)}
-  save = () => {saveLocal();paint(navigator.onLine?'جارٍ المزامنة…':'بدون نت · محفوظ على هذا الجهاز');if(user&&navigator.onLine)schedule()};
+  save = () => {saveLocal();paint(!navigator.onLine?'بدون نت · محفوظ على هذا الجهاز':user?'جارٍ المزامنة…':'محفوظ على هذا الجهاز · سجّلي الدخول للمزامنة');if(user&&navigator.onLine)schedule()};
   async function showAccount() {
     if(!navigator.onLine){gate.hidden=true;paint('بدون نت · محفوظ على هذا الجهاز');return}
     gate.hidden=false;
