@@ -3,8 +3,9 @@
 (function (root) {
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   const plain = x => x && typeof x === 'object' && !Array.isArray(x);
-  function merge(base, local, remote) {
+  function merge(base, local, remote, choices = {}) {
     const conflicts = [];
+    const details = [];
     function walk(b, l, r, path) {
       if (same(l, r)) return l;
       if (same(l, b)) return r;
@@ -32,10 +33,11 @@
         return result;
       }
       conflicts.push(path);
-      return l;
+      details.push({path,local:l,remote:r});
+      return choices[path] === 'remote' ? r : l;
     }
     const value = walk(base, local, remote, 'data');
-    return {value, conflicts};
+    return {value, conflicts, details};
   }
   root.yomiMerge = merge;
   if (typeof module !== 'undefined') module.exports = merge;
