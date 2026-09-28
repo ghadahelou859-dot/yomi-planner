@@ -16,6 +16,13 @@
           l.find(x => x.id === id), r.find(x => x.id === id), path + '.' + id))
           .filter(x => x !== undefined);
       }
+      if (Array.isArray(l) && Array.isArray(r) && (!b || Array.isArray(b)) &&
+          [...(b || []), ...l, ...r].every(x => typeof x === 'string') &&
+          [b || [],l,r].every(a => new Set(a).size === a.length)) {
+        const baseline=b || [];
+        return [...new Set([...baseline,...r,...l])]
+          .filter(x => baseline.includes(x) ? l.includes(x) && r.includes(x) : l.includes(x) || r.includes(x));
+      }
       if (plain(l) && plain(r) && (b === undefined || plain(b))) {
         const result = {};
         for (const k of new Set([...Object.keys(b || {}), ...Object.keys(r), ...Object.keys(l)])) {
