@@ -60,7 +60,7 @@ if (ready) {
       }
       if(!same(local,shape(data))){paint('تعديلات جديدة · جارٍ إعادة المزامنة');return}
       if(same(merged,remote) && row) {
-        data=merged;saveLocal();setBase(merged,row.updated_at);render();paint('✓ تمت المزامنة على الجهازين');
+        data=merged;saveLocal();setBase(merged,row.updated_at);render();paint('✓ محفوظ في الحساب');
         return;
       }
       const {data:latest,error:checkError}=await client.from('yomi_state').select('payload,updated_at').eq('user_id',user.id).maybeSingle();
@@ -78,7 +78,7 @@ if (ready) {
       const changedDuringWrite=!same(local,shape(data));
       if(!changedDuringWrite){data=merged;saveLocal()}
       setBase(merged,saved.updated_at);render();
-      paint(changedDuringWrite?'جارٍ مزامنة تعديل أحدث…':'✓ تمت المزامنة على الجهازين');
+      paint(changedDuringWrite?'جارٍ مزامنة تعديل أحدث…':'✓ محفوظ في الحساب');
     } catch(e) {paint('تعذّرت المزامنة · محفوظ على هذا الجهاز');console.error('Sync failed',e)}
     finally {busy=false;if(user && navigator.onLine && pending() && badge.textContent.includes('جارٍ')) schedule()}
   }
