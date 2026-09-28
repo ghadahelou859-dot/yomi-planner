@@ -10,7 +10,7 @@ if (ready) {
   const form = document.getElementById('accountForm');
   const status = document.getElementById('accountStatus');
   const badge = document.getElementById('cloudBadge');
-  const nonempty = d => ['tasks','achievements','expenses','incomes','debts','reminders','notes','periods','restDays','dhikrs','waterEntries','readings','journal'].some(k => d[k]?.length) || !!d.waterGoal;
+  const nonempty = d => ['tasks','achievements','expenses','incomes','debts','reminders','notes','periods','restDays','dhikrs','waterEntries','readings','journal','habits','routines','timerSessions','budgets','bills'].some(k => d[k]?.length) || !!d.waterGoal || !!d.quran?.lastPage || !!d.quran?.log?.length;
   const shape = d => ({...initial(), ...d});
   const paint = s => { badge.textContent = s; badge.hidden = false; };
   async function pull() {
@@ -71,6 +71,6 @@ if (ready) {
     user=result.data.user;gate.hidden=true;document.getElementById('signOutBtn').hidden=false;form.reset();await pull();
   };
   window.addEventListener('yomi-pin-unlocked',showAccount);if(document.getElementById('lock').classList.contains('hidden'))showAccount();
-  document.getElementById('signOutBtn').onclick=async()=>{await client.auth.signOut();user=null;data=initial();saveLocal();render();gate.hidden=false;badge.hidden=true;document.getElementById('signOutBtn').hidden=true};
+  document.getElementById('signOutBtn').onclick=async()=>{await client.auth.signOut();window.dispatchEvent(new Event('yomi-signed-out'));user=null;data=initial();saveLocal();render();gate.hidden=false;badge.hidden=true;document.getElementById('signOutBtn').hidden=true};
   window.addEventListener('focus',async()=>{if(!user || timer)return;const {data:row}=await client.from('yomi_state').select('payload,updated_at').eq('user_id',user.id).maybeSingle();if(row && row.updated_at!==remoteUpdatedAt){data=shape(row.payload);remoteUpdatedAt=row.updated_at;saveLocal();render();paint('✓ تم تحديث بياناتك')}});
 }
