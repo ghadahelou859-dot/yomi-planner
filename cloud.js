@@ -10,7 +10,7 @@ if (ready) {
   const form = document.getElementById('accountForm');
   const status = document.getElementById('accountStatus');
   const badge = document.getElementById('cloudBadge');
-  const nonempty = d => ['tasks','achievements','expenses','incomes','debts','reminders','notes','periods','restDays','dhikrs','waterEntries','readings','journal','habits','routines','timerSessions','budgets','bills'].some(k => d[k]?.length) || !!d.waterGoal || !!d.quran?.lastPage || !!d.quran?.log?.length;
+  const nonempty = d => ['tasks','achievements','expenses','incomes','debts','reminders','notes','periods','restDays','dhikrs','waterEntries','readings','journal','habits','routines','timerSessions','budgets','bills','projects'].some(k => d[k]?.length) || !!d.waterGoal || !!d.quran?.lastPage || !!d.quran?.log?.length;
   const shape = d => ({...initial(), ...d});
   const paint = s => { badge.textContent = s; badge.hidden = false; };
   async function pull() {
