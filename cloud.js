@@ -12,6 +12,7 @@ if (ready) {
   const syncBtn = document.getElementById('syncBtn');
   syncBtn.hidden = false;
   const baseKey = 'yomi-sync-base-v2';
+  const archiveKey = 'yomi-conflict-archives-v1';
   let user = null, base = null, remoteUpdatedAt = null, timer = null, busy = false, conflictSnapshot = null;
   const conflictDialog = document.getElementById('conflictDialog');
   const shape = d => ({...initial(), ...(d || {})});
@@ -33,12 +34,41 @@ if (ready) {
     localStorage.setItem(baseKey, JSON.stringify({userId:user.id,data:base,updatedAt}));
   }
   function pending() {return base ? !same(data,base) : nonempty(data)}
+  function archives() {
+    try {return JSON.parse(localStorage.getItem(archiveKey)||'[]').filter(x=>x.userId===user?.id)}
+    catch {return []}
+  }
+  function archiveConflict(snapshot) {
+    const existing=archives();
+    if(existing.some(x=>same(x.local,snapshot.local)&&same(x.remote,snapshot.remote)))return true;
+    const record={id:crypto.randomUUID(),userId:user.id,date:new Date().toISOString(),local:snapshot.local,remote:snapshot.remote};
+    try {
+      // A failed write leaves the older archives intact. Never resolve without a recoverable copy.
+      const all=JSON.parse(localStorage.getItem(archiveKey)||'[]');
+      localStorage.setItem(archiveKey,JSON.stringify([record,...existing].slice(0,3).concat(all.filter(x=>x.userId!==user.id))));
+      return true;
+    } catch(e) {console.error('Conflict archive failed',e);return false}
+  }
+  function showArchives() {
+    const list=document.getElementById('conflictArchives');
+    const saved=archives();
+    list.innerHTML=saved.length?saved.map(x=>'<div class="row"><span>تعارض '+safe(new Date(x.date).toLocaleString('ar-PS'))+'</span><button type="button" class="soft" data-archive="'+x.id+'" data-copy="local">استعادة نسخة هذا الجهاز</button><button type="button" class="soft" data-archive="'+x.id+'" data-copy="remote">استعادة نسخة الحساب</button></div>').join(''):'<p>ما في نسخ تعارض محفوظة لهذا الحساب على هذا الجهاز.</p>';
+    list.querySelectorAll('[data-archive]').forEach(button=>button.onclick=()=>{
+      const record=archives().find(x=>x.id===button.dataset.archive);
+      if(!record)return;
+      if(!confirm('استعادة هذه النسخة ستستبدل بيانات هذا الجهاز الحالية. متابعة؟'))return;
+      data=structuredClone(button.dataset.copy==='local'?record.local:record.remote);
+      saveLocal();document.getElementById('backupDialog').close();render();
+      paint('تمت الاستعادة على هذا الجهاز · اضغطي مزامنة الآن لمراجعة الحساب');
+    });
+  }
+  document.getElementById('showConflictArchives').onclick=showArchives;
   function backupPrompt(snapshot, details) {
     if(conflictDialog.open&&conflictSnapshot&&
        same(conflictSnapshot.local,snapshot.local)&&
        same(conflictSnapshot.remote,snapshot.remote))return;
-    conflictSnapshot={...snapshot,details,backupDownloaded:false};
-    paint('تعارض بين الجهازين · احفظي نسخة احتياطية');
+    conflictSnapshot={...snapshot,details,archived:archiveConflict(snapshot),backupDownloaded:false};
+    paint(conflictSnapshot.archived?'تعارض بين الجهازين · النسختان محفوظتان على هذا الجهاز':'تعارض بين الجهازين · نزّلي نسخة احتياطية');
     const sections={tasks:'مهامي',dhikrs:'أذكاري',quran:'وردي القرآني',readings:'القراءة',journal:'مراجعتي',diary:'مذكرتي',careLogs:'عنايتي',expenses:'مصاريفي',incomes:'دخلي',savings:'ادّخاري',waterEntries:'المي',projects:'مشاريع شغلي',routines:'روتيني',debts:'الديون',notes:'ملاحظاتي',reminders:'تذكيراتي'};
     const fields={title:'الاسم',body:'النص',amount:'المبلغ',paid:'المدفوع',lastPage:'آخر صفحة',done:'مكتمل',date:'التاريخ',status:'الحالة',count:'العدد',waterGoal:'هدف المي'};
     const showValue=v=>v===undefined?'محذوف':JSON.stringify(v)?.slice(0,180)??'فارغ';
@@ -47,7 +77,7 @@ if (ready) {
       const label=[sections[collection]||collection,record?.title||record?.date||'',fields[parts.at(-1)]||parts.at(-1)].filter(Boolean).join(' · ');
       return '<fieldset><legend>'+safe(label)+'</legend><label><input type="radio" name="choice'+i+'" value="local" required> هذا الجهاز: '+safe(showValue(entry.local))+'</label><label><input type="radio" name="choice'+i+'" value="remote" required> الحساب: '+safe(showValue(entry.remote))+'</label></fieldset>';
     }).join('');
-    document.getElementById('conflictBackupStatus').textContent='الملف الواحد يحفظ النسختين، ويمكن استيراد إحداهما لاحقًا من «نسخة احتياطية».';
+    document.getElementById('conflictBackupStatus').textContent=conflictSnapshot.archived?'حفظنا النسختين تلقائيًا على هذا الجهاز. تقدري ترجعي إلهم من «نسخة احتياطية ← نسخ التعارض». حفظ ملف خارجي اختياري إذا حبيتي.':'تعذّر الحفظ داخل التطبيق. نزّلي الملف واحفظيه في «الملفات» قبل المتابعة.';
     if(!conflictDialog.open)conflictDialog.showModal();
   }
   function downloadConflict(){
@@ -66,7 +96,7 @@ if (ready) {
     event.preventDefault();
     const snapshot=conflictSnapshot;
     if(!snapshot||busy)return;
-    if(!snapshot.backupDownloaded){alert('اضغطي «تنزيل نسخة الجهاز والحساب معًا» أولًا، وتأكدي إن الملف صار في التنزيلات.');return}
+    if(!snapshot.archived&&!snapshot.backupDownloaded){alert('تعذّر حفظ النسختين داخل التطبيق. نزّلي الملف واحفظيه في «الملفات» أولًا.');return}
     if(!navigator.onLine){paint('بدون نت · محفوظ على هذا الجهاز');return}
     if(!same(shape(data),snapshot.local)){conflictDialog.close();paint('تغيّرت بيانات هذا الجهاز · راجعي التعارض من جديد');return}
     const choices=Object.fromEntries(snapshot.details.map((entry,i)=>[entry.path,new FormData(event.currentTarget).get('choice'+i)]));
