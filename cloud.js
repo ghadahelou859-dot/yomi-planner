@@ -37,7 +37,7 @@ if (ready) {
     if(conflictDialog.open&&conflictSnapshot&&
        same(conflictSnapshot.local,snapshot.local)&&
        same(conflictSnapshot.remote,snapshot.remote))return;
-    conflictSnapshot={...snapshot,details,localDownloaded:false,remoteDownloaded:false};
+    conflictSnapshot={...snapshot,details,backupDownloaded:false};
     paint('تعارض بين الجهازين · احفظي نسخة احتياطية');
     const sections={tasks:'مهامي',dhikrs:'أذكاري',quran:'وردي القرآني',readings:'القراءة',journal:'مراجعتي',diary:'مذكرتي',careLogs:'عنايتي',expenses:'مصاريفي',incomes:'دخلي',savings:'ادّخاري',waterEntries:'المي',projects:'مشاريع شغلي',routines:'روتيني',debts:'الديون',notes:'ملاحظاتي',reminders:'تذكيراتي'};
     const fields={title:'الاسم',body:'النص',amount:'المبلغ',paid:'المدفوع',lastPage:'آخر صفحة',done:'مكتمل',date:'التاريخ',status:'الحالة',count:'العدد',waterGoal:'هدف المي'};
@@ -47,26 +47,26 @@ if (ready) {
       const label=[sections[collection]||collection,record?.title||record?.date||'',fields[parts.at(-1)]||parts.at(-1)].filter(Boolean).join(' · ');
       return '<fieldset><legend>'+safe(label)+'</legend><label><input type="radio" name="choice'+i+'" value="local" required> هذا الجهاز: '+safe(showValue(entry.local))+'</label><label><input type="radio" name="choice'+i+'" value="remote" required> الحساب: '+safe(showValue(entry.remote))+'</label></fieldset>';
     }).join('');
-    document.getElementById('conflictBackupStatus').textContent='حمّلي النسختين قبل اعتماد أي اختيار.';
+    document.getElementById('conflictBackupStatus').textContent='الملف الواحد يحفظ النسختين، ويمكن استيراد إحداهما لاحقًا من «نسخة احتياطية».';
     if(!conflictDialog.open)conflictDialog.showModal();
   }
-  function downloadConflict(which){
+  function downloadConflict(){
     if(!conflictSnapshot)return;
-    const snapshot=which==='local'?conflictSnapshot.local:conflictSnapshot.remote;
-    const file=new Blob([JSON.stringify({app:'yomi',version:1,exportedAt:new Date().toISOString(),data:snapshot},null,2)],{type:'application/json'});
-    const link=document.createElement('a');link.href=URL.createObjectURL(file);link.download='yomi-'+which+'-'+new Date().toISOString().slice(0,10)+'.json';link.click();
-    setTimeout(()=>URL.revokeObjectURL(link.href),5000);
-    conflictSnapshot[which+'Downloaded']=true;
-    document.getElementById('conflictBackupStatus').textContent=conflictSnapshot.localDownloaded&&conflictSnapshot.remoteDownloaded?'نُزّلت النسختان. اختاري قيمة لكل اختلاف.':'حمّلي النسخة الثانية أيضًا.';
+    try{
+      const file=new Blob([JSON.stringify({app:'yomi-conflict',version:1,exportedAt:new Date().toISOString(),local:conflictSnapshot.local,remote:conflictSnapshot.remote},null,2)],{type:'application/json'});
+      const link=document.createElement('a');link.href=URL.createObjectURL(file);link.download='yomi-two-copies-'+new Date().toISOString().slice(0,10)+'.json';link.click();
+      setTimeout(()=>URL.revokeObjectURL(link.href),5000);
+      conflictSnapshot.backupDownloaded=true;
+      document.getElementById('conflictBackupStatus').textContent='بدأ تنزيل ملف النسختين. تأكدي إنه موجود في التنزيلات، ثم اعتمدي اختيارك.';
+    }catch(e){paint('لم يبدأ تنزيل النسخة الاحتياطية');console.error('Backup failed',e)}
   }
-  document.getElementById('localConflictBackup').onclick=()=>downloadConflict('local');
-  document.getElementById('cloudConflictBackup').onclick=()=>downloadConflict('remote');
+  document.getElementById('bothConflictBackup').onclick=downloadConflict;
   document.getElementById('closeConflict').onclick=()=>conflictDialog.close();
   document.getElementById('conflictForm').onsubmit=async event=>{
     event.preventDefault();
     const snapshot=conflictSnapshot;
     if(!snapshot||busy)return;
-    if(!snapshot.localDownloaded||!snapshot.remoteDownloaded){alert('نزّلي نسخة هذا الجهاز ونسخة الحساب أولًا.');return}
+    if(!snapshot.backupDownloaded){alert('اضغطي «تنزيل نسخة الجهاز والحساب معًا» أولًا، وتأكدي إن الملف صار في التنزيلات.');return}
     if(!navigator.onLine){paint('بدون نت · محفوظ على هذا الجهاز');return}
     if(!same(shape(data),snapshot.local)){conflictDialog.close();paint('تغيّرت بيانات هذا الجهاز · راجعي التعارض من جديد');return}
     const choices=Object.fromEntries(snapshot.details.map((entry,i)=>[entry.path,new FormData(event.currentTarget).get('choice'+i)]));
