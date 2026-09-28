@@ -49,12 +49,22 @@ if (ready) {
       return true;
     } catch(e) {console.error('Conflict archive failed',e);return false}
   }
-  function showArchives() {
+  async function showArchives() {
     const list=document.getElementById('conflictArchives');
-    const saved=archives();
-    list.innerHTML=saved.length?saved.map(x=>'<div class="row"><span>تعارض '+safe(new Date(x.date).toLocaleString('ar-PS'))+'</span><button type="button" class="soft" data-archive="'+x.id+'" data-copy="local">استعادة نسخة هذا الجهاز</button><button type="button" class="soft" data-archive="'+x.id+'" data-copy="remote">استعادة نسخة الحساب</button></div>').join(''):'<p>ما في نسخ تعارض محفوظة لهذا الحساب على هذا الجهاز.</p>';
+    list.textContent='جارٍ تحميل النسخ المحفوظة…';
+    const local=archives().map(x=>({...x,source:'هذا الجهاز'}));
+    let cloud=[],failed=false;
+    if(user&&navigator.onLine){
+      try {
+        const {data:rows,error}=await client.from('yomi_conflict_backups').select('id,device_copy,account_copy,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(20);
+        if(error)throw error;
+        cloud=(rows||[]).map(x=>({id:x.id,date:x.created_at,local:x.device_copy,remote:x.account_copy,source:'الحساب'}));
+      }catch(e){failed=true;console.error('Loading backups failed',e)}
+    }
+    const saved=[...cloud,...local.filter(x=>!cloud.some(y=>same(x.local,y.local)&&same(x.remote,y.remote)))];
+    list.innerHTML=(failed?'<p>تعذّر تحميل نسخ الحساب. نسخ هذا الجهاز ظاهرة تحت.</p>':'')+(saved.length?saved.map((x,i)=>'<div class="row"><span>نسخة '+safe(x.source)+' · '+safe(new Date(x.date).toLocaleString('ar-PS'))+'</span><button type="button" class="soft" data-archive="'+i+'" data-copy="local">استعادة نسخة هذا الجهاز</button><button type="button" class="soft" data-archive="'+i+'" data-copy="remote">استعادة نسخة الحساب</button></div>').join(''):'<p>ما في نسخ تعارض محفوظة لهذا الحساب.</p>');
     list.querySelectorAll('[data-archive]').forEach(button=>button.onclick=()=>{
-      const record=archives().find(x=>x.id===button.dataset.archive);
+      const record=saved[Number(button.dataset.archive)];
       if(!record)return;
       if(!confirm('استعادة هذه النسخة ستستبدل بيانات هذا الجهاز الحالية. متابعة؟'))return;
       data=structuredClone(button.dataset.copy==='local'?record.local:record.remote);
@@ -63,6 +73,28 @@ if (ready) {
     });
   }
   document.getElementById('showConflictArchives').onclick=showArchives;
+  async function ensureCloudBackup(snapshot) {
+    if(snapshot.cloudArchiveSaved)return true;
+    if(!user||!navigator.onLine)return false;
+    if(snapshot.cloudArchivePromise)return snapshot.cloudArchivePromise;
+    snapshot.cloudArchivePromise=(async()=>{
+      try {
+        const bytes=new TextEncoder().encode(JSON.stringify([snapshot.local,snapshot.remote]));
+        const digest=await crypto.subtle.digest('SHA-256',bytes);
+        const key=Array.from(new Uint8Array(digest),x=>x.toString(16).padStart(2,'0')).join('');
+        const {error}=await client.from('yomi_conflict_backups').insert({user_id:user.id,conflict_key:key,device_copy:snapshot.local,account_copy:snapshot.remote});
+        if(error&&error.code!=='23505')throw error;
+        snapshot.cloudArchiveSaved=true;
+        if(conflictSnapshot===snapshot)document.getElementById('conflictBackupStatus').textContent='انحفظت النسختان تلقائيًا في الحساب، وبإمكانك استعادتهما من أي جهاز بنفس الحساب. اختاري القيمة الصحيحة واعملي مزامنة.';
+        return true;
+      }catch(e){
+        console.error('Cloud backup failed',e);
+        if(conflictSnapshot===snapshot)document.getElementById('conflictBackupStatus').textContent='تعذّر حفظ النسختين في الحساب. بيانات هذا الجهاز محفوظة؛ تأكدي من النت وجرّبي المزامنة مرة ثانية.';
+        return false;
+      }finally{snapshot.cloudArchivePromise=null}
+    })();
+    return snapshot.cloudArchivePromise;
+  }
   function backupPrompt(snapshot, details) {
     if(conflictDialog.open&&conflictSnapshot&&
        same(conflictSnapshot.local,snapshot.local)&&
@@ -77,8 +109,9 @@ if (ready) {
       const label=[sections[collection]||collection,record?.title||record?.date||'',fields[parts.at(-1)]||parts.at(-1)].filter(Boolean).join(' · ');
       return '<fieldset><legend>'+safe(label)+'</legend><label><input type="radio" name="choice'+i+'" value="local" required> هذا الجهاز: '+safe(showValue(entry.local))+'</label><label><input type="radio" name="choice'+i+'" value="remote" required> الحساب: '+safe(showValue(entry.remote))+'</label></fieldset>';
     }).join('');
-    document.getElementById('conflictBackupStatus').textContent=conflictSnapshot.archived?'حفظنا النسختين تلقائيًا على هذا الجهاز. تقدري ترجعي إلهم من «نسخة احتياطية ← نسخ التعارض». حفظ ملف خارجي اختياري إذا حبيتي.':'تعذّر الحفظ داخل التطبيق. نزّلي الملف واحفظيه في «الملفات» قبل المتابعة.';
+    document.getElementById('conflictBackupStatus').textContent='جارٍ حفظ نسختَي الجهاز والحساب تلقائيًا في حسابك…';
     if(!conflictDialog.open)conflictDialog.showModal();
+    ensureCloudBackup(conflictSnapshot);
   }
   function downloadConflict(){
     if(!conflictSnapshot)return;
@@ -96,13 +129,14 @@ if (ready) {
     event.preventDefault();
     const snapshot=conflictSnapshot;
     if(!snapshot||busy)return;
-    if(!snapshot.archived&&!snapshot.backupDownloaded){alert('تعذّر حفظ النسختين داخل التطبيق. نزّلي الملف واحفظيه في «الملفات» أولًا.');return}
+    if(!snapshot.archived&&!snapshot.backupDownloaded&&!snapshot.cloudArchiveSaved){alert('تعذّر حفظ النسختين داخل التطبيق. نزّلي الملف واحفظيه في «الملفات» أولًا.');return}
     if(!navigator.onLine){paint('بدون نت · محفوظ على هذا الجهاز');return}
     if(!same(shape(data),snapshot.local)){conflictDialog.close();paint('تغيّرت بيانات هذا الجهاز · راجعي التعارض من جديد');return}
     const choices=Object.fromEntries(snapshot.details.map((entry,i)=>[entry.path,new FormData(event.currentTarget).get('choice'+i)]));
     if(Object.values(choices).some(x=>!x)){alert('اختاري قيمة لكل اختلاف.');return}
     busy=true;
     try{
+      if(!await ensureCloudBackup(snapshot)){paint('تعذّر حفظ النسختين في الحساب · جرّبي المزامنة مرة ثانية');return}
       const {data:latest,error}=await client.from('yomi_state').select('payload,updated_at').eq('user_id',user.id).maybeSingle();
       if(error)throw error;
       if(!latest||latest.updated_at!==snapshot.updatedAt){conflictDialog.close();paint('تغيّرت نسخة الحساب · اضغطي مزامنة الآن للمراجعة');return}
