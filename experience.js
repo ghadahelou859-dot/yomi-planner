@@ -8,11 +8,11 @@
   const nowButton=document.getElementById('entrySoundNow');
   const gentleAudio=new Audio('./assets/gentle-loop.wav');
   gentleAudio.loop=true;gentleAudio.preload='auto';gentleAudio.volume=.5;
-  let savedAudio=null,savedUrl=null,playing=null,introTimer=null,lastStart=0;
+  let savedAudio=null,savedUrl=null,playing=null,introTimer=null,lastStart=0,audioError='';
   const getMode=()=>localStorage.getItem(soundKey)||'off';
   const setStatus=message=>{status.textContent=message};
   const active=()=>!!playing;
-  function updateControl(){nowButton.hidden=getMode()==='off';nowButton.textContent=active()?'■ إيقاف الصوت':'▶ تشغيل الصوت'}
+  function updateControl(){nowButton.hidden=getMode()==='off'&&!active();nowButton.textContent=active()?'■ إيقاف الصوت':'▶ تشغيل الصوت';window.dispatchEvent(new Event('yomi-sound-changed'))}
   function openAudioDB(){return new Promise((resolve,reject)=>{
     const request=indexedDB.open('yomi-local-audio-v1',1);
     request.onupgradeneeded=()=>request.result.createObjectStore('files');
@@ -33,17 +33,18 @@
   }
   function stopSound(){
     if(playing){playing.pause();playing.currentTime=0;playing=null}
+    audioError='';
     updateControl();
   }
-  function startSound(){
-    const choice=getMode();if(choice==='off')return;
-    if(active()&&Date.now()-lastStart<1000)return;
+  function startSound(forcedChoice){
+    const choice=typeof forcedChoice==='string'?forcedChoice:getMode();if(choice==='off')return;
+    if(!forcedChoice&&active()&&Date.now()-lastStart<1000)return;
     lastStart=Date.now();
     const audio=choice==='gentle'?gentleAudio:savedAudio;
     if(!audio){setStatus('التسجيل لسه قيد التحميل؛ جرّبي تشغيل الصوت بعد لحظة.');updateControl();return}
     stopSound();audio.currentTime=0;playing=audio;updateControl();
-    audio.play().catch(error=>{
-      if(playing===audio){playing=null;updateControl();setStatus('اضغطي «تشغيل الصوت» أعلى الصفحة؛ بعض الهواتف تحتاج ضغطة مباشرة.')}
+    audio.play().then(()=>{if(playing===audio){audioError='';updateControl()}}).catch(error=>{
+      if(playing===audio){playing=null;audioError='تعذّر تشغيل الصوت. افحصي صوت الجهاز وكتم صوت تبويب المتصفح، ثم اضغطي الموسيقى مرة ثانية.';updateControl();setStatus(audioError)}
       console.warn('Audio playback did not start',error);
     });
   }
@@ -62,10 +63,13 @@
   readAudio().then(file=>{if(file)prepareAudio(file);updateStatus();if(file&&getMode()==='recording'&&document.getElementById('lock').classList.contains('hidden'))startSound()}).catch(()=>setStatus('تعذّر فتح التسجيل؛ النغمات الهادئة ما زالت متاحة.'));
   document.getElementById('entrySoundBtn').onclick=()=>{updateStatus();soundDialog.showModal()};
   document.getElementById('entrySoundClose').onclick=()=>soundDialog.close();
-  document.getElementById('entrySoundTest').onclick=startSound;
+  document.getElementById('entrySoundTest').onclick=()=>startSound();
   document.getElementById('entrySoundStop').onclick=stopSound;
   nowButton.onclick=()=>{if(active())stopSound();else startSound()};
   window.yomiEntryStopSound=stopSound;
+  window.yomiTimerMusicIsPlaying=()=>playing===gentleAudio;
+  window.yomiAudioError=()=>audioError;
+  window.yomiTimerMusicToggle=()=>{if(playing===gentleAudio)stopSound();else startSound('gentle')};
   window.addEventListener('yomi-signed-out',stopSound);
   document.getElementById('pinForm').addEventListener('submit',()=>{
     const entered=document.getElementById('pinInput').value,saved=localStorage.getItem(PIN_KEY);
