@@ -1,0 +1,41 @@
+/* Keep the same planner usable on phones, tablets, and laptops. */
+html, body { max-width: 100%; }
+header, .shell, #view, .panel, .stat { min-width: 0; }
+#cloudBadge, #accountIdentity { overflow-wrap: anywhere; }
+.stat, .item small, .notice, .panel h2, .panel h3 { overflow-wrap: anywhere; }
+dialog { max-height: min(90dvh, 800px); overflow-y: auto; }
+
+@media (min-width: 721px) and (max-width: 1000px) {
+  .shell { grid-template-columns: 170px minmax(0, 1fr); gap: 14px; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  header { gap: 12px; flex-wrap: wrap; }
+  header > .row { justify-content: flex-end; flex: 1 1 420px; }
+}
+
+@media (max-width: 720px) {
+  header { display: flex; flex-direction: column; align-items: stretch; gap: 9px; }
+  header > .row { width: 100%; gap: 6px; }
+  header > .row > button { padding: 9px 10px; font-size: .84rem; }
+  #cloudBadge, #accountIdentity { flex: 1 1 100%; font-size: .78rem; line-height: 1.35; }
+  main { padding-bottom: calc(112px + env(safe-area-inset-bottom)); }
+  .nav { padding-bottom: calc(5px + env(safe-area-inset-bottom)); }
+  .panel { width: 100%; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat { padding: 12px; }
+  .stat b { font-size: clamp(1.2rem, 5vw, 1.6rem); }
+  .row > .field, .row > form, .quran-track form { min-width: 0; flex: 1 1 160px; }
+  .item:not(.task-item) { flex-wrap: wrap; }
+  .item:not(.task-item) > .grow { flex: 1 1 150px; }
+  .item button { min-height: 40px; }
+  .timer-dock { bottom: calc(69px + env(safe-area-inset-bottom)); }
+  .timer-dock .row { justify-content: stretch; }
+  .timer-dock .row button { flex: 1 1 auto; }
+  dialog { width: min(calc(100% - 20px), 460px); padding: 18px; }
+}
+
+@media (max-width: 380px) {
+  .grid { grid-template-columns: 1fr; }
+  .plant { flex-wrap: wrap; justify-content: center; text-align: center; }
+  .plant-copy { flex: 1 1 100%; }
+  .timer-dock .row button { font-size: .76rem; padding: 8px 6px; }
+}

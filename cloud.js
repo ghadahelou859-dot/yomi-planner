@@ -21,6 +21,10 @@ if (ready && !window.YOMI_CLOUD_READY) {
   const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
   const nonempty = d => ['tasks','achievements','expenses','incomes','debts','reminders','notes','periods','restDays','dhikrs','waterEntries','readings','journal','habits','routines','timerSessions','budgets','bills','projects','savings','careLogs','diary','memories','subscriptions','givingPayments','appIdeas'].some(k => d[k]?.length) || !!d.waterGoal || !!d.quran?.lastPage || !!d.quran?.log?.length || !!d.quran?.tracks?.length || !!d.quran?.extraLogs?.length || Number(d.givingRates?.salary ?? 5)!==5 || Number(d.givingRates?.work ?? 15)!==15;
   const paint = s => {badge.hidden = false;badge.textContent = s};
+  const paintSynced = updatedAt => {
+    const time = updatedAt && new Intl.DateTimeFormat('ar-PS', {hour:'numeric',minute:'2-digit',timeZone:'Asia/Jerusalem'}).format(new Date(updatedAt));
+    paint('✓ محفوظ في الحساب' + (time ? ' · آخر مزامنة ' + time : ''));
+  };
   const identify = () => {identity.hidden=!user;identity.textContent=user?'الحساب: '+user.email:''};
   const saveLocal = () => localStorage.setItem(KEY, JSON.stringify(data));
   function loadBase() {
@@ -147,7 +151,7 @@ if (ready && !window.YOMI_CLOUD_READY) {
       if(writeError)throw writeError;
       if(!saved){conflictDialog.close();paint('تغيّرت نسخة الحساب · اضغطي مزامنة الآن');return}
       if(!same(shape(data),snapshot.local)){setBase(merged,saved.updated_at);conflictDialog.close();paint('ظهرت تعديلات جديدة · اضغطي مزامنة الآن');return}
-      data=merged;saveLocal();setBase(merged,saved.updated_at);conflictSnapshot=null;conflictDialog.close();render();paint('✓ محفوظ في الحساب');
+      data=merged;saveLocal();setBase(merged,saved.updated_at);conflictSnapshot=null;conflictDialog.close();render();paintSynced(saved.updated_at);
     }catch(e){paint('تعذّر حل التعارض · النسختان محفوظتان');console.error('Conflict resolution failed',e)}
     finally{busy=false}
   };
@@ -175,7 +179,7 @@ if (ready && !window.YOMI_CLOUD_READY) {
       }
       if(!same(local,shape(data))){paint('تعديلات جديدة · جارٍ إعادة المزامنة');return}
       if(same(merged,remote) && row) {
-        data=merged;saveLocal();setBase(merged,row.updated_at);render();paint('✓ محفوظ في الحساب');
+        data=merged;saveLocal();setBase(merged,row.updated_at);render();paintSynced(row.updated_at);
         return;
       }
       const {data:latest,error:checkError}=await client.from('yomi_state').select('payload,updated_at').eq('user_id',user.id).maybeSingle();
@@ -193,7 +197,7 @@ if (ready && !window.YOMI_CLOUD_READY) {
       const changedDuringWrite=!same(local,shape(data));
       if(!changedDuringWrite){data=merged;saveLocal()}
       setBase(merged,saved.updated_at);render();
-      paint(changedDuringWrite?'جارٍ مزامنة تعديل أحدث…':'✓ محفوظ في الحساب');
+      if(changedDuringWrite)paint('جارٍ مزامنة تعديل أحدث…');else paintSynced(saved.updated_at);
     } catch(e) {paint('تعذّرت المزامنة · محفوظ على هذا الجهاز');console.error('Sync failed',e)}
     finally {busy=false;if(user && navigator.onLine && pending() && badge.textContent.includes('جارٍ')) schedule()}
   }
@@ -201,11 +205,14 @@ if (ready && !window.YOMI_CLOUD_READY) {
   save = () => {saveLocal();paint(!navigator.onLine?'بدون نت · محفوظ على هذا الجهاز':user?'جارٍ المزامنة…':'محفوظ على هذا الجهاز · سجّلي الدخول للمزامنة');if(user&&navigator.onLine)schedule()};
   async function showAccount() {
     if(!navigator.onLine){gate.hidden=true;paint('بدون نت · محفوظ على هذا الجهاز');return}
-    gate.hidden=false;
-    status.textContent='سجّلي دخولك بنفس الحساب على الهاتف واللابتوب.';
-    const {data:{user:found},error}=await client.auth.getUser();
-    if(error && error.name!=='AuthSessionMissingError')status.textContent='تعذّر التحقق من الحساب. تحققي من الاتصال.';
-    if(found){user=found;identify();loadBase();gate.hidden=true;document.getElementById('signOutBtn').hidden=false;await reconcile();notifyMemories()}
+    if(user){gate.hidden=true;await reconcile();return}
+    status.textContent='جارٍ التحقق من الحساب…';
+    try {
+      const {data:{user:found},error}=await client.auth.getUser();
+      if(found){user=found;identify();loadBase();gate.hidden=true;document.getElementById('signOutBtn').hidden=false;await reconcile();notifyMemories();return}
+      gate.hidden=false;
+      status.textContent=error && error.name!=='AuthSessionMissingError'?'تعذّر التحقق من الحساب. تحققي من الاتصال.':'سجّلي دخولك بنفس البريد وكلمة المرور على الهاتف واللابتوب. رمز الرقمين لهذا الجهاز فقط.';
+    } catch(e) {gate.hidden=false;status.textContent='تعذّر الاتصال بالحساب. بيانات هذا الجهاز محفوظة.';console.error('Account check failed',e)}
   }
   form.onsubmit=async event=>{
     event.preventDefault();
@@ -221,8 +228,11 @@ if (ready && !window.YOMI_CLOUD_READY) {
   if(document.getElementById('lock').classList.contains('hidden'))showAccount();
   document.getElementById('offlineBtn').onclick=()=>{gate.hidden=true;paint('بيانات هذا الجهاز فقط · سجّلي الدخول لاحقًا للمزامنة')};
   syncBtn.onclick=()=>{if(!navigator.onLine){paint('بدون نت · محفوظ على هذا الجهاز');return}if(user)reconcile();else showAccount()};
-  window.addEventListener('online',()=>{if(user)reconcile();else paint('رجع النت · أعيدي فتح الصفحة للمزامنة')});
+  window.addEventListener('online',()=>{if(user)reconcile();else showAccount()});
   window.addEventListener('focus',()=>{if(user&&navigator.onLine)reconcile()});
+  window.addEventListener('pageshow',()=>{if(user&&navigator.onLine)reconcile()});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&user&&navigator.onLine)reconcile()});
+  setInterval(()=>{if(document.visibilityState==='visible'&&user&&navigator.onLine)reconcile()},60000);
   document.getElementById('signOutBtn').onclick=async()=>{
     await client.auth.signOut();window.dispatchEvent(new Event('yomi-signed-out'));notifyMemories();
     user=null;identify();base=null;conflictSnapshot=null;if(conflictDialog.open)conflictDialog.close();localStorage.removeItem(baseKey);data=initial();saveLocal();render();
