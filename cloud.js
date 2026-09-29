@@ -19,7 +19,7 @@ if (ready) {
   const conflictDialog = document.getElementById('conflictDialog');
   const shape = d => ({...initial(), ...(d || {})});
   const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
-  const nonempty = d => ['tasks','achievements','expenses','incomes','debts','reminders','notes','periods','restDays','dhikrs','waterEntries','readings','journal','habits','routines','timerSessions','budgets','bills','projects','savings','careLogs','diary','memories'].some(k => d[k]?.length) || !!d.waterGoal || !!d.quran?.lastPage || !!d.quran?.log?.length;
+  const nonempty = d => ['tasks','achievements','expenses','incomes','debts','reminders','notes','periods','restDays','dhikrs','waterEntries','readings','journal','habits','routines','timerSessions','budgets','bills','projects','savings','careLogs','diary','memories','subscriptions','givingPayments','appIdeas'].some(k => d[k]?.length) || !!d.waterGoal || !!d.quran?.lastPage || !!d.quran?.log?.length || Number(d.givingRates?.salary ?? 5)!==5 || Number(d.givingRates?.work ?? 15)!==15;
   const paint = s => {badge.hidden = false;badge.textContent = s};
   const identify = () => {identity.hidden=!user;identity.textContent=user?'الحساب: '+user.email:''};
   const saveLocal = () => localStorage.setItem(KEY, JSON.stringify(data));
