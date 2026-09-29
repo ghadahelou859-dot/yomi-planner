@@ -4,3 +4,5 @@
 .work-type{font-size:.8rem;font-weight:700;color:#885f49;margin-top:10px}.idea-check{display:flex;gap:8px;align-items:center;font-weight:650;min-width:180px;max-width:100%;overflow-wrap:anywhere}
 .idea-check input{width:20px;height:20px;flex:none}.idea-item .grow{flex-basis:150px}.idea-item p{margin:5px 0}.idea-item button{padding:7px 10px}
 @media(max-width:720px){.giving-item>.row,.subscription-item>.row,.idea-item>.row{width:100%}.idea-item .grow{flex-basis:100%}}
+
+.giving-shortcut{background:linear-gradient(120deg,#fbf1e0,#f5e9dd);border-color:#d9b98e}.giving-shortcut p{margin:4px 0 12px}.giving-shortcut h2{margin-bottom:5px}
