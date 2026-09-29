@@ -1,8 +1,8 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm';
-window.YOMI_CLOUD_READY = true;
 const cfg = window.YOMI_SUPABASE_CONFIG;
 const ready = cfg?.url?.startsWith('https://') && cfg?.publishableKey?.startsWith('sb_publishable_') && !cfg.url.includes('YOUR_');
-if (ready) {
+if (ready && !window.YOMI_CLOUD_READY) {
+  window.YOMI_CLOUD_READY = true;
   const client = createClient(cfg.url, cfg.publishableKey);
   const gate = document.getElementById('accountGate');
   const form = document.getElementById('accountForm');
@@ -19,7 +19,7 @@ if (ready) {
   const conflictDialog = document.getElementById('conflictDialog');
   const shape = d => ({...initial(), ...(d || {})});
   const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
-  const nonempty = d => ['tasks','achievements','expenses','incomes','debts','reminders','notes','periods','restDays','dhikrs','waterEntries','readings','journal','habits','routines','timerSessions','budgets','bills','projects','savings','careLogs','diary','memories','subscriptions','givingPayments','appIdeas'].some(k => d[k]?.length) || !!d.waterGoal || !!d.quran?.lastPage || !!d.quran?.log?.length || Number(d.givingRates?.salary ?? 5)!==5 || Number(d.givingRates?.work ?? 15)!==15;
+  const nonempty = d => ['tasks','achievements','expenses','incomes','debts','reminders','notes','periods','restDays','dhikrs','waterEntries','readings','journal','habits','routines','timerSessions','budgets','bills','projects','savings','careLogs','diary','memories','subscriptions','givingPayments','appIdeas'].some(k => d[k]?.length) || !!d.waterGoal || !!d.quran?.lastPage || !!d.quran?.log?.length || !!d.quran?.tracks?.length || !!d.quran?.extraLogs?.length || Number(d.givingRates?.salary ?? 5)!==5 || Number(d.givingRates?.work ?? 15)!==15;
   const paint = s => {badge.hidden = false;badge.textContent = s};
   const identify = () => {identity.hidden=!user;identity.textContent=user?'الحساب: '+user.email:''};
   const saveLocal = () => localStorage.setItem(KEY, JSON.stringify(data));
