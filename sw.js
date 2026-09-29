@@ -1,7 +1,8 @@
 /* Cached app shell only; private journal data stays in this browser's local storage. */
-const CACHE = 'yomi-shell-2026-09-29-v12';
-const SHELL = ['./', './index.html', './autumn.css?v=1', './timer.js', './cloud.js?v=11', './merge.js', './features.js',
-  './assets/plant-1.webp', './assets/plant-2.webp', './assets/plant-3.webp', './assets/plant-4.webp'];
+const CACHE = 'yomi-shell-2026-09-29-v14';
+const SHELL = ['./', './index.html', './autumn.css?v=2', './themes.css?v=2', './theme.js?v=1', './timer.js', './cloud.js?v=11', './merge.js', './features.js',
+  './assets/autumn-branch.svg', './assets/autumn-pumpkins.svg', './assets/autumn-falling.svg',
+  './assets/christmas-scene.svg', './assets/ramadan-scene.svg', './assets/plant-1.webp', './assets/plant-2.webp', './assets/plant-3.webp', './assets/plant-4.webp'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
 });

@@ -1,0 +1,143 @@
+body[data-theme="winter"] {
+  --season-page: #edf3f5; --season-panel: #f9fcfc; --season-ink: #263f4d;
+  --season-muted: #516a76; --season-accent: #315d76; --season-deep: #24495f;
+  --season-soft: #dcebf0; --season-border: #bfd4df; --season-stat: #e2f0f4;
+  --season-hero: #d3e6ee; --season-motif: '❄️';
+}
+body[data-theme="christmas"] {
+  --season-page: #f6f5ed; --season-panel: #fffdf7; --season-ink: #253d32;
+  --season-muted: #50685c; --season-accent: #a53d3d; --season-deep: #7f292e;
+  --season-soft: #e4eee3; --season-border: #cbd9c5; --season-stat: #e9f0e3;
+  --season-hero: #e4eddf; --season-motif: '🎄';
+}
+body[data-theme="ramadan"] {
+  --season-page: #edf3f1; --season-panel: #fdfdf8; --season-ink: #243a44;
+  --season-muted: #536b70; --season-accent: #126d72; --season-deep: #174d61;
+  --season-soft: #dbece9; --season-border: #bfd9d5; --season-stat: #e3f2ee;
+  --season-hero: #d9eae8; --season-motif: '🌙';
+}
+body[data-theme="spring"] {
+  --season-page: #f5f8ef; --season-panel: #fffefa; --season-ink: #344a3c;
+  --season-muted: #637466; --season-accent: #4e7e63; --season-deep: #3b654c;
+  --season-soft: #e8f0df; --season-border: #d4e2cb; --season-stat: #edf3e6;
+  --season-hero: #e6f0de; --season-motif: '🌸';
+}
+body[data-theme="summer"] {
+  --season-page: #fdf8e9; --season-panel: #fffef9; --season-ink: #4d4029;
+  --season-muted: #75664b; --season-accent: #a25f17; --season-deep: #804b13;
+  --season-soft: #faedc9; --season-border: #eddbad; --season-stat: #fff1ca;
+  --season-hero: #f8e5b3; --season-motif: '☀️';
+}
+body[data-theme]:not([data-theme="autumn"]) {
+  color: var(--season-ink);
+  background:
+    radial-gradient(circle at 8% 9%, var(--season-hero), transparent 30rem),
+    radial-gradient(circle at 95% 45%, var(--season-soft), transparent 36rem),
+    var(--season-page);
+}
+body[data-theme]:not([data-theme="autumn"])::before,
+body[data-theme]:not([data-theme="autumn"]) header h1::after,
+body[data-theme]:not([data-theme="autumn"]) .plant::after { content: var(--season-motif); }
+body[data-theme]:not([data-theme="autumn"]) header {
+  background: linear-gradient(125deg, var(--season-panel), var(--season-hero));
+  border-color: var(--season-border);
+}
+body[data-theme]:not([data-theme="autumn"]) header h1,
+body[data-theme]:not([data-theme="autumn"]) h2,
+body[data-theme]:not([data-theme="autumn"]) h3,
+body[data-theme]:not([data-theme="autumn"]) .nav button,
+body[data-theme]:not([data-theme="autumn"]) .tab { color: var(--season-ink); }
+body[data-theme]:not([data-theme="autumn"]) .sub,
+body[data-theme]:not([data-theme="autumn"]) .muted,
+body[data-theme]:not([data-theme="autumn"]) .item small { color: var(--season-muted); }
+body[data-theme]:not([data-theme="autumn"]) .nav,
+body[data-theme]:not([data-theme="autumn"]) .panel,
+body[data-theme]:not([data-theme="autumn"]) dialog,
+body[data-theme]:not([data-theme="autumn"]) .timer-dock {
+  background: var(--season-panel);
+  border-color: var(--season-border);
+}
+body[data-theme]:not([data-theme="autumn"]) .nav button.active,
+body[data-theme]:not([data-theme="autumn"]) .tab.active,
+body[data-theme]:not([data-theme="autumn"]) .primary {
+  background: linear-gradient(135deg, var(--season-accent), var(--season-deep));
+  color: #fff;
+  box-shadow: 0 5px 14px #24242422;
+}
+body[data-theme]:not([data-theme="autumn"]) .stat,
+body[data-theme]:not([data-theme="autumn"]) .plant {
+  background: linear-gradient(130deg, var(--season-stat), var(--season-hero));
+  border-color: var(--season-border);
+  color: var(--season-ink);
+}
+body[data-theme]:not([data-theme="autumn"]) .stat b,
+body[data-theme]:not([data-theme="autumn"]) .donut-hole b,
+body[data-theme]:not([data-theme="autumn"]) .timer-top strong { color: var(--season-accent); }
+body[data-theme]:not([data-theme="autumn"]) .donut-hole,
+body[data-theme]:not([data-theme="autumn"]) .progress-ring span { background: var(--season-panel); }
+body[data-theme]:not([data-theme="autumn"]) .soft,
+body[data-theme]:not([data-theme="autumn"]) .item button,
+body[data-theme]:not([data-theme="autumn"]) .notice,
+body[data-theme]:not([data-theme="autumn"]) .motivation {
+  background: var(--season-soft);
+  border-color: var(--season-border);
+  color: var(--season-ink);
+}
+body[data-theme]:not([data-theme="autumn"]) .field input,
+body[data-theme]:not([data-theme="autumn"]) .field select,
+body[data-theme]:not([data-theme="autumn"]) .field textarea {
+  background: var(--season-panel);
+  color: var(--season-ink);
+  border-color: var(--season-border);
+}
+body[data-theme]:not([data-theme="autumn"]) .bar { background: var(--season-soft); }
+body[data-theme]:not([data-theme="autumn"]) .bar i,
+body[data-theme]:not([data-theme="autumn"]) .chartcol .v { background: var(--season-accent); }
+body[data-theme]:not([data-theme="autumn"]) .nav button:hover:not(.active),
+body[data-theme]:not([data-theme="autumn"]) .tab:hover:not(.active),
+body[data-theme]:not([data-theme="autumn"]) .soft:hover { background: var(--season-hero); }
+body[data-theme]:not([data-theme="autumn"]) button:focus-visible,
+body[data-theme]:not([data-theme="autumn"]) input:focus-visible,
+body[data-theme]:not([data-theme="autumn"]) select:focus-visible { outline-color: var(--season-accent); }
+
+/* Seasonal illustrations are part of the page, not controls. */
+body[data-theme="christmas"] header,
+body[data-theme="ramadan"] header { position: relative; isolation: isolate; overflow: hidden; min-height: 130px; }
+body[data-theme="christmas"] header > *,
+body[data-theme="ramadan"] header > * { position: relative; z-index: 1; }
+body[data-theme="christmas"] header::after,
+body[data-theme="ramadan"] header::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  bottom: -30px;
+  width: 180px;
+  height: 168px;
+  background: center / contain no-repeat;
+  pointer-events: none;
+  opacity: .43;
+}
+body[data-theme="christmas"] header::after,
+body[data-theme="christmas"] .plant::after { background-image: url('assets/christmas-scene.svg'); }
+body[data-theme="ramadan"] header::after,
+body[data-theme="ramadan"] .plant::after { background-image: url('assets/ramadan-scene.svg'); }
+body[data-theme="christmas"] .plant::after,
+body[data-theme="ramadan"] .plant::after {
+  content: '';
+  width: 94px;
+  height: 88px;
+  left: 4px;
+  bottom: -13px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: .36;
+}
+@media (max-width: 720px) {
+  body[data-theme="christmas"] header,
+  body[data-theme="ramadan"] header { min-height: 112px; }
+  body[data-theme="christmas"] header::after,
+  body[data-theme="ramadan"] header::after { width: 105px; height: 100px; left: -8px; bottom: -25px; opacity: .27; }
+  body[data-theme="christmas"] .plant::after,
+  body[data-theme="ramadan"] .plant::after { width: 56px; height: 52px; opacity: .25; }
+}

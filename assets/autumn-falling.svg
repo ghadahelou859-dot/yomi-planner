@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 510" fill="none">
+ <defs><path id="leaf" d="M0-22C14-18 21-8 19 4 17 16 1 21 0 26-5 15-18 14-20 3-22-8-13-19 0-22Z"/></defs>
+ <g stroke-width="2" stroke-linejoin="round">
+  <use href="#leaf" transform="translate(68 55) rotate(31) scale(1.2)" fill="#cb692c" stroke="#a64e25"/>
+  <use href="#leaf" transform="translate(218 26) rotate(-42) scale(.7)" fill="#e3aa42" stroke="#bf7a29"/>
+  <use href="#leaf" transform="translate(258 132) rotate(74) scale(1.1)" fill="#b95a27" stroke="#9e4423"/>
+  <use href="#leaf" transform="translate(36 180) rotate(-56) scale(.75)" fill="#d9993b" stroke="#af6928"/>
+  <use href="#leaf" transform="translate(145 250) rotate(22) scale(1.03)" fill="#c47a33" stroke="#a55d29"/>
+  <use href="#leaf" transform="translate(283 317) rotate(-42) scale(.85)" fill="#db9c45" stroke="#ba722d"/>
+  <use href="#leaf" transform="translate(57 377) rotate(69) scale(.95)" fill="#b95029" stroke="#983e21"/>
+  <use href="#leaf" transform="translate(198 462) rotate(-38) scale(1.15)" fill="#e0a542" stroke="#b9792d"/>
+ </g>
+ <g stroke="#a86c35" stroke-width="1.4" opacity=".7"><path d="M68 33v48m190 29v45M145 225v54M57 353v44M198 432v58"/></g>
+ <g fill="#ce8239" opacity=".58"><circle cx="289" cy="218" r="3"/><circle cx="105" cy="126" r="2"/><circle cx="17" cy="303" r="3"/><circle cx="272" cy="410" r="2"/></g>
+</svg>

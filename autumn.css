@@ -144,3 +144,58 @@ dialog::backdrop { background: #33201491; }
 @media (prefers-reduced-motion: reduce) {
   .primary, .soft { transition: none; }
 }
+
+/* Illustrated foliage stays behind controls and never intercepts taps. */
+body[data-theme="autumn"]::before {
+  content: '';
+  width: 190px;
+  height: 335px;
+  top: 260px;
+  left: max(0px, calc((100vw - 1300px) / 2));
+  background: url('assets/autumn-falling.svg') center / contain no-repeat;
+  opacity: .48;
+  transform: none;
+}
+body[data-theme="autumn"] header { position: relative; isolation: isolate; min-height: 130px; overflow: hidden; }
+body[data-theme="autumn"] header > * { position: relative; z-index: 1; }
+body[data-theme="autumn"] header::before,
+body[data-theme="autumn"] header::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+body[data-theme="autumn"] header::before {
+  width: 275px;
+  height: 208px;
+  top: -65px;
+  right: -32px;
+  background-image: url('assets/autumn-branch.svg');
+  opacity: .34;
+}
+body[data-theme="autumn"] header::after {
+  width: 195px;
+  height: 130px;
+  bottom: -37px;
+  left: 8px;
+  background-image: url('assets/autumn-pumpkins.svg');
+  opacity: .45;
+}
+body[data-theme="autumn"] .plant::after {
+  content: '';
+  width: 115px;
+  height: 75px;
+  left: 7px;
+  bottom: -15px;
+  background: url('assets/autumn-pumpkins.svg') center / contain no-repeat;
+  opacity: .4;
+}
+@media (max-width: 720px) {
+  body[data-theme="autumn"]::before { width: 115px; height: 205px; top: 235px; left: -40px; opacity: .25; }
+  body[data-theme="autumn"] header { min-height: 112px; }
+  body[data-theme="autumn"] header::before { width: 170px; height: 130px; top: -48px; right: -45px; opacity: .22; }
+  body[data-theme="autumn"] header::after { width: 105px; height: 72px; bottom: -20px; left: -5px; opacity: .28; }
+  body[data-theme="autumn"] .plant::after { width: 65px; height: 48px; opacity: .28; }
+}
