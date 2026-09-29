@@ -1,6 +1,6 @@
 (function () {
   const names = {
-    autumn: 'الخريف اليقطيني', winter: 'الشتاء الهادئ',
+    autumn: 'الخريف اليقطيني', autumnPhoto: 'الخريف الفوتوغرافي', winter: 'الشتاء الهادئ',
     christmas: 'أعياد الميلاد', ramadan: 'رمضان',
     spring: 'الربيع', summer: 'الصيف'
   };
@@ -17,7 +17,7 @@
     if (month === 12 && day >= 15 || month === 1 && day <= 6) return 'christmas';
     if (month >= 3 && month <= 5) return 'spring';
     if (month >= 6 && month <= 8) return 'summer';
-    if (month >= 9 && month <= 11) return 'autumn';
+    if (month >= 9 && month <= 11) return 'autumnPhoto';
     return 'winter';
   }
 

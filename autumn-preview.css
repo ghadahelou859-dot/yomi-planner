@@ -1,4 +1,4 @@
-body[data-autumn-preview="true"]::before {
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"])::before {
   content: '';
   position: fixed;
   inset: 0;
@@ -10,7 +10,7 @@ body[data-autumn-preview="true"]::before {
   z-index: 0;
   pointer-events: none;
 }
-body[data-autumn-preview="true"]::after {
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"])::after {
   content: '';
   position: fixed;
   inset: 0;
@@ -18,36 +18,36 @@ body[data-autumn-preview="true"]::after {
   z-index: 0;
   pointer-events: none;
 }
-body[data-autumn-preview="true"] header,
-body[data-autumn-preview="true"] .nav,
-body[data-autumn-preview="true"] .panel,
-body[data-autumn-preview="true"] dialog,
-body[data-autumn-preview="true"] .timer-dock {
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) header,
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .nav,
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .panel,
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) dialog,
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .timer-dock {
   background: #fffaf0ed;
   border-color: #ebd2ad;
   box-shadow: 0 12px 32px #57351722;
   backdrop-filter: blur(10px);
 }
-body[data-autumn-preview="true"] .stat,
-body[data-autumn-preview="true"] .plant,
-body[data-autumn-preview="true"] .motivation,
-body[data-autumn-preview="true"] .notice { background: #fff4dfd9; border-color: #ead0a7; }
-body[data-autumn-preview="true"] .nav button.active,
-body[data-autumn-preview="true"] .tab.active,
-body[data-autumn-preview="true"] .primary {
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .stat,
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .plant,
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .motivation,
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .notice { background: #fff4dfd9; border-color: #ead0a7; }
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .nav button.active,
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .tab.active,
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .primary {
   background: linear-gradient(135deg,#c56426,#98421c);
   color: #fff;
 }
-body[data-autumn-preview="true"] header h1,
-body[data-autumn-preview="true"] h2,
-body[data-autumn-preview="true"] h3 { color: #5e3521; }
-body[data-autumn-preview="true"] header::before,
-body[data-autumn-preview="true"] header::after,
-body[data-autumn-preview="true"] .nav::after,
-body[data-autumn-preview="true"] .plant::after { display: none; }
-body[data-autumn-preview="true"] .panel:first-child > .grid .stat { position: relative; overflow: hidden; }
-body[data-autumn-preview="true"] .panel:first-child > .grid .stat:nth-child(1)::after,
-body[data-autumn-preview="true"] .panel:first-child > .grid .stat:nth-child(2)::after {
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) header h1,
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) h2,
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) h3 { color: #5e3521; }
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) header::before,
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) header::after,
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .nav::after,
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .plant::after { display: none; }
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .panel:first-child > .grid .stat { position: relative; overflow: hidden; }
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .panel:first-child > .grid .stat:nth-child(1)::after,
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .panel:first-child > .grid .stat:nth-child(2)::after {
   content: '';
   position: absolute;
   left: 2px;
@@ -60,10 +60,10 @@ body[data-autumn-preview="true"] .panel:first-child > .grid .stat:nth-child(2)::
   pointer-events: none;
   opacity: .88;
 }
-body[data-autumn-preview="true"] .panel:first-child > .grid .stat:nth-child(1)::after {
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .panel:first-child > .grid .stat:nth-child(1)::after {
   background-image: url('assets/autumn-pumpkin-real.webp');
 }
-body[data-autumn-preview="true"] .panel:first-child > .grid .stat:nth-child(2)::after {
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .panel:first-child > .grid .stat:nth-child(2)::after {
   background-image: url('assets/autumn-leaves-real.webp');
   width: 70px;
 }
@@ -87,9 +87,9 @@ body[data-autumn-preview="true"] .panel:first-child > .grid .stat:nth-child(2)::
 }
 #autumnPreviewBanner button { flex: 0 0 auto; padding: 7px 10px; border-radius: 10px; background: #b45225; color: #fff; }
 @media(max-width:720px) {
-  body[data-autumn-preview="true"]::before { background-image: url('assets/autumn-photo-mobile.webp'); background-position: center center; }
-  body[data-autumn-preview="true"] .nav { background: #fffaf0f2; }
+  :is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"])::before { background-image: url('assets/autumn-photo-mobile.webp'); background-position: center center; }
+  :is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .nav { background: #fffaf0f2; }
   #autumnPreviewBanner { left: 10px; right: 10px; top: auto; bottom: calc(75px + env(safe-area-inset-bottom)); justify-content: space-between; }
-  body[data-autumn-preview="true"] .panel:first-child > .grid .stat:nth-child(1)::after,
-  body[data-autumn-preview="true"] .panel:first-child > .grid .stat:nth-child(2)::after { width: 45px; height: 45px; opacity: .72; }
+  :is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .panel:first-child > .grid .stat:nth-child(1)::after,
+  :is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .panel:first-child > .grid .stat:nth-child(2)::after { width: 45px; height: 45px; opacity: .72; }
 }

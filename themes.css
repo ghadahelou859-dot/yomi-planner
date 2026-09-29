@@ -28,77 +28,77 @@ body[data-theme="summer"] {
   --season-soft: #faedc9; --season-border: #eddbad; --season-stat: #fff1ca;
   --season-hero: #f8e5b3; --season-motif: '☀️';
 }
-body[data-theme]:not([data-theme="autumn"]) {
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) {
   color: var(--season-ink);
   background:
     radial-gradient(circle at 8% 9%, var(--season-hero), transparent 30rem),
     radial-gradient(circle at 95% 45%, var(--season-soft), transparent 36rem),
     var(--season-page);
 }
-body[data-theme]:not([data-theme="autumn"])::before,
-body[data-theme]:not([data-theme="autumn"]) header h1::after,
-body[data-theme]:not([data-theme="autumn"]) .plant::after { content: var(--season-motif); }
-body[data-theme]:not([data-theme="autumn"]) header {
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"])::before,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) header h1::after,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .plant::after { content: var(--season-motif); }
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) header {
   background: linear-gradient(125deg, var(--season-panel), var(--season-hero));
   border-color: var(--season-border);
 }
-body[data-theme]:not([data-theme="autumn"]) header h1,
-body[data-theme]:not([data-theme="autumn"]) h2,
-body[data-theme]:not([data-theme="autumn"]) h3,
-body[data-theme]:not([data-theme="autumn"]) .nav button,
-body[data-theme]:not([data-theme="autumn"]) .tab { color: var(--season-ink); }
-body[data-theme]:not([data-theme="autumn"]) .sub,
-body[data-theme]:not([data-theme="autumn"]) .muted,
-body[data-theme]:not([data-theme="autumn"]) .item small { color: var(--season-muted); }
-body[data-theme]:not([data-theme="autumn"]) .nav,
-body[data-theme]:not([data-theme="autumn"]) .panel,
-body[data-theme]:not([data-theme="autumn"]) dialog,
-body[data-theme]:not([data-theme="autumn"]) .timer-dock {
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) header h1,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) h2,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) h3,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .nav button,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .tab { color: var(--season-ink); }
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .sub,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .muted,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .item small { color: var(--season-muted); }
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .nav,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .panel,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) dialog,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .timer-dock {
   background: var(--season-panel);
   border-color: var(--season-border);
 }
-body[data-theme]:not([data-theme="autumn"]) .nav button.active,
-body[data-theme]:not([data-theme="autumn"]) .tab.active,
-body[data-theme]:not([data-theme="autumn"]) .primary {
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .nav button.active,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .tab.active,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .primary {
   background: linear-gradient(135deg, var(--season-accent), var(--season-deep));
   color: #fff;
   box-shadow: 0 5px 14px #24242422;
 }
-body[data-theme]:not([data-theme="autumn"]) .stat,
-body[data-theme]:not([data-theme="autumn"]) .plant {
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .stat,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .plant {
   background: linear-gradient(130deg, var(--season-stat), var(--season-hero));
   border-color: var(--season-border);
   color: var(--season-ink);
 }
-body[data-theme]:not([data-theme="autumn"]) .stat b,
-body[data-theme]:not([data-theme="autumn"]) .donut-hole b,
-body[data-theme]:not([data-theme="autumn"]) .timer-top strong { color: var(--season-accent); }
-body[data-theme]:not([data-theme="autumn"]) .donut-hole,
-body[data-theme]:not([data-theme="autumn"]) .progress-ring span { background: var(--season-panel); }
-body[data-theme]:not([data-theme="autumn"]) .soft,
-body[data-theme]:not([data-theme="autumn"]) .item button,
-body[data-theme]:not([data-theme="autumn"]) .notice,
-body[data-theme]:not([data-theme="autumn"]) .motivation {
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .stat b,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .donut-hole b,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .timer-top strong { color: var(--season-accent); }
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .donut-hole,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .progress-ring span { background: var(--season-panel); }
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .soft,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .item button,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .notice,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .motivation {
   background: var(--season-soft);
   border-color: var(--season-border);
   color: var(--season-ink);
 }
-body[data-theme]:not([data-theme="autumn"]) .field input,
-body[data-theme]:not([data-theme="autumn"]) .field select,
-body[data-theme]:not([data-theme="autumn"]) .field textarea {
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .field input,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .field select,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .field textarea {
   background: var(--season-panel);
   color: var(--season-ink);
   border-color: var(--season-border);
 }
-body[data-theme]:not([data-theme="autumn"]) .bar { background: var(--season-soft); }
-body[data-theme]:not([data-theme="autumn"]) .bar i,
-body[data-theme]:not([data-theme="autumn"]) .chartcol .v { background: var(--season-accent); }
-body[data-theme]:not([data-theme="autumn"]) .nav button:hover:not(.active),
-body[data-theme]:not([data-theme="autumn"]) .tab:hover:not(.active),
-body[data-theme]:not([data-theme="autumn"]) .soft:hover { background: var(--season-hero); }
-body[data-theme]:not([data-theme="autumn"]) button:focus-visible,
-body[data-theme]:not([data-theme="autumn"]) input:focus-visible,
-body[data-theme]:not([data-theme="autumn"]) select:focus-visible { outline-color: var(--season-accent); }
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .bar { background: var(--season-soft); }
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .bar i,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .chartcol .v { background: var(--season-accent); }
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .nav button:hover:not(.active),
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .tab:hover:not(.active),
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) .soft:hover { background: var(--season-hero); }
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) button:focus-visible,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) input:focus-visible,
+body[data-theme]:not([data-theme="autumn"]):not([data-theme="autumnPhoto"]) select:focus-visible { outline-color: var(--season-accent); }
 
 /* Seasonal illustrations are part of the page, not controls. */
 body[data-theme="christmas"] header,
