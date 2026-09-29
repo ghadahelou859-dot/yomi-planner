@@ -45,6 +45,28 @@ body[data-autumn-preview="true"] header::before,
 body[data-autumn-preview="true"] header::after,
 body[data-autumn-preview="true"] .nav::after,
 body[data-autumn-preview="true"] .plant::after { display: none; }
+body[data-autumn-preview="true"] .panel:first-child > .grid .stat { position: relative; overflow: hidden; }
+body[data-autumn-preview="true"] .panel:first-child > .grid .stat:nth-child(1)::after,
+body[data-autumn-preview="true"] .panel:first-child > .grid .stat:nth-child(2)::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  bottom: 1px;
+  width: 62px;
+  height: 62px;
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  opacity: .88;
+}
+body[data-autumn-preview="true"] .panel:first-child > .grid .stat:nth-child(1)::after {
+  background-image: url('assets/autumn-pumpkin-real.webp');
+}
+body[data-autumn-preview="true"] .panel:first-child > .grid .stat:nth-child(2)::after {
+  background-image: url('assets/autumn-leaves-real.webp');
+  width: 70px;
+}
 #autumnPreviewBanner[hidden] { display: none !important; }
 #autumnPreviewBanner {
   position: fixed;
@@ -68,4 +90,6 @@ body[data-autumn-preview="true"] .plant::after { display: none; }
   body[data-autumn-preview="true"]::before { background-image: url('assets/autumn-photo-mobile.webp'); background-position: center center; }
   body[data-autumn-preview="true"] .nav { background: #fffaf0f2; }
   #autumnPreviewBanner { left: 10px; right: 10px; top: auto; bottom: calc(75px + env(safe-area-inset-bottom)); justify-content: space-between; }
+  body[data-autumn-preview="true"] .panel:first-child > .grid .stat:nth-child(1)::after,
+  body[data-autumn-preview="true"] .panel:first-child > .grid .stat:nth-child(2)::after { width: 45px; height: 45px; opacity: .72; }
 }
