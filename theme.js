@@ -1,6 +1,6 @@
 (function () {
   const names = {
-    autumn: 'الخريف اليقطيني', autumnPhoto: 'الخريف الفوتوغرافي', winter: 'الشتاء الهادئ',
+    autumn: 'الخريف الفوتوغرافي', autumnPhoto: 'الخريف الفوتوغرافي', autumnClassic: 'الخريف اليقطيني البسيط', winter: 'الشتاء الهادئ',
     christmas: 'أعياد الميلاد', ramadan: 'رمضان',
     spring: 'الربيع', summer: 'الصيف'
   };
@@ -23,9 +23,9 @@
 
   function apply() {
     const mode = modes.has(data.appearance?.mode) ? data.appearance.mode : 'auto';
-    const active = mode === 'auto' ? seasonal() : mode;
+    const active = mode === 'auto' ? seasonal() : mode === 'autumn' ? 'autumnPhoto' : mode === 'autumnClassic' ? 'autumn' : mode;
     document.body.dataset.theme = active;
-    picker.value = mode;
+    picker.value = mode === 'autumnPhoto' ? 'autumn' : mode;
     document.getElementById('themeStatus').textContent =
       'المظهر الحالي: ' + names[active] + (mode === 'auto' ? ' · تغيّر تلقائيًا مع الموسم' : ' · اختيارك محفوظ على حسابك');
   }
