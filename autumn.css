@@ -1,0 +1,146 @@
+:root {
+  color: #3f2c25;
+  background: #faf5eb;
+  --autumn-ink: #3f2c25;
+  --autumn-muted: #715b50;
+  --autumn-pumpkin: #b74e22;
+  --autumn-pumpkin-dark: #893b1e;
+  --autumn-cream: #fffdf8;
+  --autumn-border: #e9d6bc;
+}
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 9% 7%, #f7dbad66, transparent 29rem),
+    radial-gradient(circle at 95% 38%, #e7b57f38, transparent 34rem),
+    #faf5eb;
+}
+body::before {
+  content: '🍁';
+  position: fixed;
+  top: 114px;
+  left: max(2vw, calc((100vw - 1200px) / 2));
+  font-size: clamp(34px, 5vw, 72px);
+  opacity: .23;
+  transform: rotate(-24deg);
+  pointer-events: none;
+  z-index: 0;
+}
+header, main { position: relative; z-index: 1; }
+header {
+  margin-top: 12px;
+  margin-bottom: 12px;
+  padding: 20px 24px;
+  border: 1px solid #e7cfad;
+  border-radius: 25px;
+  background: linear-gradient(125deg, #fffaf0 8%, #f8e9d4 100%);
+  box-shadow: 0 13px 30px #6a3d1912;
+}
+header h1 {
+  color: #673a25;
+  font-size: clamp(2rem, 3vw, 2.65rem);
+  letter-spacing: -.03em;
+}
+header h1::after {
+  content: '🍂';
+  display: inline-block;
+  margin-inline-start: .28em;
+  font-size: .52em;
+  transform: rotate(-19deg);
+  vertical-align: middle;
+}
+header h1 span { color: #b35b28; }
+h2, h3 { color: #633d28; }
+.sub, .muted, .item small { color: var(--autumn-muted); }
+.nav {
+  padding: 10px;
+  border: 1px solid var(--autumn-border);
+  border-radius: 22px;
+  background: #fff9efcf;
+  box-shadow: 0 12px 25px #663d1b0e;
+}
+.nav button, .tab { color: #674a35; }
+.nav button:hover:not(.active), .tab:hover:not(.active) { background: #f6e4cd; }
+.nav button.active, .tab.active, .primary {
+  background: linear-gradient(135deg, var(--autumn-pumpkin), var(--autumn-pumpkin-dark));
+  color: #fff;
+  box-shadow: 0 5px 14px #8b431e2e;
+}
+.primary:hover { filter: brightness(1.07); }
+.panel, dialog, .timer-dock, .lock-card {
+  background: var(--autumn-cream);
+  border-color: var(--autumn-border);
+  box-shadow: 0 10px 28px #653d1b12;
+}
+.panel { border-radius: 24px; }
+.stat {
+  background: linear-gradient(145deg, #fff2de, #f8e7d0);
+  border: 1px solid #ecd5b3;
+  color: #5c3d2d;
+}
+.stat b { color: #a74620; }
+.plant {
+  background: linear-gradient(115deg, #f9dfb8, #fff5df 55%, #eadcbb);
+  border: 1px solid #e9c996;
+  position: relative;
+  overflow: hidden;
+}
+.plant::after {
+  content: '🍂';
+  position: absolute;
+  bottom: 7px;
+  left: 17px;
+  font-size: 1.7rem;
+  opacity: .45;
+  pointer-events: none;
+}
+.plant-note { color: #775542; }
+.progress-ring span, .donut-hole { background: #fffaf0; color: #633d28; }
+.donut-hole b, .timer-top strong { color: #9d4524; }
+.bar { background: #eddbc4; }
+.bar i { background: #b65b2b; }
+.chartcol .v { background: #bc713f; }
+.notice, .motivation {
+  color: #5c3d2d;
+  background: linear-gradient(120deg, #fff0d7, #f5e3cd, #ebeddc);
+  border: 1px solid #ead4b4;
+}
+.soft, .item button { background: #f5e5cf; color: #6d442c; }
+.soft:hover, .item button:hover { background: #efd4b1; }
+.field input, .field select, .field textarea {
+  border-color: #dcc6aa;
+  background: #fffefa;
+  color: var(--autumn-ink);
+}
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline-color: #b74e22;
+  outline-offset: 2px;
+}
+.item { border-color: #eddfcc; }
+.lock { background: linear-gradient(135deg, #fcf5e9, #f3e1c8); }
+.timer-dock { border-color: #ddbd99; }
+dialog::backdrop { background: #33201491; }
+@media (max-width: 720px) {
+  body::before { top: 116px; left: 10px; font-size: 33px; opacity: .14; }
+  header { margin: 8px 12px 6px; padding: 16px; border-radius: 21px; flex-wrap: wrap; gap: 9px; }
+  header h1 { font-size: 2rem; }
+  header .row { gap: 6px; }
+  header .row button { padding: 8px 10px; font-size: .82rem; }
+  .nav {
+    top: auto;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    border-radius: 18px 18px 0 0;
+    border-inline: 0;
+    border-bottom: 0;
+    background: #fff8ed;
+    padding: 6px 7px calc(6px + env(safe-area-inset-bottom));
+  }
+  .nav button { min-width: 72px; }
+  main { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+  .plant::after { font-size: 1.15rem; left: 7px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .primary, .soft { transition: none; }
+}
