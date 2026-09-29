@@ -1,6 +1,6 @@
 /* Cached app shell only; private journal data stays in this browser's local storage. */
-const CACHE = 'yomi-shell-2026-09-29-v19';
-const SHELL = ['./', './index.html', './autumn.css?v=3', './themes.css?v=3', './theme.js?v=3', './autumn-preview.css?v=3', './autumn-preview.js?v=2', './timer.js', './cloud.js?v=11', './merge.js', './features.js',
+const CACHE = 'yomi-shell-2026-09-29-v20';
+const SHELL = ['./', './index.html', './autumn.css?v=3', './themes.css?v=3', './theme.js?v=4', './autumn-preview.css?v=4', './autumn-preview.js?v=2', './experience.css?v=1', './experience.js?v=1', './timer.js', './cloud.js?v=11', './merge.js', './features.js',
   './assets/autumn-pumpkin-real.webp', './assets/autumn-leaves-real.webp', './assets/autumn-photo-wide.webp', './assets/autumn-photo-mobile.webp', './assets/autumn-tree.svg', './assets/autumn-branch.svg', './assets/autumn-pumpkins.svg', './assets/autumn-falling.svg',
   './assets/christmas-scene.svg', './assets/ramadan-scene.svg', './assets/plant-1.webp', './assets/plant-2.webp', './assets/plant-3.webp', './assets/plant-4.webp'];
 self.addEventListener('install', event => {

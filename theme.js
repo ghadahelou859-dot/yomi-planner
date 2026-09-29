@@ -25,6 +25,8 @@
     const mode = modes.has(data.appearance?.mode) ? data.appearance.mode : 'auto';
     const active = mode === 'auto' ? seasonal() : mode === 'autumn' ? 'autumnPhoto' : mode === 'autumnClassic' ? 'autumn' : mode;
     document.body.dataset.theme = active;
+    const leaf = document.querySelector('#entryScene .entry-leaf');
+    if (leaf) leaf.textContent = {autumnPhoto:'🍂', autumn:'🍁', winter:'❄️', christmas:'🎄', ramadan:'🌙', spring:'🌸', summer:'☀️'}[active];
     picker.value = mode === 'autumnPhoto' ? 'autumn' : mode;
     document.getElementById('themeStatus').textContent =
       'المظهر الحالي: ' + names[active] + (mode === 'auto' ? ' · تغيّر تلقائيًا مع الموسم' : ' · اختيارك محفوظ على حسابك');
@@ -34,6 +36,10 @@
   picker.onchange = () => {
     data.appearance = {mode: picker.value};
     save();
+    document.body.classList.remove('theme-switching');
+    void document.body.offsetWidth;
+    document.body.classList.add('theme-switching');
+    setTimeout(() => document.body.classList.remove('theme-switching'), 500);
     apply();
   };
   document.getElementById('themeClose').onclick = () => dialog.close();

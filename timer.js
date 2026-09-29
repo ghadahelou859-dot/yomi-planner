@@ -14,6 +14,7 @@
   function startMusic() {
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx || !timer?.running) return;
+    window.yomiEntryStopSound?.();
     stopMusic(); audio = new Ctx(); audio.resume().catch(() => {});
     function play() {
       if (!audio || audio.state !== 'running') return;

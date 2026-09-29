@@ -1,0 +1,32 @@
+#entryScene[hidden] { display: none !important; }
+#entryScene {
+  position: fixed;
+  inset: 0;
+  z-index: 16;
+  pointer-events: none;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  color: #5f3925;
+  background: linear-gradient(150deg, #fff5e8f2, #f7e0bdd9), url('assets/autumn-photo-mobile.webp') center / cover;
+  animation: entry-exit 2s ease-in-out both;
+}
+#entryScene .entry-title { font-size: clamp(3rem, 8vw, 5rem); font-weight: 800; animation: entry-rise .7s .12s both; }
+#entryScene .entry-line { font-size: 1.15rem; animation: entry-rise .7s .5s both; }
+#entryScene .entry-leaf { font-size: 3rem; animation: entry-leaf 1.6s ease-out both; }
+@media (min-width: 721px) { body[data-theme="autumnPhoto"] #entryScene { background-image: linear-gradient(150deg, #fff5e8e9, #f7e0bdc9), url('assets/autumn-photo-wide.webp'); } }
+body:not([data-theme="autumnPhoto"]) #entryScene { background: linear-gradient(145deg, #fffaf2f5, #e7e0d9e9); }
+body[data-theme="winter"] #entryScene { background: linear-gradient(145deg, #f7fcff, #d5e7f0); color: #274c61; }
+body[data-theme="spring"] #entryScene { background: linear-gradient(145deg, #fffefa, #e2efdf); color: #3b654c; }
+body[data-theme="summer"] #entryScene { background: linear-gradient(145deg, #fffdf5, #f7e7b7); color: #80551e; }
+body[data-theme="ramadan"] #entryScene { background: linear-gradient(145deg, #f8fff9, #d9ece8); color: #174d61; }
+body[data-theme="christmas"] #entryScene { background: linear-gradient(145deg, #fffdfa, #e2ebe1); color: #7f292e; }
+body.theme-switching header, body.theme-switching main { animation: theme-reveal .44s ease-out; }
+@keyframes entry-exit { 0%, 75% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes entry-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes entry-leaf { from { opacity: 0; transform: translate(30px,-45px) rotate(35deg); } to { opacity: 1; transform: translate(-25px,0) rotate(-20deg); } }
+@keyframes theme-reveal { from { opacity: .72; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  #entryScene, #entryScene *, body.theme-switching header, body.theme-switching main { animation: none !important; }
+  #entryScene { display: none; }
+}

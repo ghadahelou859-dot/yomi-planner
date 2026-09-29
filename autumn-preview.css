@@ -45,27 +45,37 @@
 :is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) header::after,
 :is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .nav::after,
 :is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .plant::after { display: none; }
-:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .panel:first-child > .grid .stat { position: relative; overflow: hidden; }
-:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .panel:first-child > .grid .stat:nth-child(1)::after,
-:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .panel:first-child > .grid .stat:nth-child(2)::after {
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) #view > .panel:first-child > .grid > .stat {
+  position: relative;
+  overflow: hidden;
+  padding-left: 76px;
+  min-height: 114px;
+}
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) #view > .panel:first-child > .grid > .stat::after {
   content: '';
   position: absolute;
-  left: 2px;
-  bottom: 1px;
-  width: 62px;
-  height: 62px;
+  left: 8px;
+  bottom: 8px;
+  width: 56px;
+  height: 56px;
   background-position: center;
   background-size: contain;
   background-repeat: no-repeat;
   pointer-events: none;
-  opacity: .88;
+  opacity: .77;
 }
-:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .panel:first-child > .grid .stat:nth-child(1)::after {
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) #view > .panel:first-child > .grid > .stat:nth-child(odd)::after {
   background-image: url('assets/autumn-pumpkin-real.webp');
 }
-:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .panel:first-child > .grid .stat:nth-child(2)::after {
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) #view > .panel:first-child > .grid > .stat:nth-child(even)::after {
   background-image: url('assets/autumn-leaves-real.webp');
-  width: 70px;
+  transform: rotate(-15deg);
+}
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) #view > .panel:first-child > .grid > .stat:nth-child(3)::after,
+:is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) #view > .panel:first-child > .grid > .stat:nth-child(4)::after {
+  width: 44px;
+  height: 44px;
+  opacity: .55;
 }
 #autumnPreviewBanner[hidden] { display: none !important; }
 #autumnPreviewBanner {
@@ -90,6 +100,8 @@
   :is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"])::before { background-image: url('assets/autumn-photo-mobile.webp'); background-position: center center; }
   :is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .nav { background: #fffaf0f2; }
   #autumnPreviewBanner { left: 10px; right: 10px; top: auto; bottom: calc(75px + env(safe-area-inset-bottom)); justify-content: space-between; }
-  :is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .panel:first-child > .grid .stat:nth-child(1)::after,
-  :is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) .panel:first-child > .grid .stat:nth-child(2)::after { width: 45px; height: 45px; opacity: .72; }
+  :is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) #view > .panel:first-child > .grid > .stat { padding-left: 50px; min-height: 125px; }
+  :is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) #view > .panel:first-child > .grid > .stat::after { width: 36px; height: 36px; left: 7px; bottom: 7px; opacity: .68; }
+  :is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) #view > .panel:first-child > .grid > .stat:nth-child(3)::after,
+  :is(body[data-autumn-preview="true"], body[data-theme="autumnPhoto"]) #view > .panel:first-child > .grid > .stat:nth-child(4)::after { width: 29px; height: 29px; opacity: .48; }
 }
