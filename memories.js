@@ -5,10 +5,17 @@ const memoryUrls = new Set();
 const memoryTransfers = new Set();
 const memoryDeleteQueueKey='yomi-memory-delete-queue-v1';
 let memoryEditing = null;
+let memoryView = 'gallery', memoryDirty = false;
 let memoryDraft = {date:selected,title:'',body:'',position:'above',files:[]};
 const memoryPreviewUrls = new Set();
 function memoryClearPreviewUrls() {for(const url of memoryPreviewUrls)URL.revokeObjectURL(url);memoryPreviewUrls.clear();}
-function memoryResetDraft() {memoryEditing=null;memoryDraft={date:selected,title:'',body:'',position:'above',files:[]};memoryClearPreviewUrls();}
+function memoryResetDraft() {memoryEditing=null;memoryView='gallery';memoryDirty=false;memoryDraft={date:selected,title:'',body:'',position:'above',files:[]};memoryClearPreviewUrls();}
+function memoryOpenEditor(memoryId=null) {
+  const x=memoryId&&data.memories?.find(row=>row.id===memoryId);
+  memoryClearPreviewUrls();memoryEditing=x?.id||null;memoryView='editor';memoryDirty=false;
+  memoryDraft=x?{date:x.date,title:x.title,body:x.body||'',position:x.position||'above',files:[]}:{date:selected,title:'',body:'',position:'above',files:[]};
+  render();document.getElementById('view')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
 function memoryDb() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open('yomi-memory-photos-v1', 1);
@@ -68,14 +75,17 @@ function memoryGallery(x) {
 }
 function memories() {
   const rows = [...(data.memories || [])].sort((a,b) => (b.date + b.id).localeCompare(a.date + a.id));
+  if(memoryView==='gallery')return `<div class="panel memory-intro memory-landing"><div><h2>ذكرياتي 📷</h2><p class="sub">كل صورة تفتح ذكراها: اكتبي تفاصيلها، وأضيفي أكثر من صورة ورتّبيها مثل ما بتحبي.</p></div><button type="button" class="primary" data-memory-new>＋ ذكرى جديدة</button></div>
+    <div class="memory-grid">${rows.map(x=>`<button type="button" class="memory-tile" data-memory-open="${safe(x.id)}" aria-label="افتحي ذكرى ${safe(x.title)}"><div class="memory-cover">${(x.photos||[]).length?`<div class="memory-photo" data-memory-photo="${safe(x.id)}:0"><span>جارٍ عرض الصورة…</span></div>`:'<div class="memory-photo"><span aria-hidden="true">📷</span></div>'}</div><div class="memory-tile-caption"><small>${safe(x.date)} · ${(x.photos||[]).length} صورة</small><strong>${safe(x.title)}</strong></div></button>`).join('')||'<div class="panel empty">لسّه ما في ذكريات. اضغطي «ذكرى جديدة» وابدئي بصورك 🌼</div>'}</div>`;
+  const existing=memoryEditing&&data.memories?.find(x=>x.id===memoryEditing);
   const preview=memoryDraft.files.length ? `<div class="memory-draft-gallery" id="memoryDraftGallery" aria-label="معاينة الصور المختارة">${memoryDraft.files.map((file,i)=>`<div class="memory-draft-photo"><img data-memory-preview="${i}" alt="معاينة الصورة ${i+1}"><div class="memory-photo-tools"><button type="button" data-memory-draft-move="${i}:-1" aria-label="تقديم الصورة">→</button><button type="button" data-memory-draft-move="${i}:1" aria-label="تأخير الصورة">←</button><button type="button" data-memory-draft-remove="${i}" aria-label="إزالة الصورة">×</button></div></div>`).join('')}</div>` : '';
-  return `<div class="panel memory-intro"><h2>ذكرياتي 📷</h2><p class="sub">اختاري صورك وشوفيها هون قبل الحفظ. بتقدري تغيّري ترتيبها ومكانها.</p>
+  return `<div class="panel memory-intro memory-editor"><button type="button" class="soft" data-memory-back>← كل الذكريات</button><h2>${existing?'ذكرى: '+safe(existing.title):'ذكرى جديدة'} 📷</h2><p class="sub">اكتبي الذكرى هون، وأضيفي أكثر من صورة. بتقدري تغيّري ترتيب الصور ومكانها.</p>
+    ${existing?.photos?.length?`<h3>الصور المحفوظة (${existing.photos.length})</h3>${memoryGallery(existing)}`:''}
     <form id="memoryForm"><div class="row"><label class="field">تاريخ الذكرى<input name="date" type="date" value="${safe(memoryDraft.date)}" required></label><label class="field">عنوان الذكرى<input name="title" maxlength="120" value="${safe(memoryDraft.title)}" required placeholder="مثلاً: يوم جميل مع العائلة"></label></div>
     <label class="field">شو بتحبي تتذكّري؟<textarea name="body" rows="4" maxlength="5000" placeholder="اكتبي تفاصيل اللحظة…">${safe(memoryDraft.body)}</textarea></label>
     <div class="row memory-upload-row"><label class="soft memory-picker">＋ إضافة صور<input name="photo" type="file" accept="image/*" multiple class="memory-native-picker" aria-label="إضافة صور للذكرى"></label><span class="sub" id="memoryFileCount">${memoryDraft.files.length ? memoryDraft.files.length+' صور مختارة' : 'ما اخترتِ صور بعد'}</span></div>
     ${preview}<label class="field">مكان الصور في الذكرى<select name="position"><option value="above" ${memoryDraft.position==='above'?'selected':''}>فوق النص</option><option value="below" ${memoryDraft.position==='below'?'selected':''}>تحت النص</option></select></label>
-    <div class="row"><button class="primary" type="submit" id="memorySubmit">${memoryEditing?'حفظ التعديل':'حفظ الذكرى'}</button><button class="soft ${memoryEditing?'':'hidden'}" type="button" id="memoryCancel">إلغاء التعديل</button></div><p id="memoryStatus" class="sub" role="status"></p></form></div>
-    <div class="memory-grid">${rows.map(x => `<article class="panel memory-card">${x.position==='below'?'':memoryGallery(x)}<div class="memory-content"><small>${safe(x.date)}</small><h3>${safe(x.title)}</h3>${x.body ? `<p>${safe(x.body)}</p>` : ''}${(x.photos||[]).some(photo=>photo.local) ? '<small class="memory-pending">بعض الصور على هذا الجهاز · بانتظار المزامنة</small>' : ''}${x.position==='below'?memoryGallery(x):''}<div class="row"><button class="soft" data-memory-edit="${safe(x.id)}">تعديل</button><button class="soft" data-memory-delete="${safe(x.id)}">حذف</button></div></div></article>`).join('') || '<div class="panel empty">لسّه ما في ذكريات. ابدئي بأول لحظة بتحبي تحتفظي فيها 🌼</div>'}</div>`;
+    <div class="row"><button class="primary" type="submit" id="memorySubmit">${memoryEditing?'حفظ التعديل':'حفظ الذكرى'}</button>${existing?`<button class="danger" type="button" data-memory-delete="${safe(existing.id)}">حذف الذكرى</button>`:''}</div><p id="memoryStatus" class="sub" role="status"></p></form></div>`;
 }
 function memoryShowDraftPreviews() {
   memoryClearPreviewUrls();
@@ -107,7 +117,8 @@ async function memoryPaint() {
       if (blob) {
         const url = URL.createObjectURL(blob); memoryUrls.add(url);
         const img = document.createElement('img'); img.src=url; img.alt='صورة الذكرى: '+x.title; img.loading='lazy';
-        box.replaceChildren(img);const tools=document.createElement('div');tools.className='memory-photo-tools';for(const [label,attribute,value] of [['→','memoryMove',box.dataset.memoryPhoto+':-1'],['←','memoryMove',box.dataset.memoryPhoto+':1'],['×','memoryRemove',box.dataset.memoryPhoto]]){const button=document.createElement('button');button.type='button';button.dataset[attribute]=value;button.textContent=label;button.setAttribute('aria-label',label==='×'?'حذف الصورة':'تغيير ترتيب الصورة');tools.append(button)}box.append(tools);
+        box.replaceChildren(img);
+        if(box.closest('.memory-editor')){const tools=document.createElement('div');tools.className='memory-photo-tools';for(const [label,attribute,value] of [['→','memoryMove',box.dataset.memoryPhoto+':-1'],['←','memoryMove',box.dataset.memoryPhoto+':1'],['×','memoryRemove',box.dataset.memoryPhoto]]){const button=document.createElement('button');button.type='button';button.dataset[attribute]=value;button.textContent=label;button.setAttribute('aria-label',label==='×'?'حذف الصورة':'تغيير ترتيب الصورة');tools.append(button)}box.append(tools)}
       } else box.textContent = 'الصورة تحتاج اتصالًا بالإنترنت لعرضها أول مرة';
     } catch (error) { if (box.isConnected) box.textContent='تعذّر عرض الصورة الآن'; console.error('Memory photo failed', error); }
   }
@@ -154,28 +165,33 @@ render=function() {
   renderBeforeMemories();
   if (page!=='memories') return;
   memoryPaint();memoryShowDraftPreviews();
+  document.querySelector('[data-memory-new]')?.addEventListener('click',()=>memoryOpenEditor());
+  document.querySelectorAll('[data-memory-open]').forEach(button=>button.onclick=()=>memoryOpenEditor(button.dataset.memoryOpen));
   const form=$('#memoryForm'),status=$('#memoryStatus');
-  for(const name of ['date','title','body','position'])form.elements[name].oninput=event=>{memoryDraft[name]=event.target.value};
+  if(!form)return;
+  document.querySelector('[data-memory-back]').onclick=()=>{if(memoryDirty&&!confirm('ترجعي للصور بدون حفظ التعديلات؟'))return;memoryResetDraft();render()};
+  for(const name of ['date','title','body','position'])form.elements[name].oninput=event=>{memoryDraft[name]=event.target.value;memoryDirty=true};
   form.elements.photo.onchange=()=>{
     const picked=[...form.elements.photo.files];
-    if(memoryDraft.files.length+picked.length>12){status.textContent='اختاري حتى 12 صورة لكل ذكرى.';return}
-    memoryDraft.files.push(...picked);
+    const stored=data.memories?.find(x=>x.id===memoryEditing)?.photos?.length||0;
+    if(stored+memoryDraft.files.length+picked.length>12){status.textContent='اختاري حتى 12 صورة لكل ذكرى.';return}
+    memoryDraft.files.push(...picked);memoryDirty=true;
     // Keep typed text and selected File objects across account sync re-renders.
     render();
     $('#memoryStatus').textContent=`جاهزة للمعاينة: ${memoryDraft.files.length} صورة. اضغطي حفظ الذكرى بعد ما تخلصي.`;
   };
-  document.querySelectorAll('[data-memory-draft-remove]').forEach(button=>button.onclick=()=>{memoryDraft.files.splice(Number(button.dataset.memoryDraftRemove),1);render()});
+  document.querySelectorAll('[data-memory-draft-remove]').forEach(button=>button.onclick=()=>{memoryDraft.files.splice(Number(button.dataset.memoryDraftRemove),1);memoryDirty=true;render()});
   document.querySelectorAll('[data-memory-draft-move]').forEach(button=>button.onclick=()=>{
     const [from,delta]=button.dataset.memoryDraftMove.split(':').map(Number),to=from+delta;
     if(to<0||to>=memoryDraft.files.length)return;
-    [memoryDraft.files[from],memoryDraft.files[to]]=[memoryDraft.files[to],memoryDraft.files[from]];render();
+    [memoryDraft.files[from],memoryDraft.files[to]]=[memoryDraft.files[to],memoryDraft.files[from]];memoryDirty=true;render();
   });
   form.onsubmit=async event=>{
     event.preventDefault();
     const submit=$('#memorySubmit');submit.disabled=true;status.textContent='جارٍ حفظ الذكرى…';
     const added=[];
     try {
-      if(memoryDraft.files.length>12)throw Error('اختاري حتى 12 صورة لكل ذكرى.');
+      if((data.memories?.find(x=>x.id===memoryEditing)?.photos?.length||0)+memoryDraft.files.length>12)throw Error('اختاري حتى 12 صورة لكل ذكرى.');
       for(const file of memoryDraft.files){
         const blob=await memoryImage(file);
         const local='local:'+id();await memoryStore(local,blob);added.push({local});
@@ -188,12 +204,6 @@ render=function() {
       memoryResetDraft();save();render();memoryUploadPending();
     } catch(error){for(const photo of added)await memoryForget(photo.local).catch(()=>{});if($('#memoryStatus')){$('#memoryStatus').textContent=error.message||'تعذّر حفظ الذكرى';$('#memorySubmit').disabled=false}}
   };
-  $('#memoryCancel').onclick=()=>{memoryResetDraft();render()};
-  document.querySelectorAll('[data-memory-edit]').forEach(button=>button.onclick=()=>{
-    const x=data.memories.find(row=>row.id===button.dataset.memoryEdit);if(!x)return;
-    memoryEditing=x.id;memoryDraft={date:x.date,title:x.title,body:x.body||'',position:x.position||'above',files:[]};render();
-    $('#memoryForm').scrollIntoView({behavior:'smooth',block:'start'});
-  });
   $('#view').onclick=async event=>{
     const button=event.target.closest('[data-memory-remove],[data-memory-move]');if(!button)return;
     const value=button.dataset.memoryRemove||button.dataset.memoryMove;
@@ -215,4 +225,5 @@ render=function() {
 };
 window.addEventListener('yomi-cloud-session',()=>{memoryUploadPending();if(page==='memories')render()});
 window.addEventListener('online',()=>{memoryUploadPending();if(page==='memories')memoryPaint()});
+window.addEventListener('yomi-signed-out',memoryResetDraft);
 render();
