@@ -14,10 +14,12 @@ if (ready) {
   const baseKey = 'yomi-sync-base-v2';
   const archiveKey = 'yomi-conflict-archives-v1';
   let user = null, base = null, remoteUpdatedAt = null, timer = null, busy = false, conflictSnapshot = null;
+  window.yomiMemoriesSession = () => user ? {client,user} : null;
+  const notifyMemories = () => window.dispatchEvent(new Event('yomi-cloud-session'));
   const conflictDialog = document.getElementById('conflictDialog');
   const shape = d => ({...initial(), ...(d || {})});
   const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
-  const nonempty = d => ['tasks','achievements','expenses','incomes','debts','reminders','notes','periods','restDays','dhikrs','waterEntries','readings','journal','habits','routines','timerSessions','budgets','bills','projects','savings','careLogs','diary'].some(k => d[k]?.length) || !!d.waterGoal || !!d.quran?.lastPage || !!d.quran?.log?.length;
+  const nonempty = d => ['tasks','achievements','expenses','incomes','debts','reminders','notes','periods','restDays','dhikrs','waterEntries','readings','journal','habits','routines','timerSessions','budgets','bills','projects','savings','careLogs','diary','memories'].some(k => d[k]?.length) || !!d.waterGoal || !!d.quran?.lastPage || !!d.quran?.log?.length;
   const paint = s => {badge.hidden = false;badge.textContent = s};
   const identify = () => {identity.hidden=!user;identity.textContent=user?'الحساب: '+user.email:''};
   const saveLocal = () => localStorage.setItem(KEY, JSON.stringify(data));
@@ -203,7 +205,7 @@ if (ready) {
     status.textContent='سجّلي دخولك بنفس الحساب على الهاتف واللابتوب.';
     const {data:{user:found},error}=await client.auth.getUser();
     if(error && error.name!=='AuthSessionMissingError')status.textContent='تعذّر التحقق من الحساب. تحققي من الاتصال.';
-    if(found){user=found;identify();loadBase();gate.hidden=true;document.getElementById('signOutBtn').hidden=false;await reconcile()}
+    if(found){user=found;identify();loadBase();gate.hidden=true;document.getElementById('signOutBtn').hidden=false;await reconcile();notifyMemories()}
   }
   form.onsubmit=async event=>{
     event.preventDefault();
@@ -213,7 +215,7 @@ if (ready) {
     const result=action==='signup'?await client.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}}):await client.auth.signInWithPassword({email,password});
     if(result.error){status.textContent=result.error.message;return}
     if(!result.data.user||!result.data.session){status.textContent='راجعي بريدك لتأكيد الحساب، ثم سجّلي الدخول.';return}
-    user=result.data.user;identify();loadBase();gate.hidden=true;document.getElementById('signOutBtn').hidden=false;form.reset();await reconcile();
+    user=result.data.user;identify();loadBase();gate.hidden=true;document.getElementById('signOutBtn').hidden=false;form.reset();await reconcile();notifyMemories();
   };
   window.addEventListener('yomi-pin-unlocked',showAccount);
   if(document.getElementById('lock').classList.contains('hidden'))showAccount();
@@ -222,7 +224,7 @@ if (ready) {
   window.addEventListener('online',()=>{if(user)reconcile();else paint('رجع النت · أعيدي فتح الصفحة للمزامنة')});
   window.addEventListener('focus',()=>{if(user&&navigator.onLine)reconcile()});
   document.getElementById('signOutBtn').onclick=async()=>{
-    await client.auth.signOut();window.dispatchEvent(new Event('yomi-signed-out'));
+    await client.auth.signOut();window.dispatchEvent(new Event('yomi-signed-out'));notifyMemories();
     user=null;identify();base=null;conflictSnapshot=null;if(conflictDialog.open)conflictDialog.close();localStorage.removeItem(baseKey);data=initial();saveLocal();render();
     gate.hidden=false;badge.hidden=true;document.getElementById('signOutBtn').hidden=true;
   };
