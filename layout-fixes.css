@@ -1,0 +1,21 @@
+/* Give the task title and actions their own space at every screen width. */
+.task-item {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+}
+.task-item > input[type="checkbox"] { width: 21px; height: 21px; margin: 7px 0 0; }
+.task-copy { min-width: 0; overflow-wrap: anywhere; line-height: 1.5; }
+.task-actions { display: flex; flex-wrap: wrap; gap: 7px; justify-content: flex-start; }
+.task-actions button { white-space: nowrap; min-height: 42px; }
+@media (max-width: 900px) {
+  .task-item { grid-template-columns: 26px minmax(0, 1fr); }
+  .task-actions {
+    grid-column: 1 / -1;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
+  }
+  .task-actions button { min-width: 0; }
+}
