@@ -52,6 +52,7 @@
     if (!AudioContextClass) return;
     context = new AudioContextClass();
     const activeContext = context, start = activeContext.currentTime + .03;
+    activeContext.resume().catch(() => {});
     [523.25, 659.25, 783.99, 659.25, 587.33, 523.25].forEach((pitch, index) => {
       const oscillator = activeContext.createOscillator();
       const gain = activeContext.createGain();
