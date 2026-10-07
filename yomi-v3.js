@@ -81,22 +81,25 @@
     return '<div class="panel"><button class="soft" data-v3-course-back>‹ كل الدورات</button><h2>'+safe(c.title)+'</h2><form id="v3CourseItem"><div class="row"><label class="field">العنوان<input name="title" required></label><label class="field">النوع<select name="type"><option value="note">ملاحظة</option><option value="video">فيديو/رابط</option><option value="image">صورة نوت</option></select></label><label class="field">الرابط<input name="url" type="url"></label><label class="field">الصورة<input name="file" type="file" accept="image/png,image/jpeg,image/webp"></label></div><label class="field">ملاحظاتي<textarea name="note"></textarea></label><label><input name="watched" type="checkbox"> تم</label><p class="sub" data-v3-learning-status></p><button class="primary">حفظ</button></form></div><div class="panel">'+(c.items.map(i=>'<div class="learning-item '+(i.watched?'done-card':'')+'">'+(i.media?'<div class="learning-media media-box" data-v3-media="'+safe(i.media.local||i.media.path||'')+'"></div>':i.src?'<img src="'+i.src+'" alt="">':'')+'<div class="grow"><b>'+safe(i.title)+'</b><small>'+safe(i.type)+'</small><p>'+safe(i.note||'')+'</p>'+(i.url?'<a href="'+safe(i.url)+'" target="_blank">فتح الرابط</a>':'')+'</div><button data-v3-course-toggle="'+i.id+'">'+(i.watched?'إرجاع':'تم')+'</button></div>').join('')||'<div class="empty">ما في مواد.</div>')+'</div>'
   }
   function customize(){
-    const d=data.designSettings,trans=Number(d.panelTransparency??35);
+    const d=data.designSettings,trans=Number(d.panelTransparency??35),saved=JSON.parse(localStorage.getItem(BG_SCOPE_KEY)||'null')||d;
     const pagesOptions=[
       ['home','يومي'],['worship','عبادتي'],['planner','التقويم'],['clients','العملاء'],['learning','تعلّمي'],
       ['finance','مالي'],['tasks','مهامي'],['wellness','عاداتي'],['quran','وردي القرآني'],['achievements','إنجازاتي'],
       ['notes','ملاحظات'],['diary','مذكرتي'],['memories','ذكرياتي'],['care','عنايتي'],['cycle','دورتي'],['reports','التقارير'],
-      ['customize','تخصيص'],['lock','صفحة الدخول']
+      ['customize','تخصيص']
     ];
-    return '<div class="panel customize-main"><h2>تصميم يومي</h2><p class="sub">اختاري الصورة أولًا؛ ستظهر معاينة فقط ولن تتطبّق قبل الضغط على «حفظ وتطبيق».</p>'+
-      '<form id="v3Bg"><label class="field">صورة الخلفية<input name="file" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"></label><div class="upload-preview" data-v3-bg-prev></div><p class="sub upload-status" data-v3-bg-status>'+(localStorage.getItem(BG_KEY)?'✓ في خلفية محفوظة حاليًا':'اختاري صورة JPG أو PNG أو WebP')+'</p><button type="button" class="soft" data-v3-bg-clear>إزالة الخلفية الحالية</button></form></div>'+
-    '<div class="panel"><h3>مكان التصميم والشفافية</h3><form id="v3DesignScope">'+
-      '<label class="design-switch"><input name="applyAll" type="checkbox" '+(d.applyAll!==false?'checked':'')+'><span>تطبيق التصميم على كل صفحات التطبيق</span></label>'+
-      '<label class="design-switch"><input name="includeLogin" type="checkbox" '+(d.includeLogin?'checked':'')+'><span>يشمل صفحة الدخول أيضًا</span></label>'+
-      '<label class="field">أو اختاري صفحة واحدة<select name="target">'+pagesOptions.map(([k,v])=>'<option value="'+k+'" '+(d.targetPage===k?'selected':'')+'>'+v+'</option>').join('')+'</select></label>'+
+    let destination='all';
+    if(saved.applyAll===false) destination=saved.targetPage==='lock'?'login':'page';
+    else if(saved.includeLogin) destination='all-login';
+    const currentBg=localStorage.getItem(BG_KEY);
+    return '<div class="panel customize-main"><h2>تصميم يومي</h2><p class="sub">ارفعي الصورة من المربع الكبير، شوفي المعاينة، بعدين اختاري المكان واحفظي.</p>'+
+      '<form id="v3Bg"><label class="upload-zone" for="v3BgFile"><input id="v3BgFile" name="file" class="upload-zone-input" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"><span class="upload-zone-icon">⬆️</span><b>اضغطي هنا لاختيار صورة</b><small>JPG · PNG · WebP</small></label><div class="upload-preview upload-preview-large" data-v3-bg-prev>'+(currentBg?'<img src="'+currentBg+'" alt="الخلفية الحالية">':'')+'</div><p class="sub upload-status" data-v3-bg-status>'+(currentBg?'✓ في خلفية محفوظة حاليًا':'ما تم اختيار صورة بعد')+'</p><button type="button" class="soft" data-v3-bg-clear>إزالة الخلفية الحالية</button></form></div>'+
+    '<div class="panel"><h3>وين بدك الصورة؟</h3><form id="v3DesignScope">'+
+      '<label class="field">مكان التطبيق<select name="destination"><option value="login" '+(destination==='login'?'selected':'')+'>صفحة الدخول فقط</option><option value="all" '+(destination==='all'?'selected':'')+'>كل صفحات التطبيق</option><option value="all-login" '+(destination==='all-login'?'selected':'')+'>كل الصفحات + صفحة الدخول</option><option value="page" '+(destination==='page'?'selected':'')+'>صفحة محددة</option></select></label>'+
+      '<label class="field" data-page-picker>اختاري الصفحة<select name="target">'+pagesOptions.map(([k,v])=>'<option value="'+k+'" '+(saved.targetPage===k?'selected':'')+'>'+v+'</option>').join('')+'</select></label>'+
       '<label class="field transparency-control"><span>شفافية المربعات: <b data-v3-trans-value>'+trans+'%</b></span><input name="transparency" type="range" min="0" max="80" step="1" value="'+trans+'"><small class="sub">0% = واضحة، 80% = شفافة جدًا</small></label>'+
       '<div class="transparency-preview"><div class="preview-card" data-v3-trans-preview>معاينة المربعات</div></div>'+
-      '<div class="row"><button class="primary">حفظ وتطبيق</button><button type="button" class="soft" data-v3-design-reset>رجوع للإعدادات الأصلية</button></div>'+
+      '<div class="row"><button class="primary" data-v3-apply>حفظ وتطبيق</button><button type="button" class="soft" data-v3-design-reset>رجوع للإعدادات الأصلية</button></div>'+
     '</form></div>'+
     '<div class="panel"><h3>Stickers</h3><form id="v3Sticker"><div class="row"><label class="field">صورة Sticker<input name="file" type="file" accept="image/png,image/webp,image/jpeg,.jpg,.jpeg,.png,.webp"></label><label class="field">أو Emoji<input name="text" maxlength="8"></label><label class="field">الصفحة<select name="target"><option value="all">كل التطبيق</option><option value="lock">صفحة الدخول</option><option value="home">يومي</option><option value="planner">التقويم</option><option value="worship">عبادتي</option><option value="learning">تعلّمي</option><option value="clients">العملاء</option><option value="finance">مالي</option></select></label></div><div class="row"><label class="field">أفقي<input name="x" type="range" min="5" max="95" value="85"></label><label class="field">عمودي<input name="y" type="range" min="5" max="95" value="18"></label><label class="field">الحجم<input name="size" type="range" min="24" max="140" value="54"></label></div><div class="upload-preview" data-v3-sticker-prev></div><button class="soft">إضافة Sticker</button></form>'+(d.stickers.map(s=>'<div class="item"><div class="grow"><div class="sticker-thumb" '+((s.local||s.path)?'data-v3-media="'+safe(s.local||s.path)+'"':'')+'>'+safe(s.text||'')+'</div><small>'+safe(s.target||'all')+' · '+s.size+'px</small></div><button data-v3-sticker-toggle="'+s.id+'">'+(s.hidden?'إظهار':'إخفاء')+'</button><button data-v3-sticker-del="'+s.id+'">حذف</button></div>').join('')||'<div class="empty">ما في Stickers.</div>')+'</div>'
   }
@@ -248,19 +251,24 @@
       document.documentElement.style.setProperty('--yomi-user-bg','none');document.body.dataset.userBg='0';render()
     });
     const ds=$('#v3DesignScope');if(ds){
-      const all=ds.elements.applyAll,includeLogin=ds.elements.includeLogin,target=ds.elements.target,slider=ds.elements.transparency,label=ds.querySelector('[data-v3-trans-value]'),preview=ds.querySelector('[data-v3-trans-preview]');
-      const live=()=>{target.disabled=all.checked;includeLogin.disabled=!all.checked;label.textContent=slider.value+'%';preview.style.background='rgba(255,253,250,'+((100-Number(slider.value))/100)+')'};
-      all.onchange=live;slider.oninput=live;live();
+      const destination=ds.elements.destination,target=ds.elements.target,pagePicker=ds.querySelector('[data-page-picker]'),slider=ds.elements.transparency,label=ds.querySelector('[data-v3-trans-value]'),preview=ds.querySelector('[data-v3-trans-preview]');
+      const live=()=>{pagePicker.hidden=destination.value!=='page';label.textContent=slider.value+'%';preview.style.background='rgba(255,253,250,'+((100-Number(slider.value))/100)+')'};
+      destination.onchange=live;slider.oninput=live;live();
       ds.onsubmit=async e=>{
         e.preventDefault();
         try{
           if(pendingBackgroundFile){
             const raw=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result||''));r.onerror=no;r.readAsDataURL(pendingBackgroundFile)});
             const compact=await new Promise((ok)=>{const im=new Image();im.onload=()=>{try{const max=1000,s=Math.min(1,max/Math.max(im.naturalWidth,im.naturalHeight)),cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(im.naturalWidth*s));cv.height=Math.max(1,Math.round(im.naturalHeight*s));cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);ok(cv.toDataURL('image/jpeg',.62))}catch{ok(raw)}};im.onerror=()=>ok(raw);im.src=raw});
-            localStorage.setItem(BG_KEY,compact);
-            pendingBackgroundFile=null;
+            localStorage.setItem(BG_KEY,compact);pendingBackgroundFile=null;
           }
-          const scope={applyAll:all.checked,includeLogin:all.checked&&includeLogin.checked,targetPage:target.value,panelTransparency:Number(slider.value)};
+          const dest=destination.value;
+          const scope={
+            applyAll:dest==='all'||dest==='all-login',
+            includeLogin:dest==='all-login',
+            targetPage:dest==='login'?'lock':dest==='page'?target.value:'home',
+            panelTransparency:Number(slider.value)
+          };
           localStorage.setItem(BG_SCOPE_KEY,JSON.stringify(scope));
           data.designSettings.applyAll=scope.applyAll;data.designSettings.includeLogin=scope.includeLogin;data.designSettings.targetPage=scope.targetPage;data.designSettings.panelTransparency=scope.panelTransparency;
           save();render()
