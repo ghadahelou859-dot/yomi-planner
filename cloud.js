@@ -27,6 +27,17 @@ if (ready && !window.YOMI_CLOUD_READY) {
   };
   const identify = () => {identity.hidden=!user;identity.textContent=user?'الحساب: '+user.email:''};
   const saveLocal = () => localStorage.setItem(KEY, JSON.stringify(data));
+  const userIsTyping=()=>{
+    const el=document.activeElement;
+    return !!el&&el.closest?.('#view')&&(['INPUT','TEXTAREA','SELECT'].includes(el.tagName)||el.isContentEditable);
+  };
+  const renderAfterSync=()=>{
+    if(!userIsTyping()){render();return}
+    window.yomiDeferredSyncRender=true;
+    const active=document.activeElement;
+    const finish=()=>{if(!window.yomiDeferredSyncRender)return;window.yomiDeferredSyncRender=false;render()};
+    active?.addEventListener('blur',()=>setTimeout(finish,80),{once:true});
+  };
   function loadBase() {
     try {
       const record = JSON.parse(localStorage.getItem(baseKey) || 'null');
@@ -151,7 +162,7 @@ if (ready && !window.YOMI_CLOUD_READY) {
       if(writeError)throw writeError;
       if(!saved){conflictDialog.close();paint('تغيّرت نسخة الحساب · اضغطي مزامنة الآن');return}
       if(!same(shape(data),snapshot.local)){setBase(merged,saved.updated_at);conflictDialog.close();paint('ظهرت تعديلات جديدة · اضغطي مزامنة الآن');return}
-      data=merged;saveLocal();setBase(merged,saved.updated_at);conflictSnapshot=null;conflictDialog.close();render();paintSynced(saved.updated_at);
+      data=merged;saveLocal();setBase(merged,saved.updated_at);conflictSnapshot=null;conflictDialog.close();renderAfterSync();paintSynced(saved.updated_at);
     }catch(e){paint('تعذّر حل التعارض · النسختان محفوظتان');console.error('Conflict resolution failed',e)}
     finally{busy=false}
   };
@@ -179,7 +190,7 @@ if (ready && !window.YOMI_CLOUD_READY) {
       }
       if(!same(local,shape(data))){paint('تعديلات جديدة · جارٍ إعادة المزامنة');return}
       if(same(merged,remote) && row) {
-        data=merged;saveLocal();setBase(merged,row.updated_at);render();paintSynced(row.updated_at);
+        data=merged;saveLocal();setBase(merged,row.updated_at);renderAfterSync();paintSynced(row.updated_at);
         return;
       }
       const {data:latest,error:checkError}=await client.from('yomi_state').select('payload,updated_at').eq('user_id',user.id).maybeSingle();
@@ -196,7 +207,7 @@ if (ready && !window.YOMI_CLOUD_READY) {
       // If another edit occurred during the write, keep that local edit and sync again.
       const changedDuringWrite=!same(local,shape(data));
       if(!changedDuringWrite){data=merged;saveLocal()}
-      setBase(merged,saved.updated_at);render();
+      setBase(merged,saved.updated_at);renderAfterSync();
       if(changedDuringWrite)paint('جارٍ مزامنة تعديل أحدث…');else paintSynced(saved.updated_at);
     } catch(e) {paint('تعذّرت المزامنة · محفوظ على هذا الجهاز');console.error('Sync failed',e)}
     finally {busy=false;if(user && navigator.onLine && pending() && badge.textContent.includes('جارٍ')) schedule()}
