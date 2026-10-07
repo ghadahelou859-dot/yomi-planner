@@ -123,3 +123,10 @@ body[data-yomi-design="1"] .cycle-edit-card{
   font-family:system-ui,'Segoe UI',Tahoma,sans-serif;
 }
 #lock #pinEmail::placeholder{letter-spacing:normal;color:#8e7d83}
+
+
+/* Flow واضح لتخصيص الخلفية */
+.customize-main .upload-preview:empty::before{content:'معاينة الصورة ستظهر هنا';display:block;width:100%;padding:26px;text-align:center;border:1px dashed #cdbba9;border-radius:16px;color:#8b7880;background:rgba(255,255,255,.34)}
+.customize-main .upload-preview img{width:min(100%,360px);height:190px;object-fit:cover;border-radius:18px}
+#v3DesignScope select:disabled{opacity:.55}
+#v3DesignScope input:disabled+span{opacity:.6}
