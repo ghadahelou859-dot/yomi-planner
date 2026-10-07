@@ -422,7 +422,9 @@
     document.querySelectorAll('[data-v3-pay-del]').forEach(b=>b.onclick=()=>{const p=data.clients.find(c=>c.id===state.client).projects.find(p=>p.id===state.project);p.payments=p.payments.filter(x=>x.id!==b.dataset.v3PayDel);save();render()});
     const as=$('#v3Assets');if(as){
       const input=as.elements.file,prev=as.querySelector('[data-v3-preview]'),st=as.querySelector('[data-v3-status]');
+      input.addEventListener('click',()=>{window.yomiFilePickerActive=true});
       input.onchange=()=>{
+        window.yomiFilePickerActive=false;
         prev.innerHTML='';const files=[...input.files];
         st.textContent=files.length?'✓ تم اختيار '+files.length+' صورة. اضغطي «حفظ الصور في الألبوم».':'';
         files.forEach((f,i)=>{const wrap=document.createElement('div');wrap.className='album-preview-item';const im=document.createElement('img'),u=URL.createObjectURL(f);im.src=u;im.alt='معاينة الصورة '+(i+1);im.onload=()=>URL.revokeObjectURL(u);wrap.appendChild(im);const n=document.createElement('span');n.textContent=i+1;wrap.appendChild(n);prev.appendChild(wrap)})
@@ -440,12 +442,14 @@
             saved.push({id:id(),...med,status:f.get('status'),caption:f.get('caption').trim()})
           }
           p.assets.push(...saved);
-          save();
+          try{localStorage.setItem(KEY,JSON.stringify(data))}catch(err){console.error('Direct album local save failed',err);throw err}
           state.albumStatus='✓ تم حفظ '+saved.length+' صورة في الألبوم.';
           render();
-          Promise.resolve(syncMedia()).then(()=>{save();paint()}).catch(err=>console.error('Project album sync failed',err));
+          save();
+          setTimeout(()=>{Promise.resolve(syncMedia()).then(()=>{try{localStorage.setItem(KEY,JSON.stringify(data))}catch{};paint()}).catch(err=>console.error('Project album sync failed',err))},1200);
         }catch(err){
           console.error('Project image save failed',err);
+          window.yomiFilePickerActive=false;
           state.albumStatus='تعذّر حفظ الصور. جرّبي JPG/PNG/WebP أو صور أصغر.';
           st.textContent=state.albumStatus
         }
