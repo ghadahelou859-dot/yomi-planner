@@ -1,6 +1,6 @@
 /* Cached app shell only; private journal data stays in this browser's local storage. */
-const CACHE = 'yomi-shell-2026-10-08-v63';
-const SHELL = ['./', './index.html', './autumn.css?v=3', './themes.css?v=3', './theme.js?v=4', './autumn-preview.css?v=4', './autumn-preview.js?v=2', './layout-fixes.css?v=1', './responsive.css?v=1', './experience.css?v=1', './experience.js?v=9', './timer.js?v=3', './cloud.js?v=20', './supabase-config.js', './merge.js', './features.js?v=2', './memories.js?v=4', './memories.css?v=4', './planner-extras.js?v=2', './planner-extras.css?v=2', './yomi-v2.js?v=2', './yomi-v2.css?v=1', './yomi-v3.js?v=26', './yomi-v3.css?v=20',
+const CACHE = 'yomi-shell-2026-10-08-v64';
+const SHELL = ['./', './index.html', './autumn.css?v=3', './themes.css?v=3', './theme.js?v=4', './autumn-preview.css?v=4', './autumn-preview.js?v=2', './layout-fixes.css?v=1', './responsive.css?v=1', './experience.css?v=1', './experience.js?v=9', './timer.js?v=3', './cloud.js?v=20', './supabase-config.js', './merge.js', './features.js?v=2', './memories.js?v=4', './memories.css?v=4', './planner-extras.js?v=2', './planner-extras.css?v=2', './yomi-v2.js?v=2', './yomi-v2.css?v=1', './yomi-v3.js?v=27', './yomi-v3.css?v=20',
   './assets/gentle-loop.wav', './assets/autumn-pumpkin-real.webp', './assets/autumn-leaves-real.webp', './assets/autumn-photo-wide.webp', './assets/autumn-photo-mobile.webp', './assets/autumn-tree.svg', './assets/autumn-branch.svg', './assets/autumn-pumpkins.svg', './assets/autumn-falling.svg',
   './assets/christmas-scene.svg', './assets/ramadan-scene.svg', './assets/plant-1.webp', './assets/plant-2.webp', './assets/plant-3.webp', './assets/plant-4.webp'];
 self.addEventListener('install', event => {
