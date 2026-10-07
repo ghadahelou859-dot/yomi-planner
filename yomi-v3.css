@@ -115,3 +115,11 @@ body[data-yomi-design="1"] .cycle-edit-card{
 @media(max-width:720px){
  #lock .lock-card{width:min(92vw,420px);padding:24px 20px}
 }
+#lock #pinEmail{
+  letter-spacing:normal!important;
+  text-align:left!important;
+  direction:ltr;
+  font-size:1rem!important;
+  font-family:system-ui,'Segoe UI',Tahoma,sans-serif;
+}
+#lock #pinEmail::placeholder{letter-spacing:normal;color:#8e7d83}
