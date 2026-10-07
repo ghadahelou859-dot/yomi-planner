@@ -74,6 +74,7 @@
   }
   loadSyncedAudio().then(async synced=>{if(!synced){const file=await readAudio().catch(()=>null);if(file){prepareAudio(file);if(!data.designSettings?.audioMedia&&window.yomiMediaSaveFile){data.designSettings??={stickers:[]};data.designSettings.audioMedia=await window.yomiMediaSaveFile(file);save();window.yomiMediaSyncNow?.()}}}updateStatus();if(savedAudio&&getMode()==='recording'&&document.getElementById('lock').classList.contains('hidden'))startSound()});
   window.addEventListener('yomi-cloud-session',async()=>{const changed=await loadSyncedAudio();mode.value=['off','gentle','recording'].includes(getMode())?getMode():'off';updateStatus();if(changed&&getMode()==='recording'&&document.getElementById('lock').classList.contains('hidden'))startSound()});
+  window.addEventListener('yomi-data-synced',async()=>{const before=data?.designSettings?.audioMedia?.path||data?.designSettings?.audioMedia?.local||'';const changed=await loadSyncedAudio();mode.value=['off','gentle','recording'].includes(getMode())?getMode():'off';updateStatus();if(changed&&getMode()==='recording'&&document.getElementById('lock').classList.contains('hidden')&&!active())startSound()});
   document.getElementById('entrySoundBtn').onclick=()=>{updateStatus();soundDialog.showModal()};
   document.getElementById('entrySoundClose').onclick=()=>soundDialog.close();
   document.getElementById('entrySoundTest').onclick=()=>startSound();
