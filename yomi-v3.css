@@ -85,7 +85,7 @@ body[data-yomi-design="1"] .cycle-edit-card{
 /* صفحة الدخول — صورة خلفية + Glass */
 #lock{background-color:#f6ead8;background-image:linear-gradient(rgba(41,31,35,.18),rgba(41,31,35,.18)),var(--yomi-user-bg,none);background-size:cover;background-position:center}
 #lock .lock-card{
-  background:rgba(255,253,250,.58)!important;
+  background:rgba(255,253,250,var(--yomi-panel-alpha,.58))!important;
   border:1px solid rgba(255,255,255,.66)!important;
   backdrop-filter:blur(18px) saturate(1.08);
   -webkit-backdrop-filter:blur(18px) saturate(1.08);
@@ -160,3 +160,9 @@ body[data-yomi-design="1"] .cycle-edit-card{
  .work-log-row{align-items:flex-start;flex-wrap:wrap}
  .work-log-date{width:100%}
 }
+
+
+/* فصل تحكم الخلفية عن الشفافية */
+#v3Transparency .transparency-control input[type="range"]{width:100%}
+#v3Transparency [data-trans-page-picker][hidden],
+#v3Bg [data-bg-page-picker][hidden]{display:none!important}
