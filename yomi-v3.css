@@ -395,3 +395,50 @@ body[data-nav-hidden="1"] #view{max-width:1180px;margin-inline:auto;width:100%}
     overflow:auto;
   }
 }
+
+
+/* عبادتي — إدارة الأذكار من مكان واحد */
+.worship-dhikr-panel{overflow:hidden}
+.dhikr-new-form{
+  display:grid;
+  grid-template-columns:2fr 1fr 1fr 1fr auto;
+  gap:10px;
+  align-items:end;
+  margin:14px 0 18px;
+}
+.dhikr-manage-card{
+  padding:16px;
+  border:1px solid rgba(124,95,77,.14);
+  border-radius:18px;
+  background:rgba(255,255,255,.42);
+  margin:12px 0;
+}
+.dhikr-copy{display:grid;gap:5px}
+.dhikr-copy b{font-size:1.05rem}
+.dhikr-copy small{color:#806d75}
+.dhikr-count-row{
+  display:grid;
+  grid-template-columns:auto minmax(120px,180px) auto;
+  gap:10px;
+  align-items:end;
+  margin-top:12px;
+}
+.dhikr-number-field{margin:0}
+.dhikr-number-field input{
+  min-height:50px;
+  font-size:1.15rem;
+  text-align:center;
+  direction:ltr;
+}
+.dhikr-plus{min-width:58px;min-height:50px;font-size:1.05rem}
+.dhikr-manage-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+@media(max-width:720px){
+  .dhikr-new-form{grid-template-columns:1fr 1fr}
+  .dhikr-new-form .field:first-child{grid-column:1/-1}
+  .dhikr-new-form button{grid-column:1/-1;min-height:48px}
+  .dhikr-count-row{grid-template-columns:64px 1fr}
+  .dhikr-count-row .primary{grid-column:1/-1;min-height:48px}
+  .dhikr-number-field input{font-size:1.2rem}
+  .dhikr-manage-actions{display:grid;grid-template-columns:1fr 1fr}
+  .dhikr-manage-actions button{min-height:44px}
+}
