@@ -701,3 +701,89 @@ body[data-user-bg="1"],body[data-user-bg="1"]::before,.lock{background-position:
   .project-head-actions button{width:100%}
   .sticker-preview-box{min-height:130px}
 }
+
+
+/* تقويم مختصر في يومي */
+.home-calendar-card{overflow:hidden}
+.home-calendar-card .home-calendar-row{align-items:center}
+.home-calendar-tomorrow{
+  margin-top:12px;
+  padding-top:12px;
+  border-top:1px solid rgba(126,96,78,.12);
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px 12px;
+  align-items:center;
+}
+.home-calendar-tomorrow b{min-width:48px}
+.home-calendar-tomorrow span{
+  padding:7px 10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.42);
+}
+
+/* معاينة مكان الـSticker */
+.sticker-placement-wrap{
+  margin-top:16px;
+  display:grid;
+  gap:10px;
+}
+.sticker-placement-preview{
+  position:relative;
+  min-height:320px;
+  overflow:hidden;
+  border-radius:22px;
+  border:1px solid rgba(126,96,78,.14);
+  background:
+    linear-gradient(rgba(255,255,255,.48),rgba(255,255,255,.48)),
+    radial-gradient(circle at 20% 10%,rgba(187,146,92,.12),transparent 34%);
+  padding:14px;
+}
+.sticker-mock-top{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:38px;
+  padding:8px 10px;
+  border-radius:12px;
+  background:rgba(255,255,255,.55);
+}
+.sticker-mock-top span{margin-inline-end:auto;font-weight:800}
+.sticker-mock-top i{
+  width:28px;height:8px;border-radius:999px;
+  background:rgba(126,96,78,.14);
+}
+.sticker-mock-card{
+  height:90px;
+  margin-top:12px;
+  border-radius:16px;
+  background:rgba(255,255,255,.46);
+  border:1px solid rgba(126,96,78,.10);
+}
+.sticker-mock-card.small{height:58px;width:70%}
+.sticker-placement-item{
+  position:absolute;
+  transform:translate(-50%,-50%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:4;
+  pointer-events:none;
+}
+.sticker-placement-item img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  background:transparent;
+}
+.sticker-placement-item .sticker-emoji-preview{
+  font-size:clamp(1.5rem,4vw,4rem);
+}
+.sticker-saved-row small{display:block;line-height:1.55}
+@media(max-width:720px){
+  .home-calendar-card .row.between{align-items:flex-start}
+  .home-calendar-card .row.between>.primary{width:auto}
+  .sticker-placement-preview{min-height:260px}
+  .sticker-saved-row{align-items:flex-start;flex-wrap:wrap}
+  .sticker-saved-row .grow{width:100%}
+}
