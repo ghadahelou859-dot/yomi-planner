@@ -20,7 +20,7 @@
     data.designSettings.navVisibility ??= null;
     data.designSettings.audioMode ??= null;
     data.designSettings.portraitBackgroundMedia ??= null;
-    data.prayerChecks??={};data.adhkarChecks??={};data.adhkarAudio??={};data.prayerWorks??=[];
+    data.prayerChecks??={};data.adhkarChecks??={};data.adhkarItemChecks??={};data.adhkarAudio??={};data.prayerWorks??=[];
     data.quran??={lastPage:0,log:[]};data.quran.log??=[];
     if(data.designSettings.background===null&&!data.designSettings.backgroundMigrated){
       const old=localStorage.getItem(BG_KEY);if(old){data.designSettings.background=old;Object.assign(data.designSettings,JSON.parse(localStorage.getItem(BG_SCOPE_KEY)||'{}'))}
@@ -127,12 +127,12 @@
   function adhkarDaily(){
     const checks=data.adhkarChecks[selected]||{},names=['أذكار الصباح','أذكار المساء','أذكار النوم'],open=state.adhkarOpen&&names.includes(state.adhkarOpen)?state.adhkarOpen:null;
     if(open){
-      const audio=data.adhkarAudio?.[open]||'';
-      return '<div class="panel adhkar-reader"><div class="row between"><div><button type="button" class="soft" data-adhkar-back>‹ رجوع</button><h3>'+safe(open)+'</h3></div><label class="adhkar-done-check" title="تعليم كمكتمل"><input type="checkbox" data-daily-adhkar="'+open+'" '+(checks[open]?'checked':'')+'><span>✓</span></label></div>'+
+      const audio=data.adhkarAudio?.[open]||'',items=dailyAdhkarText[open]||[],itemChecks=data.adhkarItemChecks?.[selected]?.[open]||{},doneCount=items.filter((_,i)=>!!itemChecks[i]).length;
+      return '<div class="panel adhkar-reader"><div class="row between"><div><button type="button" class="soft" data-adhkar-back>‹ رجوع</button><h3>'+safe(open)+'</h3><small>'+doneCount+' / '+items.length+'</small></div><label class="adhkar-done-check" title="تعليم كمكتمل"><input type="checkbox" data-daily-adhkar="'+open+'" '+(checks[open]?'checked':'')+'><span>✓</span></label></div>'+
         '<div class="adhkar-audio-box"><div class="row">'+(audio?'<a class="primary adhkar-youtube" href="'+safe(audio)+'" target="_blank" rel="noopener">▶️ تشغيل من YouTube</a>':'<span class="sub">ما في رابط صوتي مضاف بعد.</span>')+'</div><form id="adhkarAudioForm" class="row"><label class="field grow">رابط YouTube<input name="url" type="url" inputmode="url" placeholder="https://youtube.com/..." value="'+safe(audio)+'"></label><button class="soft">'+(audio?'تحديث الرابط':'إضافة الصوت')+'</button>'+(audio?'<button type="button" class="danger" data-adhkar-audio-clear>حذف الرابط</button>':'')+'</form></div>'+
-        '<div class="adhkar-text-list">'+(dailyAdhkarText[open]||[]).map((x,i)=>'<article class="adhkar-text-card"><div class="row between"><b>'+(i+1)+'. '+safe(x[0])+'</b><span class="badge">'+safe(x[2])+'</span></div><p>'+safe(x[1])+'</p></article>').join('')+'</div></div>';
+        '<div class="adhkar-text-list">'+items.map((x,i)=>'<article class="adhkar-text-card"><div class="row between"><b>'+(i+1)+'. '+safe(x[0])+'</b><div class="row"><span class="badge">'+safe(x[2])+'</span><label title="تم قراءة هذا الذكر"><input type="checkbox" data-adhkar-item="'+i+'" data-adhkar-kind="'+open+'" '+(itemChecks[i]?'checked':'')+'> ✓</label></div></div><p>'+safe(x[1])+'</p></article>').join('')+'</div></div>';
     }
-    return '<div class="panel"><h3>أذكار الصباح والمساء والنوم</h3><div class="prayer-grid">'+names.map(n=>'<div class="prayer-card adhkar-launch-card"><button type="button" class="adhkar-open-btn" data-adhkar-open="'+n+'"><span>'+n+'</span><small>اضغطي لفتح الأذكار</small></button><label class="adhkar-done-check" title="تعليم كمكتمل"><input type="checkbox" data-daily-adhkar="'+n+'" '+(checks[n]?'checked':'')+'><span>✓</span></label></div>').join('')+'</div></div>';
+    return '<div class="panel"><h3>أذكار الصباح والمساء والنوم</h3><div class="prayer-grid">'+names.map(n=>{const items=dailyAdhkarText[n]||[],ic=data.adhkarItemChecks?.[selected]?.[n]||{},done=items.filter((_,i)=>!!ic[i]).length;return '<div class="prayer-card adhkar-launch-card"><button type="button" class="adhkar-open-btn" data-adhkar-open="'+n+'"><span>'+n+'</span><small>'+done+' / '+items.length+'</small></button><label class="adhkar-done-check" title="تعليم كمكتمل"><input type="checkbox" data-daily-adhkar="'+n+'" '+(checks[n]?'checked':'')+'><span>✓</span></label></div>'}).join('')+'</div></div>';
   }
   function prayerDetails(){
     const n=state.prayer;if(!n)return '';
@@ -397,7 +397,8 @@
   }
 
   function attach(){
-    document.querySelectorAll('[data-daily-adhkar]').forEach(b=>b.onchange=()=>{data.adhkarChecks[selected]??={};data.adhkarChecks[selected][b.dataset.dailyAdhkar]=b.checked;save();render()});
+    document.querySelectorAll('[data-daily-adhkar]').forEach(b=>b.onchange=()=>{data.adhkarChecks[selected]??={};const kind=b.dataset.dailyAdhkar;if(b.checked)data.adhkarChecks[selected][kind]='manual';else delete data.adhkarChecks[selected][kind];save();render()});
+    document.querySelectorAll('[data-adhkar-item]').forEach(b=>b.onchange=()=>{const kind=b.dataset.adhkarKind,index=b.dataset.adhkarItem;data.adhkarItemChecks[selected]??={};data.adhkarItemChecks[selected][kind]??={};if(b.checked)data.adhkarItemChecks[selected][kind][index]=true;else delete data.adhkarItemChecks[selected][kind][index];const items=dailyAdhkarText[kind]||[],allDone=items.length>0&&items.every((_,i)=>!!data.adhkarItemChecks[selected][kind][i]);data.adhkarChecks[selected]??={};if(allDone&&data.adhkarChecks[selected][kind]!=='manual')data.adhkarChecks[selected][kind]='auto';else if(!allDone&&data.adhkarChecks[selected][kind]==='auto')delete data.adhkarChecks[selected][kind];save();render()});
     document.querySelectorAll('[data-adhkar-open]').forEach(b=>b.onclick=()=>{state.adhkarOpen=b.dataset.adhkarOpen;render()});
     document.querySelector('[data-adhkar-back]')?.addEventListener('click',()=>{state.adhkarOpen=null;render()});
     const adhkarAudioForm=$('#adhkarAudioForm');if(adhkarAudioForm)adhkarAudioForm.onsubmit=e=>{e.preventDefault();const value=String(adhkarAudioForm.elements.url.value||'').trim();if(value){try{const u=new URL(value);const host=u.hostname.replace(/^www\./,'');if(!['youtube.com','m.youtube.com','youtu.be'].includes(host)){alert('حطي رابط YouTube صحيح');return}}catch{alert('حطي رابط YouTube صحيح');return}}data.adhkarAudio??={};data.adhkarAudio[state.adhkarOpen]=value;save();render()};
