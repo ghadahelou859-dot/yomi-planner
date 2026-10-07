@@ -251,6 +251,16 @@
   async function blobFor(ref){let blob=await get(ref);const s=window.yomiMemoriesSession?.();if(!blob&&s){blob=await get(s.user.id+':'+ref);if(!blob&&ref.startsWith(s.user.id+'/')&&navigator.onLine){const {data:x,error}=await s.client.storage.from(bucket).download(ref);if(error)throw error;blob=x;await put(ref,blob);await put(s.user.id+':'+ref,blob)}}return blob}
   async function saveRawFile(file){if(!file?.size)throw Error('no-file');if(file.size>50*1024*1024)throw Error('file-too-large');const local='local:'+id();await put(local,file);return{local,mime:file.type||'application/octet-stream',name:file.name||''}}
   window.yomiMediaSaveFile=saveRawFile;window.yomiMediaBlobFor=blobFor;window.yomiMediaSyncNow=syncMedia;
+  let backgroundMigrationRunning=false;
+  async function migrateBackgroundToMedia(){
+    if(backgroundMigrationRunning||data.designSettings?.backgroundMedia||!String(data.designSettings?.background||'').startsWith('data:image/'))return;
+    backgroundMigrationRunning=true;
+    try{
+      const blob=await fetch(data.designSettings.background).then(r=>r.blob()),local='local:'+id();
+      await put(local,blob);data.designSettings.backgroundMedia={local,mime:blob.type||'image/jpeg',name:'background.jpg'};save();await syncMedia();
+    }catch(e){console.warn('Background migration skipped',e)}
+    finally{backgroundMigrationRunning=false}
+  }
   function backgroundApplies(){
     const d=data.designSettings||{},lockVisible=!document.getElementById('lock')?.classList.contains('hidden');
     if(lockVisible)return d.applyAll!==false ? !!d.includeLogin : d.targetPage==='lock';
@@ -304,7 +314,7 @@
     else{document.documentElement.style.setProperty('--yomi-user-bg','none');document.body.dataset.userBg='0'}
     document.documentElement.style.setProperty('--yomi-bg-position',(data.designSettings.bgX??50)+'% '+(data.designSettings.bgY??50)+'%');
     const zoom=Number(data.designSettings.bgZoom??100);document.documentElement.style.setProperty('--yomi-bg-size',zoom===100?'cover':zoom+'% auto');
-    applyNavVisibility();syncMedia()
+    applyNavVisibility();migrateBackgroundToMedia();syncMedia()
   }
   function stickers(){
     document.querySelectorAll('.yomi-v3-sticker').forEach(x=>x.remove());
