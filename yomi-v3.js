@@ -2,7 +2,7 @@
 (() => {
   window.yomiV3DesignActive=true;
   const BG_KEY='yomi-bg-v3', BG_SCOPE_KEY='yomi-bg-scope-v3', TRANS_KEY='yomi-transparency-v1', NAV_KEY='yomi-nav-visibility-v1';
-  const state={client:null,project:null,course:null,prayer:null,reopenPrayerManage:false,worshipJump:null,stickerStatus:'',stickerDraft:null};
+  const state={client:null,project:null,course:null,prayer:null,reopenPrayerManage:false,worshipJump:null,stickerStatus:'',stickerDraft:null,albumStatus:''};
   const bucket='yomi-memories', urls=new Set();
   let pendingBackgroundFile=null,pendingBackgroundPreviewUrl=null,pendingPortraitFile=null,pendingPortraitPreviewUrl=null,projectClockInterval=null;
   const formatDuration=ms=>{ms=Math.max(0,Number(ms)||0);const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return String(h).padStart(2,'0')+' س : '+String(m).padStart(2,'0')+' د : '+String(sec).padStart(2,'0')+' ث'};
@@ -121,7 +121,7 @@
     '<div class="panel project-time-panel"><div class="row between"><div><h3>⏱ وقت العمل على المشروع</h3><p class="sub">سجلي وقتك الحقيقي على هذا المشروع.</p></div><div class="project-total-time">الإجمالي <b data-v3-project-total>'+formatDuration(projectTotalTime(p))+'</b></div></div><div class="project-stopwatch" data-v3-project-clock>'+formatDuration(projectElapsed(p))+'</div><div class="row project-timer-actions">'+(p.timerState?.running?'<button class="soft" data-v3-timer-pause>⏸ إيقاف مؤقت</button><button class="primary" data-v3-timer-finish>■ إنهاء الجلسة</button>':'<button class="primary" data-v3-timer-start>▶ '+(Number(p.timerState?.elapsed||0)>0?'متابعة':'ابدأ العمل')+'</button>'+(Number(p.timerState?.elapsed||0)>0?'<button class="soft" data-v3-timer-finish>■ حفظ الجلسة</button>':''))+'</div>'+(p.timeSessions.length?'<div class="time-session-list">'+[...p.timeSessions].reverse().map(x=>'<div class="item"><div class="grow"><b>'+formatDuration(x.duration)+'</b><small>'+safe(x.date||'')+(x.note?' · '+safe(x.note):'')+'</small></div><button data-v3-time-del="'+x.id+'">حذف</button></div>').join('')+'</div>':'<div class="empty">ما في جلسات عمل محفوظة بعد.</div>')+'</div>'+
     '<div class="panel project-log-panel"><h3>🗓 سجل العمل</h3><form id="v3WorkLog"><div class="row"><label class="field">التاريخ<input name="date" type="date" value="'+today()+'" required></label><label class="field grow">شو عملتي؟<input name="text" placeholder="مثلاً: أرسلت التصميم للعميلة" required></label><button class="soft">إضافة للسجل</button></div></form>'+(p.workLog.length?'<div class="work-log-list">'+[...p.workLog].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(x=>'<div class="work-log-row"><span class="work-log-date">'+safe(x.date||'')+'</span><div class="grow"><b>'+safe(x.text)+'</b>'+(x.duration?'<small>'+formatDuration(x.duration)+'</small>':'')+'</div><button data-v3-log-del="'+x.id+'">×</button></div>').join('')+'</div>':'<div class="empty">أضيفي أول تحديث للمشروع.</div>')+'</div>'+
     '<div class="panel"><h3>الدفعات</h3><form id="v3Pay" class="row"><label class="field">المبلغ<input name="amount" type="number" min=".01" step=".01" required></label><label class="field">التاريخ<input name="date" type="date" value="'+selected+'"></label><label class="field">ملاحظة<input name="note"></label><button class="soft">إضافة دفعة</button></form>'+(p.payments.map(x=>'<div class="item"><div class="grow"><b>'+cash(x.amount)+'</b><small>'+safe(x.date)+' · '+safe(x.note||'')+'</small></div><button data-v3-pay-del="'+x.id+'">حذف</button></div>').join('')||'<div class="empty">ما في دفعات.</div>')+'</div>'+
-    '<div class="panel project-album-panel"><div class="row between"><div><h3>📷 ألبوم المشروع</h3><p class="sub">اختاري صورة أو أكثر، وبعدها اضغطي «حفظ الصور في الألبوم». بتقدري ترجعي تضيفي صور جديدة بأي وقت.</p></div><span class="album-count">'+p.assets.length+' صورة</span></div><form id="v3Assets" class="project-album-form"><label class="album-upload-zone">＋ إضافة صور<input name="file" type="file" accept="image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp" multiple required></label><div class="row album-meta-row"><label class="field">الحالة<select name="status"><option>مرجع</option><option>قيد العمل</option><option>معتمدة</option><option>غير معتمدة</option><option>تحتاج تعديل</option><option>نهائية</option></select></label><label class="field grow">ملاحظة للألبوم<input name="caption" placeholder="اختياري"></label></div><div class="upload-preview album-upload-preview" data-v3-preview></div><p class="sub album-save-status" data-v3-status></p><button class="primary album-save-btn">💾 حفظ الصور في الألبوم</button></form><div class="asset-grid project-album-grid">'+(p.assets.map((a,i)=>'<div class="asset-card album-card"><button type="button" class="album-photo-open" data-v3-asset-open="'+a.id+'" aria-label="فتح الصورة '+(i+1)+'"><div class="media-box" data-v3-media="'+safe(a.local||a.path||'')+'"></div><span class="album-photo-number">'+(i+1)+'</span></button><div class="album-card-meta"><b>'+safe(a.status)+'</b>'+(a.caption?'<small>'+safe(a.caption)+'</small>':'')+'</div><button class="danger album-delete-btn" data-v3-asset-del="'+a.id+'">حذف</button></div>').join('')||'<div class="empty">الألبوم فاضي. أضيفي أول صور للمشروع.</div>')+'</div><dialog id="v3AssetViewer" class="asset-viewer"><button type="button" class="soft asset-viewer-close" data-v3-asset-viewer-close>إغلاق</button><div class="asset-viewer-media" data-v3-asset-viewer-media></div><div class="asset-viewer-caption" data-v3-asset-viewer-caption></div></dialog></div>'
+    '<div class="panel project-album-panel"><div class="row between"><div><h3>📷 ألبوم المشروع</h3><p class="sub">اختاري صورة أو أكثر، وبعدها اضغطي «حفظ الصور في الألبوم». بتقدري ترجعي تضيفي صور جديدة بأي وقت.</p></div><span class="album-count">'+p.assets.length+' صورة</span></div><form id="v3Assets" class="project-album-form"><label class="album-upload-zone">＋ إضافة صور<input name="file" type="file" accept="image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp" multiple required></label><div class="row album-meta-row"><label class="field">الحالة<select name="status"><option>مرجع</option><option>قيد العمل</option><option>معتمدة</option><option>غير معتمدة</option><option>تحتاج تعديل</option><option>نهائية</option></select></label><label class="field grow">ملاحظة للألبوم<input name="caption" placeholder="اختياري"></label></div><div class="upload-preview album-upload-preview" data-v3-preview></div><p class="sub album-save-status" data-v3-status>'+safe(state.albumStatus||'')+'</p><button class="primary album-save-btn">💾 حفظ الصور في الألبوم</button></form><div class="asset-grid project-album-grid">'+(p.assets.map((a,i)=>'<div class="asset-card album-card"><button type="button" class="album-photo-open" data-v3-asset-open="'+a.id+'" aria-label="فتح الصورة '+(i+1)+'"><div class="media-box" data-v3-media="'+safe(a.local||a.path||'')+'"></div><span class="album-photo-number">'+(i+1)+'</span></button><div class="album-card-meta"><b>'+safe(a.status)+'</b>'+(a.caption?'<small>'+safe(a.caption)+'</small>':'')+'</div><button class="danger album-delete-btn" data-v3-asset-del="'+a.id+'">حذف</button></div>').join('')||'<div class="empty">الألبوم فاضي. أضيفي أول صور للمشروع.</div>')+'</div><dialog id="v3AssetViewer" class="asset-viewer"><button type="button" class="soft asset-viewer-close" data-v3-asset-viewer-close>إغلاق</button><div class="asset-viewer-media" data-v3-asset-viewer-media></div><div class="asset-viewer-caption" data-v3-asset-viewer-caption></div></dialog></div>'
   }
   function learning(){
     if(!state.course||!data.learningSpaces.some(x=>x.id===state.course))return '<div class="panel"><h2>دفتر تعلّمي</h2><form id="v3Course" class="row"><label class="field">اسم الدورة<input name="title" required></label><button class="primary">إضافة دورة</button></form><div class="client-grid">'+(data.learningSpaces.map(c=>'<button class="client-card" data-v3-course="'+c.id+'"><b>'+safe(c.title)+'</b><small>'+(c.items||[]).length+' مادة</small></button>').join('')||'<div class="empty">أضيفي دورة.</div>')+'</div></div>';
@@ -430,21 +430,24 @@
       as.onsubmit=async e=>{
         e.preventDefault();
         const p=data.clients.find(x=>x.id===state.client).projects.find(x=>x.id===state.project),f=new FormData(as),files=[...input.files];
-        if(!files.length){st.textContent='اختاري صورة واحدة على الأقل.';return}
-        st.textContent='جارٍ حفظ '+files.length+' صورة في الألبوم…';
+        if(!files.length){state.albumStatus='اختاري صورة واحدة على الأقل.';st.textContent=state.albumStatus;return}
+        state.albumStatus='جارٍ حفظ '+files.length+' صورة في الألبوم…';st.textContent=state.albumStatus;
         try{
           const saved=[];
           for(let i=0;i<files.length;i++){
-            st.textContent='جارٍ حفظ الصورة '+(i+1)+' من '+files.length+'…';
+            state.albumStatus='جارٍ حفظ الصورة '+(i+1)+' من '+files.length+'…';st.textContent=state.albumStatus;
             const med=await saveImage(files[i],{max:1600,q:.82});
             saved.push({id:id(),...med,status:f.get('status'),caption:f.get('caption').trim()})
           }
-          p.assets.push(...saved);save();await syncMedia();
-          st.textContent='✓ تم حفظ '+saved.length+' صورة في الألبوم.';
-          render()
+          p.assets.push(...saved);
+          save();
+          state.albumStatus='✓ تم حفظ '+saved.length+' صورة في الألبوم.';
+          render();
+          Promise.resolve(syncMedia()).then(()=>{save();paint()}).catch(err=>console.error('Project album sync failed',err));
         }catch(err){
           console.error('Project image save failed',err);
-          st.textContent='تعذّر حفظ الصور. جرّبي JPG/PNG/WebP أو صور أصغر.'
+          state.albumStatus='تعذّر حفظ الصور. جرّبي JPG/PNG/WebP أو صور أصغر.';
+          st.textContent=state.albumStatus
         }
       }
     }
