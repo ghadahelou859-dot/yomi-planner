@@ -229,9 +229,9 @@ if (ready && !window.YOMI_CLOUD_READY) {
   document.getElementById('offlineBtn').onclick=()=>{gate.hidden=true;paint('بيانات هذا الجهاز فقط · سجّلي الدخول لاحقًا للمزامنة')};
   syncBtn.onclick=()=>{if(!navigator.onLine){paint('بدون نت · محفوظ على هذا الجهاز');return}if(user)reconcile();else showAccount()};
   window.addEventListener('online',()=>{if(user)reconcile();else showAccount()});
-  window.addEventListener('focus',()=>{if(user&&navigator.onLine)reconcile()});
-  window.addEventListener('pageshow',()=>{if(user&&navigator.onLine)reconcile()});
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&user&&navigator.onLine)reconcile()});
+  window.addEventListener('focus',()=>{if(window.yomiFilePickerActive){setTimeout(()=>{window.yomiFilePickerActive=false},600);return}if(user&&navigator.onLine)reconcile()});
+  window.addEventListener('pageshow',()=>{if(window.yomiFilePickerActive)return;if(user&&navigator.onLine)reconcile()});
+  document.addEventListener('visibilitychange',()=>{if(window.yomiFilePickerActive)return;if(document.visibilityState==='visible'&&user&&navigator.onLine)reconcile()});
   setInterval(()=>{if(document.visibilityState==='visible'&&user&&navigator.onLine)reconcile()},60000);
   document.getElementById('signOutBtn').onclick=async()=>{
     await client.auth.signOut();window.dispatchEvent(new Event('yomi-signed-out'));notifyMemories();
