@@ -1,7 +1,7 @@
 /* يومي 3.0 — تحسينات المشاريع، عبادتي، التقويم، الرفع والتخصيص */
 (() => {
   window.yomiV3DesignActive=true;
-  const BG_KEY='yomi-bg-v3', BG_SCOPE_KEY='yomi-bg-scope-v3', TRANS_KEY='yomi-transparency-v1';
+  const BG_KEY='yomi-bg-v3', BG_SCOPE_KEY='yomi-bg-scope-v3', TRANS_KEY='yomi-transparency-v1', NAV_KEY='yomi-nav-visibility-v1';
   const state={client:null,project:null,course:null};
   const bucket='yomi-memories', urls=new Set();
   let pendingBackgroundFile=null,pendingBackgroundPreviewUrl=null,projectClockInterval=null;
@@ -110,6 +110,11 @@
       '<div class="transparency-preview"><div class="preview-card" data-v3-trans-preview>معاينة المربعات</div></div>'+
       '<div class="row"><button class="primary">تطبيق الشفافية</button><button type="button" class="soft" data-v3-trans-reset>إلغاء شفافية الصفحة المختارة</button></div>'+
     '</form></div>'+
+    '<div class="panel"><h3>شريط الصفحات</h3><p class="sub">اختاري إذا بدك شريط التنقل ظاهر أو مخفي، لكل صفحة أو لكل التطبيق.</p><form id="v3NavVisibility">'+
+      '<label class="field">تطبيق على<select name="destination"><option value="all">كل صفحات التطبيق</option><option value="page" selected>صفحة محددة</option></select></label>'+
+      '<label class="field" data-nav-page-picker>اختاري الصفحة<select name="target">'+pagesOptions.map(([k,v])=>'<option value="'+k+'">'+v+'</option>').join('')+'</select></label>'+
+      '<label class="field">حالة الشريط<select name="visible"><option value="show">إظهار الشريط</option><option value="hide">إخفاء الشريط</option></select></label>'+
+      '<button class="primary">تطبيق على شريط الصفحات</button></form></div>'+
     '<div class="panel"><h3>Stickers</h3><form id="v3Sticker"><div class="row"><label class="field">صورة Sticker<input name="file" type="file" accept="image/png,image/webp,image/jpeg,.jpg,.jpeg,.png,.webp"></label><label class="field">أو Emoji<input name="text" maxlength="8"></label><label class="field">الصفحة<select name="target"><option value="all">كل التطبيق</option><option value="lock">صفحة الدخول</option><option value="home">يومي</option><option value="planner">التقويم</option><option value="worship">عبادتي</option><option value="learning">تعلّمي</option><option value="clients">العملاء</option><option value="finance">مالي</option></select></label></div><div class="row"><label class="field">أفقي<input name="x" type="range" min="5" max="95" value="85"></label><label class="field">عمودي<input name="y" type="range" min="5" max="95" value="18"></label><label class="field">الحجم<input name="size" type="range" min="24" max="140" value="54"></label></div><div class="upload-preview" data-v3-sticker-prev></div><button class="soft">إضافة Sticker</button></form>'+(d.stickers.map(s=>'<div class="item"><div class="grow"><div class="sticker-thumb" '+((s.local||s.path)?'data-v3-media="'+safe(s.local||s.path)+'"':'')+'>'+safe(s.text||'')+'</div><small>'+safe(s.target||'all')+' · '+s.size+'px</small></div><button data-v3-sticker-toggle="'+s.id+'">'+(s.hidden?'إظهار':'إخفاء')+'</button><button data-v3-sticker-del="'+s.id+'">حذف</button></div>').join('')||'<div class="empty">ما في Stickers.</div>')+'</div>'
   }
 
@@ -202,16 +207,34 @@
     }
     return {pages,lastDestination:'page',lastTarget:'home'};
   }
+  function navConfig(){
+    const saved=JSON.parse(localStorage.getItem(NAV_KEY)||'null');
+    return saved?.pages?saved:{pages:{},lastDestination:'page',lastTarget:'planner'};
+  }
+  function applyNavVisibility(){
+    const nav=document.getElementById('nav');if(!nav)return;
+    const lockVisible=!document.getElementById('lock')?.classList.contains('hidden');
+    const cfg=navConfig(),hidden=!lockVisible&&cfg.pages?.[page]===false;
+    nav.hidden=hidden;
+    document.body.dataset.navHidden=hidden?'1':'0';
+    let reveal=document.getElementById('yomiNavReveal');
+    if(hidden&&!reveal){
+      reveal=document.createElement('button');reveal.id='yomiNavReveal';reveal.type='button';reveal.className='soft yomi-nav-reveal';reveal.textContent='☰ الصفحات';
+      reveal.onclick=()=>{const x=navConfig();x.pages[page]=true;localStorage.setItem(NAV_KEY,JSON.stringify(x));applyNavVisibility()};
+      document.body.appendChild(reveal);
+    }else if(!hidden&&reveal)reveal.remove();
+  }
   async function paint(){
     for(const u of urls)URL.revokeObjectURL(u);urls.clear();
     for(const box of document.querySelectorAll('[data-v3-media]'))try{const b=await blobFor(box.dataset.v3Media);if(!b||!box.isConnected)continue;const u=URL.createObjectURL(b);urls.add(u);const im=document.createElement('img');im.src=u;im.alt='';box.replaceChildren(im)}catch{}
-    const lockVisible=!document.getElementById('lock')?.classList.contains('hidden'),currentKey=lockVisible?'lock':page,tCfg=transparencyConfig(),raw=tCfg.pages?.[currentKey],hasTransparency=raw!==undefined&&raw!==null,trans=Math.max(0,Math.min(95,Number(raw??35)));
+    const lockVisible=!document.getElementById('lock')?.classList.contains('hidden'),currentKey=lockVisible?'lock':page,tCfg=transparencyConfig(),raw=tCfg.pages?.[currentKey],plannerDefault=!lockVisible&&page==='planner'&&raw===undefined,hasTransparency=raw!==undefined&&raw!==null||plannerDefault,trans=Math.max(0,Math.min(95,Number(plannerDefault?60:(raw??35))));
+    document.body.dataset.yomiPage=lockVisible?'lock':page;
     document.body.dataset.yomiDesign=hasTransparency?'1':'0';
     document.documentElement.style.setProperty('--yomi-panel-alpha',String((100-trans)/100));
     const bgData=localStorage.getItem(BG_KEY)||data.designSettings?.background||'';
     if(backgroundApplies()&&bgData){document.documentElement.style.setProperty('--yomi-user-bg','url("'+bgData+'")');document.body.dataset.userBg='1'}
     else{document.documentElement.style.setProperty('--yomi-user-bg','none');document.body.dataset.userBg='0'}
-    syncMedia()
+    applyNavVisibility();syncMedia()
   }
   function stickers(){
     document.querySelectorAll('.yomi-v3-sticker').forEach(x=>x.remove());
@@ -320,6 +343,12 @@
         localStorage.setItem(TRANS_KEY,JSON.stringify({pages,lastDestination:dest,lastTarget:target.value}));
         render()
       };
+    }
+    const nv=$('#v3NavVisibility');if(nv){
+      const destination=nv.elements.destination,target=nv.elements.target,picker=nv.querySelector('[data-nav-page-picker]');
+      const cfg=navConfig();destination.value=cfg.lastDestination||'page';target.value=cfg.lastTarget||'planner';
+      const navLive=()=>{picker.hidden=destination.value!=='page'};destination.onchange=navLive;navLive();
+      nv.onsubmit=e=>{e.preventDefault();const x=navConfig(),visible=nv.elements.visible.value==='show',dest=destination.value,appPages=['home','worship','planner','clients','learning','finance','tasks','wellness','quran','achievements','notes','diary','memories','care','cycle','reports','customize'];if(dest==='all')for(const k of appPages)x.pages[k]=visible;else x.pages[target.value]=visible;x.lastDestination=dest;x.lastTarget=target.value;localStorage.setItem(NAV_KEY,JSON.stringify(x));render()};
     }
     const sf=$('#v3Sticker');if(sf){const input=sf.elements.file,prev=sf.querySelector('[data-v3-sticker-prev]');input.onchange=()=>{prev.innerHTML='';const f=input.files?.[0];if(f){const im=document.createElement('img');im.src=URL.createObjectURL(f);im.onload=()=>URL.revokeObjectURL(im.src);prev.appendChild(im)}};sf.onsubmit=async e=>{e.preventDefault();const f=new FormData(sf),file=input.files?.[0],text=String(f.get('text')||'').trim();if(!file&&!text){alert('اختاري صورة Sticker أو اكتبي Emoji');return}try{let med={};if(file)med=await saveImage(file,{max:700,q:.9,alpha:true});data.designSettings.stickers.push({id:id(),...med,text,target:f.get('target'),x:Number(f.get('x')),y:Number(f.get('y')),size:Number(f.get('size')),hidden:false});save();render()}catch(err){console.error('Sticker save failed',err);alert('تعذّر حفظ Sticker. جرّبي PNG أو WebP أو JPG أصغر.')}}}
     document.querySelectorAll('[data-v3-sticker-toggle]').forEach(b=>b.onclick=()=>{const s=data.designSettings.stickers.find(x=>x.id===b.dataset.v3StickerToggle);s.hidden=!s.hidden;save();render()});
