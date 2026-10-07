@@ -618,3 +618,42 @@ body[data-user-bg="1"],body[data-user-bg="1"]::before,.lock{background-position:
   .prayer-manage-item .grow{width:100%}
   .prayer-manage-item button{flex:1}
 }
+
+
+/* تنقل سريع داخل عبادتي */
+.worship-quick-nav{
+  position:sticky;
+  top:10px;
+  z-index:30;
+  display:flex;
+  gap:8px;
+  width:max-content;
+  max-width:100%;
+  margin:0 0 12px auto;
+  padding:7px;
+  border-radius:18px;
+  background:rgba(255,253,250,.82);
+  border:1px solid rgba(126,96,78,.12);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  box-shadow:0 8px 24px rgba(70,50,58,.10);
+}
+.worship-quick-nav button{
+  min-width:110px;
+  min-height:44px;
+  border-radius:13px;
+  font-weight:800;
+}
+.worship-quick-nav button.active{
+  box-shadow:0 5px 14px rgba(92,62,74,.12);
+}
+#worshipPrayerSection,
+#worshipDhikrSection{scroll-margin-top:86px}
+@media(max-width:720px){
+  .worship-quick-nav{
+    width:100%;
+    margin:0 0 10px;
+    top:6px;
+  }
+  .worship-quick-nav button{flex:1;min-width:0}
+}
