@@ -211,6 +211,7 @@
   }
 
   function applyDesign(){
+    if(window.yomiV3DesignActive)return;
     ensure();
     const d=data.designSettings;
     document.body.dataset.userBg=d.background?'1':'0';
