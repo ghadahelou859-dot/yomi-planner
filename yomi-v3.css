@@ -984,3 +984,23 @@ body[data-user-bg="1"],body[data-user-bg="1"]::before,.lock{background-position:
   .project-album-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   .album-upload-preview{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+
+.adhkar-launch-card{position:relative;display:flex;align-items:stretch;gap:10px;padding:10px}
+.adhkar-open-btn{flex:1;min-width:0;border:0;background:transparent;text-align:right;padding:10px;border-radius:14px;cursor:pointer}
+.adhkar-open-btn span{display:block;font-weight:800;font-size:1rem}
+.adhkar-open-btn small{display:block;margin-top:4px;opacity:.72}
+.adhkar-done-check{display:flex;align-items:center;justify-content:center;min-width:48px;cursor:pointer}
+.adhkar-done-check input{position:absolute;opacity:0;pointer-events:none}
+.adhkar-done-check span{display:grid;place-items:center;width:42px;height:42px;border:1px solid var(--border);border-radius:999px;font-weight:900;font-size:1.15rem}
+.adhkar-done-check input:checked+span{background:var(--accent,#667);color:#fff;border-color:transparent}
+.adhkar-reader{display:grid;gap:16px}
+.adhkar-audio-box{display:grid;gap:10px;padding:14px;border:1px solid var(--border);border-radius:18px}
+.adhkar-youtube{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.adhkar-text-list{display:grid;gap:12px}
+.adhkar-text-card{padding:16px;border:1px solid var(--border);border-radius:18px;background:rgba(255,255,255,.28)}
+.adhkar-text-card p{margin:10px 0 0;line-height:2;font-size:1rem}
+@media(max-width:720px){
+  .adhkar-launch-card{gap:6px}
+  .adhkar-text-card{padding:14px}
+  .adhkar-text-card p{font-size:1.02rem;line-height:2.05}
+}
