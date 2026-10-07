@@ -56,9 +56,13 @@
   mode.onchange=()=>{localStorage.setItem(soundKey,mode.value);stopSound();updateStatus();if(mode.value!=='off')startSound()};
   fileInput.onchange=async()=>{
     const file=fileInput.files?.[0];if(!file)return;
-    if(!file.type.startsWith('audio/')||file.size>15*1024*1024){setStatus('اختاري MP3 أو M4A أو WAV أقل من 15 ميغابايت.');return}
-    try{await storeAudio(file);prepareAudio(file);mode.value='recording';localStorage.setItem(soundKey,'recording');updateStatus();startSound()}
-    catch{setStatus('تعذّر حفظ التسجيل. جرّبي ملفًا أصغر.')}
+    const ext=(file.name.split('.').pop()||'').toLowerCase(),allowed=['mp3','m4a','wav','aac','ogg','oga','webm'];
+    if(file.size>40*1024*1024||(!(file.type||'').startsWith('audio/')&&!allowed.includes(ext))){setStatus('اختاري MP3 أو M4A أو WAV أو AAC/OGG أقل من 40 ميغابايت.');return}
+    setStatus('جارٍ حفظ الملف الصوتي…');
+    try{
+      await storeAudio(file);prepareAudio(file);mode.value='recording';localStorage.setItem(soundKey,'recording');audioError='';
+      setStatus('✓ تم حفظ الملف. اضغطي «جرّبي الصوت» للتأكد من التشغيل.');updateControl();
+    }catch(error){console.error('Audio save failed',error);setStatus('تعذّر حفظ التسجيل. جرّبي ملفًا أصغر أو صيغة MP3/M4A.')}
   };
   readAudio().then(file=>{if(file)prepareAudio(file);updateStatus();if(file&&getMode()==='recording'&&document.getElementById('lock').classList.contains('hidden'))startSound()}).catch(()=>setStatus('تعذّر فتح التسجيل؛ النغمات الهادئة ما زالت متاحة.'));
   document.getElementById('entrySoundBtn').onclick=()=>{updateStatus();soundDialog.showModal()};
