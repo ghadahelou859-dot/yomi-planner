@@ -26,9 +26,16 @@
     }return out
   }
   function plannerRows(month){
-    const a=[];for(const x of data.tasks||[])if(x.date?.startsWith(month))a.push({kind:'task',date:x.date,title:x.title,icon:'✓',color:'#7f96ad'});
-    for(const x of data.calendarEvents||[])if(x.date?.startsWith(month))a.push({kind:'event',date:x.date,title:x.title,icon:x.sticker||'•',color:x.color||'#7f96ad',time:x.time||''});
+    const a=[],monthStart=month+'-01',monthEnd=month+'-'+String(new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate()).padStart(2,'0');
+    for(const x of data.tasks||[])if(x.date?.startsWith(month))a.push({kind:'task',date:x.date,title:x.title,icon:'✓',color:'#7f96ad'});
+    for(const x of data.calendarEvents||[]){
+      if(x.repeat==='daily'){
+        let d=x.date>monthStart?x.date:monthStart,until=x.until&&x.until<monthEnd?x.until:monthEnd;
+        while(d<=until){let time=x.time||'';if(time&&Number(x.driftMinutes||0)){const hm=time.split(':').map(Number),delta=daysBetween(x.date,d)*Number(x.driftMinutes||0),total=((hm[0]*60+hm[1]+delta)%1440+1440)%1440;time=String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0')}a.push({kind:'event',date:d,title:x.title,icon:x.sticker||'•',color:x.color||'#7f96ad',time});d=dayAfter(d)}
+      }else if(x.date?.startsWith(month))a.push({kind:'event',date:x.date,title:x.title,icon:x.sticker||'•',color:x.color||'#7f96ad',time:x.time||''});
+    }
     for(const x of data.projects||[])if(x.due?.startsWith(month))a.push({kind:'project',date:x.due,title:x.title,icon:'💼',color:'#bb925c',time:x.time||''});
+    for(const x of data.importantDates||[]){const d=x.yearly?month.slice(0,4)+'-'+String(x.date||'').slice(5):x.date;if(d?.startsWith(month))a.push({kind:'important',date:d,title:x.title,icon:x.sticker||'⭐',color:x.color||'#a8738b'})}
     a.push(...clientItems(month));return a.sort((x,y)=>(x.date+(x.time||'')).localeCompare(y.date+(y.time||'')))
   }
   function planner(){
@@ -38,7 +45,7 @@
     const r=rows.filter(x=>x.date===selected);
     return '<div class="panel glass-panel"><div class="row between"><div><h2>Calendar Planner</h2><p class="sub">اضغطي على التاريخ ليظهر كل ما عندك فيه.</p></div><div class="row"><button class="soft" data-v3-month="-1">‹</button><strong>'+dateLabel(first)+'</strong><button class="soft" data-v3-month="1">›</button></div></div><div class="calendar-week"><span>الإثنين</span><span>الثلاثاء</span><span>الأربعاء</span><span>الخميس</span><span>الجمعة</span><span>السبت</span><span>الأحد</span></div><div class="calendar-grid">'+cells.join('')+'</div></div>'+
     '<div class="panel"><h3>'+dateLabel(selected)+'</h3>'+(r.map(x=>'<div class="item"><span class="event-chip" style="--chip:'+x.color+'">'+x.icon+'</span><div class="grow"><b>'+safe(x.title)+'</b><small>'+(x.time?safe(x.time)+' · ':'')+(x.kind==='client'?'مشروع عميل':x.kind==='task'?'مهمة':x.kind==='project'?'مشروع':'موعد')+'</small></div>'+(x.kind==='client'?'<button data-v3-open="'+x.cid+':'+x.pid+'">فتح المشروع</button>':'')+'</div>').join('')||'<div class="empty">ما في شيء مسجّل لهذا اليوم</div>')+'</div>'+
-    '<div class="panel"><h3>إضافة موعد</h3><form id="v3Event" class="row"><label class="field">الاسم<input name="title" required></label><label class="field">التاريخ<input name="date" type="date" value="'+selected+'" required></label><label class="field">الوقت<input name="time" type="time"></label><label class="field">اللون<select name="color"><option value="#7f96ad">أزرق</option><option value="#749485">أخضر</option><option value="#bb925c">ذهبي</option><option value="#a8738b">وردي</option></select></label><button class="primary">إضافة</button></form></div>'
+    '<div class="panel"><h3>إضافة موعد</h3><form id="v3Event"><div class="row"><label class="field">الاسم<input name="title" required></label><label class="field">التاريخ<input name="date" type="date" value="'+selected+'" required></label><label class="field">الوقت<input name="time" type="time"></label><label class="field">اللون<select name="color"><option value="#7f96ad">أزرق</option><option value="#749485">أخضر</option><option value="#bb925c">ذهبي</option><option value="#a8738b">وردي</option></select></label></div><div class="row"><label class="field">التكرار<select name="repeat"><option value="none">مرة واحدة</option><option value="daily">يومي</option></select></label><label class="field">تغيير الوقت يوميًا بالدقائق<input name="drift" type="number" step="1" value="0"></label><label class="field">حتى تاريخ<input name="until" type="date"></label></div><button class="primary">إضافة</button></form></div>'
   }
   function fastTips(){
     const d=new Date(selected+'T12:00:00Z'),w=d.getUTCDay(),t=[];
@@ -109,7 +116,7 @@
     document.querySelectorAll('[data-v3-day]').forEach(b=>b.onclick=()=>{selected=b.dataset.v3Day;render()});
     document.querySelectorAll('[data-v3-month]').forEach(b=>b.onclick=()=>{selected=monthOffset(selected,Number(b.dataset.v3Month));render()});
     document.querySelectorAll('[data-v3-open]').forEach(b=>b.onclick=()=>{const z=b.dataset.v3Open.split(':');state.client=z[0];state.project=z[1];page='clients';render()});
-    const ev=$('#v3Event');if(ev)ev.onsubmit=e=>{e.preventDefault();const f=new FormData(ev);data.calendarEvents.push({id:id(),title:f.get('title').trim(),date:f.get('date'),time:f.get('time'),color:f.get('color'),sticker:'•',done:false});selected=f.get('date');save();render()};
+    const ev=$('#v3Event');if(ev)ev.onsubmit=e=>{e.preventDefault();const f=new FormData(ev);data.calendarEvents.push({id:id(),title:f.get('title').trim(),date:f.get('date'),time:f.get('time'),color:f.get('color'),sticker:'•',repeat:f.get('repeat')||'none',driftMinutes:Number(f.get('drift')||0),until:f.get('until')||'',done:false});selected=f.get('date');save();render()};
     document.querySelectorAll('[data-v3-prayer]').forEach(x=>x.onchange=()=>{data.prayerChecks[selected]??={};data.prayerChecks[selected][x.dataset.v3Prayer]=x.checked;save();render()});
     document.querySelectorAll('[data-v3-dhikr]').forEach(b=>b.onclick=()=>{const x=data.dhikrs.find(z=>z.id===b.dataset.v3Dhikr);x.counts??={};x.counts[selected]=(Number(x.counts[selected])||0)+1;save();render()});
     document.querySelectorAll('[data-v3-dhikr-many]').forEach(b=>b.onclick=()=>{const x=data.dhikrs.find(z=>z.id===b.dataset.v3DhikrMany),v=prompt('كم مرة بدك تضيفي؟','10');if(v===null)return;const n=parseCount(v);if(!Number.isSafeInteger(n)||n<1)return;x.counts??={};x.counts[selected]=(Number(x.counts[selected])||0)+n;save();render()});
