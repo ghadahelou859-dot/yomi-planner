@@ -323,3 +323,75 @@ body[data-nav-hidden="1"] #view{max-width:1180px;margin-inline:auto;width:100%}
   .full-page-preview{padding:10px;min-height:760px}
   .full-page-preview.desktop .full-preview-screen{min-width:760px}
 }
+
+
+/* إصلاح صفحة الدخول: الصورة كاملة بدون قص وبدون تمرير */
+#lock{
+  height:100dvh!important;
+  min-height:100dvh!important;
+  max-height:100dvh!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+  padding:clamp(12px,2vw,20px)!important;
+  background-size:100% 100%!important;
+  background-position:center center!important;
+  background-repeat:no-repeat!important;
+}
+#lock .lock-card{
+  max-height:calc(100dvh - 24px);
+  overflow:auto;
+  box-sizing:border-box;
+}
+
+/* معاينة واضحة داخل نافذة مستقلة */
+.preview-dialog{
+  width:min(96vw,1180px);
+  max-width:none;
+  height:min(92dvh,900px);
+  max-height:none;
+  padding:14px;
+  border:0;
+  border-radius:26px;
+  background:rgba(247,242,235,.96);
+  box-shadow:0 30px 90px rgba(35,27,30,.34);
+  overflow:hidden;
+}
+.preview-dialog::backdrop{background:rgba(24,20,22,.48);backdrop-filter:blur(5px)}
+.preview-dialog-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  padding:4px 4px 12px;flex-wrap:wrap
+}
+.preview-dialog .full-page-preview{
+  height:calc(100% - 76px);
+  min-height:0;
+  margin-top:0;
+  overflow:auto;
+}
+.preview-dialog .full-preview-screen{height:100%;min-height:520px}
+.preview-dialog .full-page-preview.mobile .full-preview-screen{
+  width:390px;
+  height:780px;
+  min-height:780px;
+}
+.full-preview-screen[data-preview-page="lock"]{
+  background-size:100% 100%!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+}
+@media(max-width:720px){
+  .preview-dialog{
+    width:calc(100vw - 12px);
+    height:calc(100dvh - 12px);
+    padding:8px;
+    border-radius:20px
+  }
+  .preview-dialog .full-page-preview{height:calc(100% - 104px);padding:8px}
+  .preview-dialog .full-page-preview.desktop .full-preview-screen{
+    min-width:760px;
+    height:620px;
+  }
+  #lock .lock-card{
+    max-height:calc(100dvh - 20px);
+    overflow:auto;
+  }
+}
