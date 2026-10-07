@@ -2,12 +2,14 @@
 (() => {
   const state={client:null,project:null,course:null};
   const bucket='yomi-memories', urls=new Set();
+  let pendingBackgroundMedia=null,pendingBackgroundUrl=null;
   function ensure(){
     data.fastingLog??=[]; data.fastingPrefs??={mondayThursday:true,whiteDays:true,arafah:true,ashura:true};
     data.debtPeople??=[]; data.clients??=[]; data.learningSpaces??=[];
     data.designSettings??={background:null,stickers:[]}; data.designSettings.stickers??=[];
     data.designSettings.applyAll ??= true;
     data.designSettings.targetPage ??= 'home';
+    data.designSettings.includeLogin ??= false;
     data.designSettings.panelTransparency ??= 35;
     data.cyclePeriodLength??=7;
     for(const c of data.clients){c.projects??=[];for(const p of c.projects){
@@ -84,14 +86,15 @@
       ['notes','ملاحظات'],['diary','مذكرتي'],['memories','ذكرياتي'],['care','عنايتي'],['cycle','دورتي'],['reports','التقارير'],
       ['customize','تخصيص'],['lock','صفحة الدخول']
     ];
-    return '<div class="panel customize-main"><h2>تصميم يومي</h2><p class="sub">أولًا ارفعي الصورة، وبعدها تحكمي بالشفافية ومكان تطبيق التصميم.</p>'+
-    '<form id="v3Bg"><label class="field">صورة الخلفية<input name="file" type="file" accept="image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp" required></label><div class="upload-preview" data-v3-bg-prev></div><p class="sub upload-status" data-v3-bg-status>'+(d.backgroundMedia?'✓ في خلفية محفوظة حاليًا':'اختاري صورة JPG أو PNG أو WebP')+'</p><div class="row"><button class="primary">رفع وحفظ الصورة</button><button type="button" class="soft" data-v3-bg-clear>إزالة الخلفية</button></div></form></div>'+
-    '<div class="panel"><h3>الشفافية وتطبيق التصميم</h3><form id="v3DesignScope">'+
-      '<label class="design-switch"><input name="applyAll" type="checkbox" '+(d.applyAll!==false?'checked':'')+'><span>تطبيق الخلفية والشفافية على كل الصفحات</span></label>'+
-      '<label class="field">إذا لم يكن على كل الصفحات، اختاري الصفحة<select name="target">'+pagesOptions.map(([k,v])=>'<option value="'+k+'" '+(d.targetPage===k?'selected':'')+'>'+v+'</option>').join('')+'</select></label>'+
-      '<label class="field transparency-control"><span>شفافية المربعات: <b data-v3-trans-value>'+trans+'%</b></span><input name="transparency" type="range" min="0" max="80" step="1" value="'+trans+'"><small class="sub">0% = مربعات واضحة، 80% = شفافة جدًا</small></label>'+
+    return '<div class="panel customize-main"><h2>تصميم يومي</h2><p class="sub">اختاري الصورة أولًا؛ ستظهر معاينة فقط ولن تتطبّق قبل الضغط على «حفظ وتطبيق».</p>'+
+      '<form id="v3Bg"><label class="field">صورة الخلفية<input name="file" type="file" accept="image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp"></label><div class="upload-preview" data-v3-bg-prev></div><p class="sub upload-status" data-v3-bg-status>'+(pendingBackgroundMedia?'✓ الصورة جاهزة للمعاينة':d.backgroundMedia?'✓ في خلفية محفوظة حاليًا':'اختاري صورة JPG أو PNG أو WebP')+'</p><button type="button" class="soft" data-v3-bg-clear>إزالة الخلفية الحالية</button></form></div>'+
+    '<div class="panel"><h3>مكان التصميم والشفافية</h3><form id="v3DesignScope">'+
+      '<label class="design-switch"><input name="applyAll" type="checkbox" '+(d.applyAll!==false?'checked':'')+'><span>تطبيق التصميم على كل صفحات التطبيق</span></label>'+
+      '<label class="design-switch"><input name="includeLogin" type="checkbox" '+(d.includeLogin?'checked':'')+'><span>يشمل صفحة الدخول أيضًا</span></label>'+
+      '<label class="field">أو اختاري صفحة واحدة<select name="target">'+pagesOptions.map(([k,v])=>'<option value="'+k+'" '+(d.targetPage===k?'selected':'')+'>'+v+'</option>').join('')+'</select></label>'+
+      '<label class="field transparency-control"><span>شفافية المربعات: <b data-v3-trans-value>'+trans+'%</b></span><input name="transparency" type="range" min="0" max="80" step="1" value="'+trans+'"><small class="sub">0% = واضحة، 80% = شفافة جدًا</small></label>'+
       '<div class="transparency-preview"><div class="preview-card" data-v3-trans-preview>معاينة المربعات</div></div>'+
-      '<div class="row"><button class="primary">حفظ التصميم</button><button type="button" class="soft" data-v3-design-reset>رجوع للإعدادات الأصلية</button></div>'+
+      '<div class="row"><button class="primary">حفظ وتطبيق</button><button type="button" class="soft" data-v3-design-reset>رجوع للإعدادات الأصلية</button></div>'+
     '</form></div>'+
     '<div class="panel"><h3>Stickers</h3><form id="v3Sticker"><div class="row"><label class="field">صورة Sticker<input name="file" type="file" accept="image/png,image/webp,image/jpeg,.jpg,.jpeg,.png,.webp"></label><label class="field">أو Emoji<input name="text" maxlength="8"></label><label class="field">الصفحة<select name="target"><option value="all">كل التطبيق</option><option value="lock">صفحة الدخول</option><option value="home">يومي</option><option value="planner">التقويم</option><option value="worship">عبادتي</option><option value="learning">تعلّمي</option><option value="clients">العملاء</option><option value="finance">مالي</option></select></label></div><div class="row"><label class="field">أفقي<input name="x" type="range" min="5" max="95" value="85"></label><label class="field">عمودي<input name="y" type="range" min="5" max="95" value="18"></label><label class="field">الحجم<input name="size" type="range" min="24" max="140" value="54"></label></div><div class="upload-preview" data-v3-sticker-prev></div><button class="soft">إضافة Sticker</button></form>'+(d.stickers.map(s=>'<div class="item"><div class="grow"><div class="sticker-thumb" '+((s.local||s.path)?'data-v3-media="'+safe(s.local||s.path)+'"':'')+'>'+safe(s.text||'')+'</div><small>'+safe(s.target||'all')+' · '+s.size+'px</small></div><button data-v3-sticker-toggle="'+s.id+'">'+(s.hidden?'إظهار':'إخفاء')+'</button><button data-v3-sticker-del="'+s.id+'">حذف</button></div>').join('')||'<div class="empty">ما في Stickers.</div>')+'</div>'
   }
@@ -163,13 +166,14 @@
     const verify=await get(local);if(!verify)throw Error('store-failed');
     return {local,mime:b.type||file.type||'image/jpeg',name:file.name||''}
   }
-  function records(){const r=[];for(const c of data.clients)for(const p of c.projects||[])for(const a of p.assets||[])if(a.local)r.push(a);for(const c of data.learningSpaces)for(const i of c.items||[])if(i.media?.local)r.push(i.media);if(data.designSettings.backgroundMedia?.local)r.push(data.designSettings.backgroundMedia);for(const s of data.designSettings.stickers||[])if(s.local)r.push(s);return r}
-  async function syncMedia(){const s=window.yomiMemoriesSession?.();if(!s||!navigator.onLine)return;for(const r of records()){const old=r.local;try{const b=await get(old);if(!b)continue;const ext=b.type.includes('webp')?'webp':'jpg',path=s.user.id+'/planner-'+id()+'.'+ext,{error}=await s.client.storage.from(bucket).upload(path,b,{contentType:b.type,upsert:false});if(error)throw error;await put(s.user.id+':'+path,b);r.path=path;delete r.local;save();await del(old)}catch(e){console.error(e)}}}
+  function records(){const r=[];for(const c of data.clients)for(const p of c.projects||[])for(const a of p.assets||[])if(a.local&&!a.path)r.push(a);for(const c of data.learningSpaces)for(const i of c.items||[])if(i.media?.local&&!i.media?.path)r.push(i.media);if(data.designSettings.backgroundMedia?.local&&!data.designSettings.backgroundMedia?.path)r.push(data.designSettings.backgroundMedia);for(const s of data.designSettings.stickers||[])if(s.local&&!s.path)r.push(s);return r}
+  async function syncMedia(){const s=window.yomiMemoriesSession?.();if(!s||!navigator.onLine)return;for(const r of records()){const old=r.local;try{const b=await get(old);if(!b)continue;const ext=b.type.includes('webp')?'webp':'jpg',path=s.user.id+'/planner-'+id()+'.'+ext,{error}=await s.client.storage.from(bucket).upload(path,b,{contentType:b.type,upsert:false});if(error)throw error;await put(s.user.id+':'+path,b);r.path=path;save()}catch(e){console.error(e)}}}
   async function blobFor(ref){let b=await get(ref);const s=window.yomiMemoriesSession?.();if(!b&&s){b=await get(s.user.id+':'+ref);if(!b&&ref.startsWith(s.user.id+'/')&&navigator.onLine){const {data:x,error}=await s.client.storage.from(bucket).download(ref);if(error)throw error;b=x;await put(s.user.id+':'+ref,b)}}return b}
   function designApplies(){
     const d=data.designSettings||{},lockVisible=!document.getElementById('lock')?.classList.contains('hidden');
+    if(lockVisible)return d.applyAll!==false ? !!d.includeLogin : d.targetPage==='lock';
     if(d.applyAll!==false)return true;
-    return lockVisible ? d.targetPage==='lock' : d.targetPage===page;
+    return d.targetPage===page;
   }
   async function paint(){
     for(const u of urls)URL.revokeObjectURL(u);urls.clear();
@@ -225,35 +229,41 @@
 
     const bg=$('#v3Bg');if(bg){
       const input=bg.elements.file,prev=bg.querySelector('[data-v3-bg-prev]'),st=bg.querySelector('[data-v3-bg-status]');
-      const saveBackground=async file=>{
+      const showPending=async file=>{
         if(!file)return;
-        st.textContent='جارٍ رفع وحفظ الصورة…';
+        st.textContent='جارٍ تجهيز الصورة للمعاينة…';
         try{
-          const media=await saveImage(file,{max:1800,q:.8});
-          data.designSettings.backgroundMedia=media;data.designSettings.background=null;save();
-          st.textContent='✓ تم حفظ الصورة بنجاح';
-          await paint();
-          setTimeout(()=>{if(page==='customize')render()},250);
+          pendingBackgroundMedia=await saveImage(file,{max:1800,q:.8});
+          if(pendingBackgroundUrl)URL.revokeObjectURL(pendingBackgroundUrl);
+          const blob=await get(pendingBackgroundMedia.local);
+          pendingBackgroundUrl=URL.createObjectURL(blob);
+          prev.innerHTML='';const im=document.createElement('img');im.src=pendingBackgroundUrl;im.alt='معاينة الخلفية';prev.appendChild(im);
+          st.textContent='✓ الصورة جاهزة. اختاري مكانها ثم اضغطي «حفظ وتطبيق».';
         }catch(err){
-          console.error('Background save failed',err);
-          st.textContent=err?.message==='file-too-large'?'الصورة كبيرة جدًا. اختاري صورة أقل من 15MB.':'تعذّر حفظ الصورة. جرّبي JPG/PNG/WebP.';
+          console.error('Background preview failed',err);pendingBackgroundMedia=null;
+          st.textContent=err?.message==='file-too-large'?'الصورة كبيرة جدًا. اختاري صورة أقل من 15MB.':'تعذّر تجهيز الصورة. جرّبي JPG/PNG/WebP.';
         }
       };
-      input.onchange=async()=>{
-        prev.innerHTML='';const f=input.files?.[0];if(!f){st.textContent='لم يتم اختيار صورة.';return}
-        const url=URL.createObjectURL(f),im=document.createElement('img');im.src=url;im.alt='معاينة الخلفية';prev.appendChild(im);
-        im.onload=()=>URL.revokeObjectURL(url);
-        await saveBackground(f);
-      };
-      bg.onsubmit=async e=>{e.preventDefault();const file=input.files?.[0];if(!file){st.textContent='اختاري صورة أولًا.';return}await saveBackground(file)};
+      input.onchange=()=>showPending(input.files?.[0]);
+      bg.onsubmit=e=>e.preventDefault();
     }
-    document.querySelector('[data-v3-bg-clear]')?.addEventListener('click',async()=>{const x=data.designSettings.backgroundMedia;if(x?.local)await del(x.local).catch(()=>{});data.designSettings.backgroundMedia=null;data.designSettings.background=null;document.documentElement.style.setProperty('--yomi-user-bg','none');document.body.dataset.userBg='0';save();render()});
+    document.querySelector('[data-v3-bg-clear]')?.addEventListener('click',async()=>{
+      const x=data.designSettings.backgroundMedia;if(x?.local)await del(x.local).catch(()=>{});
+      data.designSettings.backgroundMedia=null;data.designSettings.background=null;
+      pendingBackgroundMedia=null;if(pendingBackgroundUrl){URL.revokeObjectURL(pendingBackgroundUrl);pendingBackgroundUrl=null}
+      document.documentElement.style.setProperty('--yomi-user-bg','none');document.body.dataset.userBg='0';save();render()
+    });
     const ds=$('#v3DesignScope');if(ds){
-      const all=ds.elements.applyAll,target=ds.elements.target,slider=ds.elements.transparency,label=ds.querySelector('[data-v3-trans-value]'),preview=ds.querySelector('[data-v3-trans-preview]');
-      const live=()=>{target.disabled=all.checked;label.textContent=slider.value+'%';preview.style.background='rgba(255,253,250,'+((100-Number(slider.value))/100)+')'};
+      const all=ds.elements.applyAll,includeLogin=ds.elements.includeLogin,target=ds.elements.target,slider=ds.elements.transparency,label=ds.querySelector('[data-v3-trans-value]'),preview=ds.querySelector('[data-v3-trans-preview]');
+      const live=()=>{target.disabled=all.checked;includeLogin.disabled=!all.checked;label.textContent=slider.value+'%';preview.style.background='rgba(255,253,250,'+((100-Number(slider.value))/100)+')'};
       all.onchange=live;slider.oninput=live;live();
-      ds.onsubmit=e=>{e.preventDefault();data.designSettings.applyAll=all.checked;data.designSettings.targetPage=target.value;data.designSettings.panelTransparency=Number(slider.value);save();render()};
-      ds.querySelector('[data-v3-design-reset]').onclick=()=>{data.designSettings.applyAll=true;data.designSettings.targetPage='home';data.designSettings.panelTransparency=35;save();render()};
+      ds.onsubmit=async e=>{
+        e.preventDefault();
+        if(pendingBackgroundMedia){const old=data.designSettings.backgroundMedia;if(old?.local&&old.local!==pendingBackgroundMedia.local)await del(old.local).catch(()=>{});data.designSettings.backgroundMedia=pendingBackgroundMedia;pendingBackgroundMedia=null;if(pendingBackgroundUrl){URL.revokeObjectURL(pendingBackgroundUrl);pendingBackgroundUrl=null}}
+        data.designSettings.applyAll=all.checked;data.designSettings.includeLogin=all.checked&&includeLogin.checked;data.designSettings.targetPage=target.value;data.designSettings.panelTransparency=Number(slider.value);
+        save();render()
+      };
+      ds.querySelector('[data-v3-design-reset]').onclick=()=>{data.designSettings.applyAll=true;data.designSettings.includeLogin=false;data.designSettings.targetPage='home';data.designSettings.panelTransparency=35;save();render()};
     }
     const sf=$('#v3Sticker');if(sf){const input=sf.elements.file,prev=sf.querySelector('[data-v3-sticker-prev]');input.onchange=()=>{prev.innerHTML='';const f=input.files?.[0];if(f){const im=document.createElement('img');im.src=URL.createObjectURL(f);im.onload=()=>URL.revokeObjectURL(im.src);prev.appendChild(im)}};sf.onsubmit=async e=>{e.preventDefault();const f=new FormData(sf),file=input.files?.[0],text=String(f.get('text')||'').trim();if(!file&&!text){alert('اختاري صورة Sticker أو اكتبي Emoji');return}try{let med={};if(file)med=await saveImage(file,{max:700,q:.9,alpha:true});data.designSettings.stickers.push({id:id(),...med,text,target:f.get('target'),x:Number(f.get('x')),y:Number(f.get('y')),size:Number(f.get('size')),hidden:false});save();render()}catch(err){console.error('Sticker save failed',err);alert('تعذّر حفظ Sticker. جرّبي PNG أو WebP أو JPG أصغر.')}}}
     document.querySelectorAll('[data-v3-sticker-toggle]').forEach(b=>b.onclick=()=>{const s=data.designSettings.stickers.find(x=>x.id===b.dataset.v3StickerToggle);s.hidden=!s.hidden;save();render()});
