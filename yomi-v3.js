@@ -161,10 +161,10 @@
     const label=previewPageLabel(k);
     return '<div class="mock-page-heading"><div><small>يومي</small><h2>'+safe(label)+'</h2></div><div class="mock-pill">'+dateLabel(today())+'</div></div><div class="mock-grid"><div class="mock-card"><b>بطاقة رئيسية</b><p>المحتوى يظهر هنا.</p></div><div class="mock-card"><b>ملخص</b><p>بيانات الصفحة.</p></div><div class="mock-card wide"><b>'+safe(label)+'</b><div class="mock-line"></div><div class="mock-line short"></div></div></div>';
   }
-  function refreshFullPreview(){
+  async function refreshFullPreview(){
     const wrap=document.querySelector('[data-v3-full-preview]'),screen=wrap?.querySelector('.full-preview-screen'),sel=document.getElementById('v3PreviewPage');if(!wrap||!screen||!sel)return;
     const k=sel.value,bgForm=document.getElementById('v3Bg'),transForm=document.getElementById('v3Transparency'),navForm=document.getElementById('v3NavVisibility');
-    const savedBg=data.designSettings.background||'',bgUrl=pendingBackgroundPreviewUrl||savedBg;
+    let savedBg=data.designSettings.background||'',bgUrl=pendingBackgroundPreviewUrl||savedBg;if(!bgUrl&&data.designSettings.backgroundMedia){try{const blob=await blobFor(data.designSettings.backgroundMedia.path||data.designSettings.backgroundMedia.local);if(blob){bgUrl=URL.createObjectURL(blob);urls.add(bgUrl)}}catch{}}
     const trans=transForm?Math.max(0,Math.min(95,Number(transForm.elements.transparency.value||35))):35,alpha=Math.max(.05,(100-trans)/100);
     const navVisible=navForm?navForm.elements.visible.value!=='hide':(navConfig().pages?.[k]!==false);
     const labels=['يومي','عبادتي','التقويم','العملاء','مهامي'];
@@ -286,7 +286,7 @@
     let reveal=document.getElementById('yomiNavReveal');
     if(hidden&&!reveal){
       reveal=document.createElement('button');reveal.id='yomiNavReveal';reveal.type='button';reveal.className='soft yomi-nav-reveal';reveal.textContent='☰ الصفحات';
-      reveal.onclick=()=>{const x=navConfig();x.pages[page]=true;localStorage.setItem(NAV_KEY,JSON.stringify(x));applyNavVisibility()};
+      reveal.onclick=()=>{const x=structuredClone(navConfig());x.pages[page]=true;data.designSettings.navVisibility=structuredClone(x);localStorage.setItem(NAV_KEY,JSON.stringify(x));save();applyNavVisibility()};
       document.body.appendChild(reveal);
     }else if(!hidden&&reveal)reveal.remove();
   }
@@ -402,7 +402,7 @@
       };
     }
     document.querySelector('[data-v3-bg-clear]')?.addEventListener('click',()=>{
-      data.designSettings.background='';data.designSettings.backgroundMedia=null;data.designSettings.backgroundMigrated=true;save();localStorage.removeItem(BG_KEY);localStorage.removeItem(BG_SCOPE_KEY);pendingBackgroundFile=null;
+      const oldBg=data.designSettings.backgroundMedia;if(oldBg?.local)del(oldBg.local).catch(()=>{});data.designSettings.background='';data.designSettings.backgroundMedia=null;data.designSettings.backgroundMigrated=true;save();localStorage.removeItem(BG_KEY);localStorage.removeItem(BG_SCOPE_KEY);pendingBackgroundFile=null;
       if(pendingBackgroundPreviewUrl){URL.revokeObjectURL(pendingBackgroundPreviewUrl);pendingBackgroundPreviewUrl=null}
       document.documentElement.style.setProperty('--yomi-user-bg','none');document.body.dataset.userBg='0';render()
     });
