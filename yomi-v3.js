@@ -354,7 +354,7 @@
     document.querySelectorAll('[data-prayer-work-delete]').forEach(b=>b.onclick=()=>{if(confirm('حذف هذا العمل؟')){const x=data.prayerWorks.find(x=>x.id===b.dataset.prayerWorkDelete),prayer=x?.prayer;data.prayerWorks=data.prayerWorks.filter(x=>x.id!==b.dataset.prayerWorkDelete);if(prayer){const works=data.prayerWorks.filter(w=>w.prayer===prayer);data.prayerChecks[selected]??={};if(works.length&&works.every(w=>w.completed?.[selected]))data.prayerChecks[selected][prayer]=true;else delete data.prayerChecks[selected][prayer]}state.reopenPrayerManage=true;save();render()}});
     document.querySelectorAll('[data-prayer-mark-manual]').forEach(b=>b.onclick=()=>{data.prayerChecks[selected]??={};const n=b.dataset.prayerMarkManual;if(data.prayerChecks[selected][n])delete data.prayerChecks[selected][n];else data.prayerChecks[selected][n]=true;save();render()});
 
-    document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{page=b.dataset.go;render()});
+    document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{page=b.dataset.go;if(page==='worship')state.prayer=null;render()});
     document.querySelectorAll('[data-v3-day]').forEach(b=>b.onclick=()=>{selected=b.dataset.v3Day;render()});
     document.querySelectorAll('[data-v3-month]').forEach(b=>b.onclick=()=>{selected=monthOffset(selected,Number(b.dataset.v3Month));render()});
     document.querySelectorAll('[data-v3-open]').forEach(b=>b.onclick=()=>{const z=b.dataset.v3Open.split(':');state.client=z[0];state.project=z[1];page='clients';render()});
@@ -443,7 +443,7 @@
             data.designSettings.portraitBackgroundMedia=await saveImage(pendingPortraitFile,{max:1800,q:.84});
             pendingPortraitFile=null;
           }
-          if(!data.designSettings.backgroundMedia&&!data.designSettings.background){st.textContent='اختاري صورة أولًا.';return}
+          if(!data.designSettings.backgroundMedia&&!data.designSettings.background&&!data.designSettings.portraitBackgroundMedia){st.textContent='اختاري صورة عرضية أو طولية أولًا.';return}
           const dest=destination.value,scope={applyAll:dest==='all'||dest==='all-login',includeLogin:dest==='all-login',targetPage:dest==='login'?'lock':dest==='page'?target.value:'home'};
           localStorage.setItem(BG_SCOPE_KEY,JSON.stringify(scope));
           data.designSettings.bgX=Number(bg.elements.bgX.value);data.designSettings.bgY=Number(bg.elements.bgY.value);data.designSettings.bgZoom=Number(bg.elements.bgZoom.value);data.designSettings.applyAll=scope.applyAll;data.designSettings.includeLogin=scope.includeLogin;data.designSettings.targetPage=scope.targetPage;
