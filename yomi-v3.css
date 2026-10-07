@@ -130,3 +130,16 @@ body[data-yomi-design="1"] .cycle-edit-card{
 .customize-main .upload-preview img{width:min(100%,360px);height:190px;object-fit:cover;border-radius:18px}
 #v3DesignScope select:disabled{opacity:.55}
 #v3DesignScope input:disabled+span{opacity:.6}
+
+
+/* مربع رفع واضح */
+.upload-zone{display:grid;place-items:center;gap:7px;min-height:150px;padding:24px;border:2px dashed #c7b29f;border-radius:20px;background:rgba(255,255,255,.42);cursor:pointer;text-align:center;transition:.18s ease}
+.upload-zone:hover{background:rgba(255,255,255,.58);border-color:#aa896f}
+.upload-zone:focus-within{outline:3px solid rgba(165,112,79,.18);outline-offset:3px}
+.upload-zone-input{position:absolute!important;inline-size:1px!important;block-size:1px!important;opacity:0!important;pointer-events:none!important}
+.upload-zone-icon{font-size:2rem}
+.upload-zone b{font-size:1.02rem}
+.upload-zone small{color:#8b7880}
+.upload-preview-large{margin-top:14px}
+.upload-preview-large img{width:min(100%,420px);height:220px;object-fit:cover}
+[data-page-picker][hidden]{display:none!important}
