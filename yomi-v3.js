@@ -2,7 +2,7 @@
 (() => {
   window.yomiV3DesignActive=true;
   const BG_KEY='yomi-bg-v3', BG_SCOPE_KEY='yomi-bg-scope-v3', TRANS_KEY='yomi-transparency-v1', NAV_KEY='yomi-nav-visibility-v1';
-  const state={client:null,project:null,course:null,prayer:null,reopenPrayerManage:false,worshipJump:null,stickerStatus:'',stickerDraft:null,albumStatus:''};
+  const state={client:null,project:null,course:null,prayer:null,adhkarOpen:null,reopenPrayerManage:false,worshipJump:null,stickerStatus:'',stickerDraft:null,albumStatus:''};
   const bucket='yomi-memories', urls=new Set();
   let pendingBackgroundFile=null,pendingBackgroundPreviewUrl=null,pendingPortraitFile=null,pendingPortraitPreviewUrl=null,projectClockInterval=null;
   const formatDuration=ms=>{ms=Math.max(0,Number(ms)||0);const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return String(h).padStart(2,'0')+' س : '+String(m).padStart(2,'0')+' د : '+String(sec).padStart(2,'0')+' ث'};
@@ -20,7 +20,7 @@
     data.designSettings.navVisibility ??= null;
     data.designSettings.audioMode ??= null;
     data.designSettings.portraitBackgroundMedia ??= null;
-    data.prayerChecks??={};data.adhkarChecks??={};data.prayerWorks??=[];
+    data.prayerChecks??={};data.adhkarChecks??={};data.adhkarAudio??={};data.prayerWorks??=[];
     data.quran??={lastPage:0,log:[]};data.quran.log??=[];
     if(data.designSettings.background===null&&!data.designSettings.backgroundMigrated){
       const old=localStorage.getItem(BG_KEY);if(old){data.designSettings.background=old;Object.assign(data.designSettings,JSON.parse(localStorage.getItem(BG_SCOPE_KEY)||'{}'))}
@@ -85,9 +85,54 @@
       (dh.map(x=>'<div class="dhikr-manage-card"><div class="dhikr-copy"><b>'+safe(x.title)+'</b><small>'+dhikrCount(x,selected)+' / '+dhikrTargetOn(x,selected)+' اليوم'+(dhikrCount(x,selected)>=dhikrTargetOn(x,selected)?' · ✓ مكتمل':'')+'</small><div class="bar"><i style="width:'+Math.min(100,pct(dhikrCount(x,selected),dhikrTargetOn(x,selected)))+'%"></i></div></div><div class="dhikr-count-row"><button class="dhikr-plus" data-v3-dhikr="'+x.id+'">+1</button><label class="field dhikr-number-field">إضافة عدد<input type="number" inputmode="numeric" min="1" step="1" placeholder="مثلاً 40" data-v3-dhikr-amount="'+x.id+'"></label><button class="primary" data-v3-dhikr-add="'+x.id+'">إضافة</button></div><div class="dhikr-manage-actions"><button class="soft" data-v3-dhikr-edit="'+x.id+'">تصحيح المجموع</button><button class="soft" data-v3-dhikr-target="'+x.id+'">تعديل الهدف</button><button class="soft" data-v3-dhikr-stop="'+x.id+'">إيقاف</button><button class="danger" data-v3-dhikr-del="'+x.id+'">حذف</button></div></div>').join('')||'<div class="empty">أضيفي أول ذكر من هون.</div>')+
     '</div>'
   }
+  const dailyAdhkarText={
+    'أذكار الصباح':[
+      ['آية الكرسي','اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ','مرة واحدة'],
+      ['سورة الإخلاص','قُلْ هُوَ اللَّهُ أَحَدٌ ۝ اللَّهُ الصَّمَدُ ۝ لَمْ يَلِدْ وَلَمْ يُولَدْ ۝ وَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ','3 مرات'],
+      ['سورة الفلق','قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ ۝ مِنْ شَرِّ مَا خَلَقَ ۝ وَمِنْ شَرِّ غَاسِقٍ إِذَا وَقَبَ ۝ وَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ ۝ وَمِنْ شَرِّ حَاسِدٍ إِذَا حَسَدَ','3 مرات'],
+      ['سورة الناس','قُلْ أَعُوذُ بِرَبِّ النَّاسِ ۝ مَلِكِ النَّاسِ ۝ إِلَٰهِ النَّاسِ ۝ مِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ ۝ الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ ۝ مِنَ الْجِنَّةِ وَالنَّاسِ','3 مرات'],
+      ['أصبحنا وأصبح الملك لله','أصبحنا وأصبح الملك لله، والحمد لله، لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير. ربِّ أسألك خير ما في هذا اليوم وخير ما بعده، وأعوذ بك من شر ما في هذا اليوم وشر ما بعده. ربِّ أعوذ بك من الكسل وسوء الكبر، ربِّ أعوذ بك من عذاب في النار وعذاب في القبر.','مرة واحدة'],
+      ['اللهم بك أصبحنا','اللهم بك أصبحنا وبك أمسينا وبك نحيا وبك نموت وإليك النشور.','مرة واحدة'],
+      ['رضيت بالله ربًا','رضيت بالله ربًا، وبالإسلام دينًا، وبمحمد ﷺ نبيًا.','3 مرات'],
+      ['بسم الله الذي لا يضر','بسم الله الذي لا يضر مع اسمه شيء في الأرض ولا في السماء وهو السميع العليم.','3 مرات'],
+      ['حسبي الله','حسبي الله لا إله إلا هو، عليه توكلت وهو رب العرش العظيم.','7 مرات'],
+      ['العفو والعافية','اللهم إني أسألك العفو والعافية في الدنيا والآخرة. اللهم إني أسألك العفو والعافية في ديني ودنياي وأهلي ومالي. اللهم استر عوراتي وآمن روعاتي، واحفظني من بين يدي ومن خلفي وعن يميني وعن شمالي ومن فوقي، وأعوذ بعظمتك أن أغتال من تحتي.','مرة واحدة'],
+      ['يا حي يا قيوم','يا حي يا قيوم برحمتك أستغيث، أصلح لي شأني كله، ولا تكلني إلى نفسي طرفة عين.','مرة واحدة'],
+      ['سبحان الله وبحمده','سبحان الله وبحمده.','100 مرة']
+    ],
+    'أذكار المساء':[
+      ['آية الكرسي','اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ','مرة واحدة'],
+      ['سورة الإخلاص','قُلْ هُوَ اللَّهُ أَحَدٌ ۝ اللَّهُ الصَّمَدُ ۝ لَمْ يَلِدْ وَلَمْ يُولَدْ ۝ وَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ','3 مرات'],
+      ['سورة الفلق','قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ ۝ مِنْ شَرِّ مَا خَلَقَ ۝ وَمِنْ شَرِّ غَاسِقٍ إِذَا وَقَبَ ۝ وَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ ۝ وَمِنْ شَرِّ حَاسِدٍ إِذَا حَسَدَ','3 مرات'],
+      ['سورة الناس','قُلْ أَعُوذُ بِرَبِّ النَّاسِ ۝ مَلِكِ النَّاسِ ۝ إِلَٰهِ النَّاسِ ۝ مِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ ۝ الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ ۝ مِنَ الْجِنَّةِ وَالنَّاسِ','3 مرات'],
+      ['أمسينا وأمسى الملك لله','أمسينا وأمسى الملك لله، والحمد لله، لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير. ربِّ أسألك خير ما في هذه الليلة وخير ما بعدها، وأعوذ بك من شر ما في هذه الليلة وشر ما بعدها. ربِّ أعوذ بك من الكسل وسوء الكبر، ربِّ أعوذ بك من عذاب في النار وعذاب في القبر.','مرة واحدة'],
+      ['اللهم بك أمسينا','اللهم بك أمسينا وبك أصبحنا وبك نحيا وبك نموت وإليك المصير.','مرة واحدة'],
+      ['رضيت بالله ربًا','رضيت بالله ربًا، وبالإسلام دينًا، وبمحمد ﷺ نبيًا.','3 مرات'],
+      ['بسم الله الذي لا يضر','بسم الله الذي لا يضر مع اسمه شيء في الأرض ولا في السماء وهو السميع العليم.','3 مرات'],
+      ['حسبي الله','حسبي الله لا إله إلا هو، عليه توكلت وهو رب العرش العظيم.','7 مرات'],
+      ['العفو والعافية','اللهم إني أسألك العفو والعافية في الدنيا والآخرة. اللهم إني أسألك العفو والعافية في ديني ودنياي وأهلي ومالي. اللهم استر عوراتي وآمن روعاتي، واحفظني من بين يدي ومن خلفي وعن يميني وعن شمالي ومن فوقي، وأعوذ بعظمتك أن أغتال من تحتي.','مرة واحدة'],
+      ['يا حي يا قيوم','يا حي يا قيوم برحمتك أستغيث، أصلح لي شأني كله، ولا تكلني إلى نفسي طرفة عين.','مرة واحدة'],
+      ['سبحان الله وبحمده','سبحان الله وبحمده.','100 مرة']
+    ],
+    'أذكار النوم':[
+      ['آية الكرسي','اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضِ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ','مرة واحدة'],
+      ['الإخلاص والفلق والناس','تُقرأ سورة الإخلاص وسورة الفلق وسورة الناس، ثم يُنفث في الكفين ويُمسح بهما ما استطعتِ من الجسد.','3 مرات'],
+      ['باسمك اللهم أموت وأحيا','باسمك اللهم أموت وأحيا.','مرة واحدة'],
+      ['اللهم قني عذابك','اللهم قني عذابك يوم تبعث عبادك.','3 مرات'],
+      ['تسبيح فاطمة','سبحان الله 33 مرة، والحمد لله 33 مرة، والله أكبر 34 مرة.','قبل النوم'],
+      ['اللهم أسلمت نفسي إليك','اللهم أسلمت نفسي إليك، ووجهت وجهي إليك، وفوضت أمري إليك، وألجأت ظهري إليك، رغبة ورهبة إليك، لا ملجأ ولا منجى منك إلا إليك، آمنت بكتابك الذي أنزلت، وبنبيك الذي أرسلت.','مرة واحدة'],
+      ['باسمك ربي وضعت جنبي','باسمك ربي وضعت جنبي وبك أرفعه، فإن أمسكت نفسي فارحمها، وإن أرسلتها فاحفظها بما تحفظ به عبادك الصالحين.','مرة واحدة']
+    ]
+  };
   function adhkarDaily(){
-    const checks=data.adhkarChecks[selected]||{};
-    return '<div class="panel"><h3>أذكار الصباح والمساء والنوم</h3><div class="prayer-grid">'+['أذكار الصباح','أذكار المساء','أذكار النوم'].map(n=>'<label class="prayer-card"><input type="checkbox" data-daily-adhkar="'+n+'" '+(checks[n]?'checked':'')+'><span>'+n+(checks[n]?' · ✓ تمت اليوم':'')+'</span></label>').join('')+'</div></div>';
+    const checks=data.adhkarChecks[selected]||{},names=['أذكار الصباح','أذكار المساء','أذكار النوم'],open=state.adhkarOpen&&names.includes(state.adhkarOpen)?state.adhkarOpen:null;
+    if(open){
+      const audio=data.adhkarAudio?.[open]||'';
+      return '<div class="panel adhkar-reader"><div class="row between"><div><button type="button" class="soft" data-adhkar-back>‹ رجوع</button><h3>'+safe(open)+'</h3></div><label class="adhkar-done-check" title="تعليم كمكتمل"><input type="checkbox" data-daily-adhkar="'+open+'" '+(checks[open]?'checked':'')+'><span>✓</span></label></div>'+
+        '<div class="adhkar-audio-box"><div class="row">'+(audio?'<a class="primary adhkar-youtube" href="'+safe(audio)+'" target="_blank" rel="noopener">▶️ تشغيل من YouTube</a>':'<span class="sub">ما في رابط صوتي مضاف بعد.</span>')+'</div><form id="adhkarAudioForm" class="row"><label class="field grow">رابط YouTube<input name="url" type="url" inputmode="url" placeholder="https://youtube.com/..." value="'+safe(audio)+'"></label><button class="soft">'+(audio?'تحديث الرابط':'إضافة الصوت')+'</button>'+(audio?'<button type="button" class="danger" data-adhkar-audio-clear>حذف الرابط</button>':'')+'</form></div>'+
+        '<div class="adhkar-text-list">'+(dailyAdhkarText[open]||[]).map((x,i)=>'<article class="adhkar-text-card"><div class="row between"><b>'+(i+1)+'. '+safe(x[0])+'</b><span class="badge">'+safe(x[2])+'</span></div><p>'+safe(x[1])+'</p></article>').join('')+'</div></div>';
+    }
+    return '<div class="panel"><h3>أذكار الصباح والمساء والنوم</h3><div class="prayer-grid">'+names.map(n=>'<div class="prayer-card adhkar-launch-card"><button type="button" class="adhkar-open-btn" data-adhkar-open="'+n+'"><span>'+n+'</span><small>اضغطي لفتح الأذكار</small></button><label class="adhkar-done-check" title="تعليم كمكتمل"><input type="checkbox" data-daily-adhkar="'+n+'" '+(checks[n]?'checked':'')+'><span>✓</span></label></div>').join('')+'</div></div>';
   }
   function prayerDetails(){
     const n=state.prayer;if(!n)return '';
@@ -353,6 +398,10 @@
 
   function attach(){
     document.querySelectorAll('[data-daily-adhkar]').forEach(b=>b.onchange=()=>{data.adhkarChecks[selected]??={};data.adhkarChecks[selected][b.dataset.dailyAdhkar]=b.checked;save();render()});
+    document.querySelectorAll('[data-adhkar-open]').forEach(b=>b.onclick=()=>{state.adhkarOpen=b.dataset.adhkarOpen;render()});
+    document.querySelector('[data-adhkar-back]')?.addEventListener('click',()=>{state.adhkarOpen=null;render()});
+    const adhkarAudioForm=$('#adhkarAudioForm');if(adhkarAudioForm)adhkarAudioForm.onsubmit=e=>{e.preventDefault();const value=String(adhkarAudioForm.elements.url.value||'').trim();if(value){try{const u=new URL(value);const host=u.hostname.replace(/^www\./,'');if(!['youtube.com','m.youtube.com','youtu.be'].includes(host)){alert('حطي رابط YouTube صحيح');return}}catch{alert('حطي رابط YouTube صحيح');return}}data.adhkarAudio??={};data.adhkarAudio[state.adhkarOpen]=value;save();render()};
+    document.querySelector('[data-adhkar-audio-clear]')?.addEventListener('click',()=>{if(!state.adhkarOpen)return;data.adhkarAudio??={};delete data.adhkarAudio[state.adhkarOpen];save();render()});
     const syncPrayerCompletion=n=>{data.prayerChecks[selected]??={};const works=(data.prayerWorks||[]).filter(x=>x.prayer===n);if(works.length&&works.every(x=>x.completed?.[selected]))data.prayerChecks[selected][n]=true;else if(data.prayerChecks[selected][n]==='auto')delete data.prayerChecks[selected][n]};
     document.querySelectorAll('[data-prayer-open]').forEach(b=>b.onclick=()=>{state.prayer=b.dataset.prayerOpen;render()});
     document.querySelectorAll('[data-worship-jump]').forEach(b=>b.onclick=()=>{
