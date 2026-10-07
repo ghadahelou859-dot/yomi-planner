@@ -9,7 +9,8 @@
   const gentleAudio=new Audio('./assets/gentle-loop.wav');
   gentleAudio.loop=true;gentleAudio.preload='auto';gentleAudio.volume=.5;
   let savedAudio=null,savedUrl=null,playing=null,introTimer=null,lastStart=0,audioError='';
-  const getMode=()=>localStorage.getItem(soundKey)||'off';
+  const getMode=()=>data?.designSettings?.audioMode||localStorage.getItem(soundKey)||'off';
+  const setMode=value=>{data.designSettings??={stickers:[]};data.designSettings.audioMode=value;localStorage.setItem(soundKey,value);save()};
   const setStatus=message=>{status.textContent=message};
   const active=()=>!!playing;
   function updateControl(){nowButton.hidden=getMode()==='off'&&!active();nowButton.textContent=active()?'■ إيقاف الصوت':'▶ تشغيل الصوت';window.dispatchEvent(new Event('yomi-sound-changed'))}
@@ -53,18 +54,26 @@
     updateControl();
   }
   mode.value=['off','gentle','recording'].includes(getMode())?getMode():'off';
-  mode.onchange=()=>{localStorage.setItem(soundKey,mode.value);stopSound();updateStatus();if(mode.value!=='off')startSound()};
+  mode.onchange=()=>{setMode(mode.value);stopSound();updateStatus();if(mode.value!=='off')startSound()};
   fileInput.onchange=async()=>{
     const file=fileInput.files?.[0];if(!file)return;
     const ext=(file.name.split('.').pop()||'').toLowerCase(),allowed=['mp3','m4a','wav','aac','ogg','oga','webm'];
     if(file.size>40*1024*1024||(!(file.type||'').startsWith('audio/')&&!allowed.includes(ext))){setStatus('اختاري MP3 أو M4A أو WAV أو AAC/OGG أقل من 40 ميغابايت.');return}
-    setStatus('جارٍ حفظ الملف الصوتي…');
+    setStatus('جارٍ حفظ الملف الصوتي ومزامنته…');
     try{
-      await storeAudio(file);prepareAudio(file);mode.value='recording';localStorage.setItem(soundKey,'recording');audioError='';
-      setStatus('✓ تم حفظ الملف. اضغطي «جرّبي الصوت» للتأكد من التشغيل.');updateControl();
+      await storeAudio(file);prepareAudio(file);
+      if(window.yomiMediaSaveFile){data.designSettings??={stickers:[]};data.designSettings.audioMedia=await window.yomiMediaSaveFile(file)}
+      mode.value='recording';setMode('recording');audioError='';
+      await window.yomiMediaSyncNow?.();
+      setStatus('✓ تم حفظ الملف وربطه بالحساب. سيظهر على الهاتف واللابتوب بعد المزامنة.');updateControl();
     }catch(error){console.error('Audio save failed',error);setStatus('تعذّر حفظ التسجيل. جرّبي ملفًا أصغر أو صيغة MP3/M4A.')}
   };
-  readAudio().then(file=>{if(file)prepareAudio(file);updateStatus();if(file&&getMode()==='recording'&&document.getElementById('lock').classList.contains('hidden'))startSound()}).catch(()=>setStatus('تعذّر فتح التسجيل؛ النغمات الهادئة ما زالت متاحة.'));
+  async function loadSyncedAudio(){
+    const media=data?.designSettings?.audioMedia;if(!media||!window.yomiMediaBlobFor)return false;
+    try{const file=await window.yomiMediaBlobFor(media.path||media.local);if(!file)return false;prepareAudio(file);return true}catch(error){console.warn('Synced audio load failed',error);return false}
+  }
+  loadSyncedAudio().then(async synced=>{if(!synced){const file=await readAudio().catch(()=>null);if(file){prepareAudio(file);if(!data.designSettings?.audioMedia&&window.yomiMediaSaveFile){data.designSettings??={stickers:[]};data.designSettings.audioMedia=await window.yomiMediaSaveFile(file);save();window.yomiMediaSyncNow?.()}}}updateStatus();if(savedAudio&&getMode()==='recording'&&document.getElementById('lock').classList.contains('hidden'))startSound()});
+  window.addEventListener('yomi-cloud-session',async()=>{const changed=await loadSyncedAudio();mode.value=['off','gentle','recording'].includes(getMode())?getMode():'off';updateStatus();if(changed&&getMode()==='recording'&&document.getElementById('lock').classList.contains('hidden'))startSound()});
   document.getElementById('entrySoundBtn').onclick=()=>{updateStatus();soundDialog.showModal()};
   document.getElementById('entrySoundClose').onclick=()=>soundDialog.close();
   document.getElementById('entrySoundTest').onclick=()=>startSound();
