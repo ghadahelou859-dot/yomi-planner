@@ -657,3 +657,47 @@ body[data-user-bg="1"],body[data-user-bg="1"]::before,.lock{background-position:
   }
   .worship-quick-nav button{flex:1;min-width:0}
 }
+
+
+/* حفظ ومعاينة الـSticker */
+.sticker-preview-wrap{
+  margin-top:14px;
+  display:grid;
+  gap:8px;
+}
+.sticker-preview-box{
+  min-height:150px;
+  padding:14px;
+  border:1px dashed rgba(126,96,78,.25);
+  border-radius:18px;
+  background:rgba(255,255,255,.38);
+  align-items:center;
+  justify-content:center;
+}
+.sticker-preview-box img{
+  width:min(180px,52vw);
+  height:min(180px,52vw);
+  object-fit:contain;
+  border-radius:16px;
+  background:transparent;
+}
+.sticker-emoji-preview{
+  font-size:5rem;
+  line-height:1;
+}
+.sticker-save-status{
+  min-height:1.5em;
+  margin:10px 0 6px;
+  font-weight:700;
+}
+.sticker-save-btn{min-height:48px}
+.sticker-saved-title{margin:20px 0 10px}
+
+/* أزرار مشروع العميل */
+.project-head-actions{flex-wrap:wrap;justify-content:flex-end}
+.project-head-actions button{min-height:42px}
+@media(max-width:720px){
+  .project-head-actions{width:100%;display:grid;grid-template-columns:1fr 1fr;margin-top:10px}
+  .project-head-actions button{width:100%}
+  .sticker-preview-box{min-height:130px}
+}
