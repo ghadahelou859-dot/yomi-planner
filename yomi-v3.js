@@ -16,6 +16,9 @@
     data.designSettings.targetPage ??= 'home';
     data.designSettings.includeLogin ??= false;
     data.designSettings.panelTransparency ??= 35;
+    data.designSettings.transparency ??= null;
+    data.designSettings.navVisibility ??= null;
+    data.designSettings.audioMode ??= null;
     data.prayerChecks??={};data.adhkarChecks??={};data.prayerWorks??=[];
     data.quran??={lastPage:0,log:[]};data.quran.log??=[];
     if(data.designSettings.background===null&&!data.designSettings.backgroundMigrated){
@@ -242,9 +245,12 @@
     const verify=await get(local);if(!verify)throw Error('store-failed');
     return {local,mime:b.type||file.type||'image/jpeg',name:file.name||''}
   }
-  function records(){const r=[];for(const c of data.clients)for(const p of c.projects||[])for(const a of p.assets||[])if(a.local&&!a.path)r.push(a);for(const c of data.learningSpaces)for(const i of c.items||[])if(i.media?.local&&!i.media?.path)r.push(i.media);if(data.designSettings.backgroundMedia?.local&&!data.designSettings.backgroundMedia?.path)r.push(data.designSettings.backgroundMedia);for(const s of data.designSettings.stickers||[])if(s.local&&!s.path)r.push(s);return r}
-  async function syncMedia(){const s=window.yomiMemoriesSession?.();if(!s||!navigator.onLine)return;for(const r of records()){const old=r.local;try{const b=await get(old);if(!b)continue;const ext=b.type.includes('webp')?'webp':'jpg',path=s.user.id+'/planner-'+id()+'.'+ext,{error}=await s.client.storage.from(bucket).upload(path,b,{contentType:b.type,upsert:false});if(error)throw error;await put(s.user.id+':'+path,b);r.path=path;save()}catch(e){console.error(e)}}}
-  async function blobFor(ref){let b=await get(ref);const s=window.yomiMemoriesSession?.();if(!b&&s){b=await get(s.user.id+':'+ref);if(!b&&ref.startsWith(s.user.id+'/')&&navigator.onLine){const {data:x,error}=await s.client.storage.from(bucket).download(ref);if(error)throw error;b=x;await put(s.user.id+':'+ref,b)}}return b}
+  function records(){const r=[];for(const c of data.clients)for(const p of c.projects||[])for(const a of p.assets||[])if(a.local&&!a.path)r.push(a);for(const c of data.learningSpaces)for(const i of c.items||[])if(i.media?.local&&!i.media?.path)r.push(i.media);if(data.designSettings.backgroundMedia?.local&&!data.designSettings.backgroundMedia?.path)r.push(data.designSettings.backgroundMedia);if(data.designSettings.audioMedia?.local&&!data.designSettings.audioMedia?.path)r.push(data.designSettings.audioMedia);for(const s of data.designSettings.stickers||[])if(s.local&&!s.path)r.push(s);return r}
+  function extForBlob(b,name=''){const t=String(b?.type||'').toLowerCase();if(t.includes('webp'))return'webp';if(t.includes('png'))return'png';if(t.includes('jpeg')||t.includes('jpg'))return'jpg';if(t.includes('mpeg'))return'mp3';if(t.includes('mp4')||t.includes('m4a'))return'm4a';if(t.includes('wav'))return'wav';if(t.includes('ogg'))return'ogg';if(t.includes('aac'))return'aac';if(t.includes('webm'))return'webm';const e=String(name||'').split('.').pop()?.toLowerCase();return e&&/^[a-z0-9]{2,5}$/.test(e)?e:'bin'}
+  async function syncMedia(){const s=window.yomiMemoriesSession?.();if(!s||!navigator.onLine)return;for(const r of records()){const old=r.local;try{const blob=await get(old);if(!blob)continue;const ext=extForBlob(blob,r.name),path=s.user.id+'/planner-'+id()+'.'+ext,{error}=await s.client.storage.from(bucket).upload(path,blob,{contentType:blob.type||r.mime||'application/octet-stream',upsert:false});if(error)throw error;await put(path,blob);await put(s.user.id+':'+path,blob);r.path=path;save()}catch(e){console.error('Media sync failed',e)}}}
+  async function blobFor(ref){let blob=await get(ref);const s=window.yomiMemoriesSession?.();if(!blob&&s){blob=await get(s.user.id+':'+ref);if(!blob&&ref.startsWith(s.user.id+'/')&&navigator.onLine){const {data:x,error}=await s.client.storage.from(bucket).download(ref);if(error)throw error;blob=x;await put(ref,blob);await put(s.user.id+':'+ref,blob)}}return blob}
+  async function saveRawFile(file){if(!file?.size)throw Error('no-file');if(file.size>50*1024*1024)throw Error('file-too-large');const local='local:'+id();await put(local,file);return{local,mime:file.type||'application/octet-stream',name:file.name||''}}
+  window.yomiMediaSaveFile=saveRawFile;window.yomiMediaBlobFor=blobFor;window.yomiMediaSyncNow=syncMedia;
   function backgroundApplies(){
     const d=data.designSettings||{},lockVisible=!document.getElementById('lock')?.classList.contains('hidden');
     if(lockVisible)return d.applyAll!==false ? !!d.includeLogin : d.targetPage==='lock';
@@ -252,8 +258,9 @@
     return d.targetPage===page;
   }
   function transparencyConfig(){
+    const cloud=data.designSettings?.transparency;if(cloud?.pages)return cloud;
     const saved=JSON.parse(localStorage.getItem(TRANS_KEY)||'null');
-    if(saved?.pages)return saved;
+    if(saved?.pages){data.designSettings.transparency=structuredClone(saved);return saved;}
     const old=JSON.parse(localStorage.getItem(BG_SCOPE_KEY)||'null');
     const pages={};
     if(old&&Number.isFinite(Number(old.panelTransparency))){
@@ -265,8 +272,10 @@
     return {pages,lastDestination:'page',lastTarget:'home'};
   }
   function navConfig(){
+    const cloud=data.designSettings?.navVisibility;if(cloud?.pages)return cloud;
     const saved=JSON.parse(localStorage.getItem(NAV_KEY)||'null');
-    return saved?.pages?saved:{pages:{},lastDestination:'page',lastTarget:'planner'};
+    if(saved?.pages){data.designSettings.navVisibility=structuredClone(saved);return saved}
+    return {pages:{},lastDestination:'page',lastTarget:'planner'};
   }
   function applyNavVisibility(){
     const nav=document.getElementById('nav');if(!nav)return;
@@ -288,8 +297,10 @@
     document.body.dataset.yomiPage=lockVisible?'lock':page;
     document.body.dataset.yomiDesign=hasTransparency?'1':'0';
     document.documentElement.style.setProperty('--yomi-panel-alpha',String((100-trans)/100));
-    const bgData=data.designSettings?.background||'';
-    if(backgroundApplies()&&bgData){document.documentElement.style.setProperty('--yomi-user-bg','url("'+bgData+'")');document.body.dataset.userBg='1'}
+    let bgData='',bgMedia=data.designSettings?.backgroundMedia;
+    if(backgroundApplies()&&bgMedia&&(bgMedia.path||bgMedia.local)){try{const blob=await blobFor(bgMedia.path||bgMedia.local);if(blob){bgData=URL.createObjectURL(blob);urls.add(bgData)}}catch(e){console.error('Background load failed',e)}}
+    if(!bgData&&backgroundApplies())bgData=data.designSettings?.background||'';
+    if(bgData){document.documentElement.style.setProperty('--yomi-user-bg','url("'+bgData+'")');document.body.dataset.userBg='1'}
     else{document.documentElement.style.setProperty('--yomi-user-bg','none');document.body.dataset.userBg='0'}
     document.documentElement.style.setProperty('--yomi-bg-position',(data.designSettings.bgX??50)+'% '+(data.designSettings.bgY??50)+'%');
     const zoom=Number(data.designSettings.bgZoom??100);document.documentElement.style.setProperty('--yomi-bg-size',zoom===100?'cover':zoom+'% auto');
@@ -298,7 +309,7 @@
   function stickers(){
     document.querySelectorAll('.yomi-v3-sticker').forEach(x=>x.remove());
     const lock=!document.getElementById('lock')?.classList.contains('hidden');
-    for(const s of data.designSettings.stickers||[]){if(s.hidden)continue;const t=s.target||'all';if(t!=='all'&&t!==page&&!(t==='lock'&&lock))continue;const e=document.createElement('div');e.className='yomi-v3-sticker';e.style.left=s.x+'%';e.style.top=s.y+'%';e.style.width=e.style.height=s.size+'px';e.style.fontSize=s.size+'px';if(s.text)e.textContent=s.text;if(s.local||s.path)e.dataset.v3Media=s.local||s.path;document.body.appendChild(e)}
+    for(const s of data.designSettings.stickers||[]){if(s.hidden)continue;const t=s.target||'all';if(t!=='all'&&t!==page&&!(t==='lock'&&lock))continue;const e=document.createElement('div');e.className='yomi-v3-sticker';e.dataset.stickerMode=s.positionMode||'screen';e.style.left=Math.max(3,Math.min(97,Number(s.x)||50))+'%';e.style.top=Math.max(3,Math.min(97,Number(s.y)||50))+'%';e.style.width=e.style.height=Math.max(24,Math.min(180,Number(s.size)||54))+'px';e.style.fontSize=Math.max(24,Math.min(180,Number(s.size)||54))+'px';if(s.text)e.textContent=s.text;if(s.local||s.path)e.dataset.v3Media=s.path||s.local;const host=s.positionMode==='page'&&!lock?document.getElementById('view'):document.body;host?.appendChild(e)}
   }
 
   function attach(){
