@@ -1,12 +1,12 @@
 /* Extra pages and reports. Saved data remains in the planner's existing JSON payload. */
 function diary(){
   let rows=[...(data.diary||[])].sort((a,b)=>(b.createdAt||b.date).localeCompare(a.createdAt||a.date));
-  return '<div class="panel"><h2>مذكرتي ✍️</h2><p class="sub">أفكارك وتعلّمك وملاحظات شغلك.</p>'+datePicker()+
-    '<form id="diaryForm"><label class="field">العنوان<input name="title" required></label><label class="field">القسم<select name="category"><option>فكرة</option><option>تعلّمت</option><option>شغل</option><option>شخصي</option></select></label>'+
+  return '<div class="diary-magazine"><section class="panel diary-glass diary-editor-panel"><div class="diary-kicker">#Back to me</div><h2>Behind the story~</h2><p class="sub">مذكرتي اليومية — أفكار، شغل، وتفاصيل صغيرة بترجعي إلها لاحقًا.</p>'+datePicker()+
+    '<form id="diaryForm"><div class="row"><label class="field">العنوان<input name="title" required></label><label class="field">القسم<select name="category"><option>فكرة</option><option>تعلّمت</option><option>شغل</option><option>شخصي</option></select></label></div>'+
     '<label class="field">مشروع (اختياري)<select name="projectId"><option value="">بدون مشروع</option>'+data.projects.map(x=>'<option value="'+safe(x.id)+'">'+safe(x.title)+'</option>').join('')+'</select></label>'+
-    '<label class="field">اكتبي بحرية<textarea name="body" rows="9" required></textarea></label><button class="primary">حفظ في مذكرتي</button></form></div>'+
-    '<div class="panel"><label class="field">بحث في المذكرة<input id="diarySearch" type="search"></label>'+
-    (rows.map(x=>{const project=data.projects.find(p=>p.id===x.projectId);return '<article class="diary-entry" data-diary-row="'+safe([x.title,x.body,x.category,project?.title||''].join(' '))+'"><strong>'+safe(x.title)+'</strong><small> · '+safe(x.date)+' · '+safe(x.category)+(project?' · '+safe(project.title):'')+'</small><p>'+safe(x.body)+'</p><button data-diary-edit="'+x.id+'">تعديل</button> <button data-feature-delete="diary:'+x.id+'">حذف</button></article>'}).join('')||'<div class="empty">مذكرتك جاهزة لأول فكرة 🌿</div>')+'</div>';
+    '<label class="field">اكتبي بحرية<textarea name="body" rows="9" required></textarea></label><button class="primary">حفظ في مذكرتي</button></form></section>'+
+    '<section class="panel diary-glass diary-story-panel"><div class="row between"><div><span class="diary-kicker">Archived by you</span><h3>قصصي المحفوظة</h3></div><label class="field diary-search">بحث<input id="diarySearch" type="search" placeholder="عنوان أو كلمة"></label></div>'+
+    '<div class="diary-story-list">'+(rows.map(x=>{const project=data.projects.find(p=>p.id===x.projectId);return '<article class="diary-entry diary-story-card" data-diary-row="'+safe([x.title,x.body,x.category,project?.title||''].join(' '))+'"><div class="diary-entry-head"><div><small>'+safe(x.date)+' · '+safe(x.category)+(project?' · '+safe(project.title):'')+'</small><strong>'+safe(x.title)+'</strong></div><span class="diary-number">✦</span></div><p>'+safe(x.body)+'</p><div class="row"><button class="soft" data-diary-edit="'+x.id+'">تعديل</button><button class="soft" data-feature-delete="diary:'+x.id+'">حذف</button></div></article>'}).join('')||'<div class="empty">مذكرتك جاهزة لأول قصة 🌿</div>')+'</div></section></div>';
 }
 function care(){
   const entries=(data.careLogs||[]).filter(x=>belongs(x.date));
