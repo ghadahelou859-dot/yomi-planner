@@ -539,3 +539,82 @@ body[data-user-bg="1"],body[data-user-bg="1"]::before,.lock{background-position:
   .prayer-work-new{display:grid;grid-template-columns:1fr}
   .prayer-work-new button{min-height:48px}
 }
+
+
+/* صورة طولية للموبايل */
+.portrait-bg-block{
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px solid rgba(126,96,78,.12);
+}
+.portrait-upload{min-height:170px}
+.portrait-preview img,
+.portrait-current-media{
+  width:min(220px,58vw)!important;
+  height:auto!important;
+  aspect-ratio:9/16;
+  object-fit:cover!important;
+  border-radius:18px;
+}
+.portrait-current-media img{width:100%;height:100%;object-fit:cover}
+
+/* صفحة الصلاة كصفحة مستقلة */
+.prayer-standalone{max-width:920px;margin-inline:auto}
+.prayer-detail-page{min-height:calc(100dvh - 170px)}
+.prayer-work-execute{
+  cursor:pointer;
+  justify-content:space-between;
+}
+.prayer-work-execute>b{
+  font-size:.82rem;
+  color:#8a7780;
+  white-space:nowrap;
+}
+.prayer-work-execute.done>b{color:#42644d}
+.prayer-manual-row{margin-top:14px}
+.prayer-manage-dialog{
+  width:min(92vw,680px);
+  max-width:none;
+  max-height:86dvh;
+  overflow:auto;
+  border:0;
+  border-radius:24px;
+  padding:20px;
+  background:rgba(250,246,240,.98);
+  box-shadow:0 24px 80px rgba(38,27,31,.30);
+}
+.prayer-manage-dialog::backdrop{
+  background:rgba(30,24,27,.48);
+  backdrop-filter:blur(5px);
+  -webkit-backdrop-filter:blur(5px);
+}
+.prayer-manage-head{align-items:flex-start;margin-bottom:14px}
+.prayer-manage-list{display:grid;gap:10px}
+.prayer-manage-item{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:12px;
+  border-radius:15px;
+  background:rgba(255,255,255,.56);
+  border:1px solid rgba(126,96,78,.12);
+}
+.prayer-manage-item small{display:block;margin-top:3px;color:#806d75}
+.prayer-manage-dialog .prayer-work-new{
+  margin-top:16px;
+  padding-top:14px;
+  border-top:1px solid rgba(126,96,78,.12);
+}
+@media(max-width:720px){
+  .prayer-standalone{width:100%}
+  .prayer-detail-page{min-height:calc(100dvh - 110px)}
+  .prayer-manage-dialog{
+    width:calc(100vw - 14px);
+    max-height:calc(100dvh - 14px);
+    padding:14px;
+    border-radius:20px;
+  }
+  .prayer-manage-item{align-items:flex-start;flex-wrap:wrap}
+  .prayer-manage-item .grow{width:100%}
+  .prayer-manage-item button{flex:1}
+}
