@@ -77,7 +77,7 @@
   window.addEventListener('yomi-signed-out',stopSound);
   document.getElementById('pinForm').addEventListener('submit',()=>{
     const entered=document.getElementById('pinInput').value,saved=localStorage.getItem(PIN_KEY);
-    if(/^[0-9]{2}$/.test(entered)&&(!saved||saved===entered))startSound();
+    if(/^[0-9]{4}$/.test(entered)&&(!saved||saved===entered))startSound();
   },true);
   window.addEventListener('yomi-pin-unlocked',()=>{
     startSound();
