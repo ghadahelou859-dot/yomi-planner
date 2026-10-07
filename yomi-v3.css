@@ -61,3 +61,57 @@ body[data-user-bg="1"] .nav{background:rgba(255,253,250,.72);backdrop-filter:blu
  .cycle-edit-card .field{min-width:calc(50% - 8px)}
  .cycle-duration{width:100%}
 }
+
+/* تخصيص الشفافية */
+body[data-yomi-design="1"] .panel{
+  background:rgba(255,253,250,var(--yomi-panel-alpha,.65))!important;
+  backdrop-filter:blur(15px) saturate(1.05);
+  -webkit-backdrop-filter:blur(15px) saturate(1.05)
+}
+body[data-yomi-design="1"] .stat,
+body[data-yomi-design="1"] .notice,
+body[data-yomi-design="1"] .client-card,
+body[data-yomi-design="1"] .project-card,
+body[data-yomi-design="1"] .debt-person,
+body[data-yomi-design="1"] .cycle-edit-card{
+  background:rgba(255,250,244,var(--yomi-panel-alpha,.65))!important;
+}
+.design-switch{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:#f5eee7;margin:10px 0}
+.transparency-control input[type="range"]{width:100%}
+.transparency-preview{min-height:130px;border-radius:18px;padding:20px;background:linear-gradient(135deg,#e7d8c8,#f5eee4);display:grid;place-items:center;margin:12px 0}
+.preview-card{padding:20px 28px;border:1px solid #ffffffaa;border-radius:18px;box-shadow:0 12px 30px #513d4320;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.upload-status{min-height:22px}
+
+/* صفحة الدخول — صورة خلفية + Glass */
+#lock{background-color:#f6ead8;background-image:linear-gradient(rgba(41,31,35,.18),rgba(41,31,35,.18)),var(--yomi-user-bg,none);background-size:cover;background-position:center}
+#lock .lock-card{
+  background:rgba(255,253,250,.58)!important;
+  border:1px solid rgba(255,255,255,.66)!important;
+  backdrop-filter:blur(18px) saturate(1.08);
+  -webkit-backdrop-filter:blur(18px) saturate(1.08);
+  box-shadow:0 18px 55px rgba(49,35,42,.22)
+}
+#lock .pin-login-fields{display:grid;gap:12px;margin-top:14px}
+#lock .pin-login-fields label{display:grid;gap:6px;text-align:right}
+#lock .pin-login-fields input{
+  width:100%;
+  min-height:48px;
+  border:1px solid rgba(110,79,90,.28);
+  background:rgba(255,255,255,.48);
+  backdrop-filter:blur(9px);
+  -webkit-backdrop-filter:blur(9px);
+  border-radius:14px;
+  padding:11px 13px;
+  color:#492d39
+}
+#lock #pinInput{text-align:center;letter-spacing:.45em;font-size:1.45rem}
+#lock #pinSubmit{
+  background:rgba(164,92,44,.78)!important;
+  border:1px solid rgba(255,255,255,.5);
+  backdrop-filter:blur(9px);
+  -webkit-backdrop-filter:blur(9px);
+  box-shadow:0 10px 24px rgba(95,54,33,.2)
+}
+@media(max-width:720px){
+ #lock .lock-card{width:min(92vw,420px);padding:24px 20px}
+}
