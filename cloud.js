@@ -32,10 +32,11 @@ if (ready && !window.YOMI_CLOUD_READY) {
     return !!el&&el.closest?.('#view')&&(['INPUT','TEXTAREA','SELECT'].includes(el.tagName)||el.isContentEditable);
   };
   const renderAfterSync=()=>{
-    if(!userIsTyping()){render();return}
+    const notify=()=>window.dispatchEvent(new Event('yomi-data-synced'));
+    if(!userIsTyping()){render();notify();return}
     window.yomiDeferredSyncRender=true;
     const active=document.activeElement;
-    const finish=()=>{if(!window.yomiDeferredSyncRender)return;window.yomiDeferredSyncRender=false;render()};
+    const finish=()=>{if(!window.yomiDeferredSyncRender)return;window.yomiDeferredSyncRender=false;render();notify()};
     active?.addEventListener('blur',()=>setTimeout(finish,80),{once:true});
   };
   function loadBase() {
