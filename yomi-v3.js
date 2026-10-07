@@ -1,8 +1,10 @@
 /* يومي 3.0 — تحسينات المشاريع، عبادتي، التقويم، الرفع والتخصيص */
 (() => {
+  window.yomiV3DesignActive=true;
+  const BG_KEY='yomi-bg-v3', BG_SCOPE_KEY='yomi-bg-scope-v3';
   const state={client:null,project:null,course:null};
   const bucket='yomi-memories', urls=new Set();
-  let pendingBackgroundData=null;
+  let pendingBackgroundFile=null,pendingBackgroundPreviewUrl=null;
   function ensure(){
     data.fastingLog??=[]; data.fastingPrefs??={mondayThursday:true,whiteDays:true,arafah:true,ashura:true};
     data.debtPeople??=[]; data.clients??=[]; data.learningSpaces??=[];
@@ -87,7 +89,7 @@
       ['customize','تخصيص'],['lock','صفحة الدخول']
     ];
     return '<div class="panel customize-main"><h2>تصميم يومي</h2><p class="sub">اختاري الصورة أولًا؛ ستظهر معاينة فقط ولن تتطبّق قبل الضغط على «حفظ وتطبيق».</p>'+
-      '<form id="v3Bg"><label class="field">صورة الخلفية<input name="file" type="file" accept="image/*,.jpg,.jpeg,.png,.webp"></label><div class="upload-preview" data-v3-bg-prev>'+(d.background?'<img src="'+d.background+'" alt="الخلفية الحالية">':'')+'</div><p class="sub upload-status" data-v3-bg-status>'+(pendingBackgroundData?'✓ الصورة جاهزة للمعاينة':d.background?'✓ في خلفية محفوظة حاليًا':'اختاري صورة JPG أو PNG أو WebP')+'</p><button type="button" class="soft" data-v3-bg-clear>إزالة الخلفية الحالية</button></form></div>'+
+      '<form id="v3Bg"><label class="field">صورة الخلفية<input name="file" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"></label><div class="upload-preview" data-v3-bg-prev></div><p class="sub upload-status" data-v3-bg-status>'+(localStorage.getItem(BG_KEY)?'✓ في خلفية محفوظة حاليًا':'اختاري صورة JPG أو PNG أو WebP')+'</p><button type="button" class="soft" data-v3-bg-clear>إزالة الخلفية الحالية</button></form></div>'+
     '<div class="panel"><h3>مكان التصميم والشفافية</h3><form id="v3DesignScope">'+
       '<label class="design-switch"><input name="applyAll" type="checkbox" '+(d.applyAll!==false?'checked':'')+'><span>تطبيق التصميم على كل صفحات التطبيق</span></label>'+
       '<label class="design-switch"><input name="includeLogin" type="checkbox" '+(d.includeLogin?'checked':'')+'><span>يشمل صفحة الدخول أيضًا</span></label>'+
@@ -170,7 +172,8 @@
   async function syncMedia(){const s=window.yomiMemoriesSession?.();if(!s||!navigator.onLine)return;for(const r of records()){const old=r.local;try{const b=await get(old);if(!b)continue;const ext=b.type.includes('webp')?'webp':'jpg',path=s.user.id+'/planner-'+id()+'.'+ext,{error}=await s.client.storage.from(bucket).upload(path,b,{contentType:b.type,upsert:false});if(error)throw error;await put(s.user.id+':'+path,b);r.path=path;save()}catch(e){console.error(e)}}}
   async function blobFor(ref){let b=await get(ref);const s=window.yomiMemoriesSession?.();if(!b&&s){b=await get(s.user.id+':'+ref);if(!b&&ref.startsWith(s.user.id+'/')&&navigator.onLine){const {data:x,error}=await s.client.storage.from(bucket).download(ref);if(error)throw error;b=x;await put(s.user.id+':'+ref,b)}}return b}
   function designApplies(){
-    const d=data.designSettings||{},lockVisible=!document.getElementById('lock')?.classList.contains('hidden');
+    const saved=JSON.parse(localStorage.getItem(BG_SCOPE_KEY)||'null');
+    const d=saved||data.designSettings||{},lockVisible=!document.getElementById('lock')?.classList.contains('hidden');
     if(lockVisible)return d.applyAll!==false ? !!d.includeLogin : d.targetPage==='lock';
     if(d.applyAll!==false)return true;
     return d.targetPage===page;
@@ -178,13 +181,11 @@
   async function paint(){
     for(const u of urls)URL.revokeObjectURL(u);urls.clear();
     for(const box of document.querySelectorAll('[data-v3-media]'))try{const b=await blobFor(box.dataset.v3Media);if(!b||!box.isConnected)continue;const u=URL.createObjectURL(b);urls.add(u);const im=document.createElement('img');im.src=u;im.alt='';box.replaceChildren(im)}catch{}
-    const applies=designApplies(),d=data.designSettings||{},trans=Math.max(0,Math.min(80,Number(d.panelTransparency??35)));
+    const savedScope=JSON.parse(localStorage.getItem(BG_SCOPE_KEY)||'null'),d=savedScope||data.designSettings||{},applies=designApplies(),trans=Math.max(0,Math.min(80,Number(d.panelTransparency??35)));
     document.body.dataset.yomiDesign=applies?'1':'0';
     document.documentElement.style.setProperty('--yomi-panel-alpha',String((100-trans)/100));
-    const bgData=d.background;
-    const bgMedia=d.backgroundMedia;
+    const bgData=localStorage.getItem(BG_KEY)||data.designSettings?.background||'';
     if(applies&&bgData){document.documentElement.style.setProperty('--yomi-user-bg','url("'+bgData+'")');document.body.dataset.userBg='1'}
-    else if(applies&&bgMedia)try{const b=await blobFor(bgMedia.local||bgMedia.path);if(b){const u=URL.createObjectURL(b);urls.add(u);document.documentElement.style.setProperty('--yomi-user-bg','url("'+u+'")');document.body.dataset.userBg='1'}}catch{}
     else{document.documentElement.style.setProperty('--yomi-user-bg','none');document.body.dataset.userBg='0'}
     syncMedia()
   }
@@ -231,39 +232,41 @@
 
     const bg=$('#v3Bg');if(bg){
       const input=bg.elements.file,prev=bg.querySelector('[data-v3-bg-prev]'),st=bg.querySelector('[data-v3-bg-status]');
-      const fileToDataUrl=file=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result||''));r.onerror=()=>reject(r.error||Error('read'));r.readAsDataURL(file)});
-      const resizeDataUrl=src=>new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>{try{const max=1400,s=Math.min(1,max/Math.max(im.naturalWidth,im.naturalHeight)),cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(im.naturalWidth*s));cv.height=Math.max(1,Math.round(im.naturalHeight*s));const ctx=cv.getContext('2d');ctx.drawImage(im,0,0,cv.width,cv.height);resolve(cv.toDataURL('image/jpeg',.72))}catch(e){reject(e)}};im.onerror=reject;im.src=src});
-      input.onchange=async()=>{
-        const file=input.files?.[0];prev.innerHTML='';pendingBackgroundData=null;
+      input.onchange=()=>{
+        const file=input.files?.[0];pendingBackgroundFile=file||null;prev.innerHTML='';
+        if(pendingBackgroundPreviewUrl){URL.revokeObjectURL(pendingBackgroundPreviewUrl);pendingBackgroundPreviewUrl=null}
         if(!file){st.textContent='لم يتم اختيار صورة.';return}
-        st.textContent='جارٍ تجهيز المعاينة…';
-        try{
-          const raw=await fileToDataUrl(file);
-          const compressed=await resizeDataUrl(raw).catch(()=>raw);
-          pendingBackgroundData=compressed;
-          const im=document.createElement('img');im.src=compressed;im.alt='معاينة الخلفية';prev.appendChild(im);
-          st.textContent='✓ الصورة جاهزة. اختاري مكانها ثم اضغطي «حفظ وتطبيق».';
-        }catch(err){console.error('Background preview failed',err);st.textContent='تعذّر قراءة الصورة. جرّبي صورة JPG أو PNG أخرى.'}
+        pendingBackgroundPreviewUrl=URL.createObjectURL(file);
+        const im=document.createElement('img');im.src=pendingBackgroundPreviewUrl;im.alt='معاينة الخلفية';prev.appendChild(im);
+        st.textContent='✓ الصورة ظهرت في المعاينة. اختاري مكانها ثم اضغطي «حفظ وتطبيق».';
       };
       bg.onsubmit=e=>e.preventDefault();
     }
-    document.querySelector('[data-v3-bg-clear]')?.addEventListener('click',async()=>{
-      const x=data.designSettings.backgroundMedia;if(x?.local)await del(x.local).catch(()=>{});
-      data.designSettings.backgroundMedia=null;data.designSettings.background=null;pendingBackgroundData=null;
-      document.documentElement.style.setProperty('--yomi-user-bg','none');document.body.dataset.userBg='0';save();render()
+    document.querySelector('[data-v3-bg-clear]')?.addEventListener('click',()=>{
+      localStorage.removeItem(BG_KEY);localStorage.removeItem(BG_SCOPE_KEY);pendingBackgroundFile=null;
+      if(pendingBackgroundPreviewUrl){URL.revokeObjectURL(pendingBackgroundPreviewUrl);pendingBackgroundPreviewUrl=null}
+      document.documentElement.style.setProperty('--yomi-user-bg','none');document.body.dataset.userBg='0';render()
     });
     const ds=$('#v3DesignScope');if(ds){
       const all=ds.elements.applyAll,includeLogin=ds.elements.includeLogin,target=ds.elements.target,slider=ds.elements.transparency,label=ds.querySelector('[data-v3-trans-value]'),preview=ds.querySelector('[data-v3-trans-preview]');
       const live=()=>{target.disabled=all.checked;includeLogin.disabled=!all.checked;label.textContent=slider.value+'%';preview.style.background='rgba(255,253,250,'+((100-Number(slider.value))/100)+')'};
       all.onchange=live;slider.oninput=live;live();
-      ds.onsubmit=e=>{
+      ds.onsubmit=async e=>{
         e.preventDefault();
-        if(pendingBackgroundData){data.designSettings.background=pendingBackgroundData;data.designSettings.backgroundMedia=null;pendingBackgroundData=null}
-        data.designSettings.applyAll=all.checked;data.designSettings.includeLogin=all.checked&&includeLogin.checked;data.designSettings.targetPage=target.value;data.designSettings.panelTransparency=Number(slider.value);
-        try{save()}catch(err){console.error('Background save to localStorage failed',err);alert('الصورة كبيرة للتخزين. اختاري صورة أصغر.');return}
-        render()
+        try{
+          if(pendingBackgroundFile){
+            const raw=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result||''));r.onerror=no;r.readAsDataURL(pendingBackgroundFile)});
+            const compact=await new Promise((ok)=>{const im=new Image();im.onload=()=>{try{const max=1000,s=Math.min(1,max/Math.max(im.naturalWidth,im.naturalHeight)),cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(im.naturalWidth*s));cv.height=Math.max(1,Math.round(im.naturalHeight*s));cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);ok(cv.toDataURL('image/jpeg',.62))}catch{ok(raw)}};im.onerror=()=>ok(raw);im.src=raw});
+            localStorage.setItem(BG_KEY,compact);
+            pendingBackgroundFile=null;
+          }
+          const scope={applyAll:all.checked,includeLogin:all.checked&&includeLogin.checked,targetPage:target.value,panelTransparency:Number(slider.value)};
+          localStorage.setItem(BG_SCOPE_KEY,JSON.stringify(scope));
+          data.designSettings.applyAll=scope.applyAll;data.designSettings.includeLogin=scope.includeLogin;data.designSettings.targetPage=scope.targetPage;data.designSettings.panelTransparency=scope.panelTransparency;
+          save();render()
+        }catch(err){console.error('Background save failed',err);alert('تعذّر حفظ الصورة. جرّبي صورة أصغر أو JPG.')}
       };
-      ds.querySelector('[data-v3-design-reset]').onclick=()=>{data.designSettings.applyAll=true;data.designSettings.includeLogin=false;data.designSettings.targetPage='home';data.designSettings.panelTransparency=35;save();render()};
+      ds.querySelector('[data-v3-design-reset]').onclick=()=>{localStorage.removeItem(BG_SCOPE_KEY);data.designSettings.applyAll=true;data.designSettings.includeLogin=false;data.designSettings.targetPage='home';data.designSettings.panelTransparency=35;save();render()};
     }
     const sf=$('#v3Sticker');if(sf){const input=sf.elements.file,prev=sf.querySelector('[data-v3-sticker-prev]');input.onchange=()=>{prev.innerHTML='';const f=input.files?.[0];if(f){const im=document.createElement('img');im.src=URL.createObjectURL(f);im.onload=()=>URL.revokeObjectURL(im.src);prev.appendChild(im)}};sf.onsubmit=async e=>{e.preventDefault();const f=new FormData(sf),file=input.files?.[0],text=String(f.get('text')||'').trim();if(!file&&!text){alert('اختاري صورة Sticker أو اكتبي Emoji');return}try{let med={};if(file)med=await saveImage(file,{max:700,q:.9,alpha:true});data.designSettings.stickers.push({id:id(),...med,text,target:f.get('target'),x:Number(f.get('x')),y:Number(f.get('y')),size:Number(f.get('size')),hidden:false});save();render()}catch(err){console.error('Sticker save failed',err);alert('تعذّر حفظ Sticker. جرّبي PNG أو WebP أو JPG أصغر.')}}}
     document.querySelectorAll('[data-v3-sticker-toggle]').forEach(b=>b.onclick=()=>{const s=data.designSettings.stickers.find(x=>x.id===b.dataset.v3StickerToggle);s.hidden=!s.hidden;save();render()});
