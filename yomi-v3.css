@@ -442,3 +442,6 @@ body[data-nav-hidden="1"] #view{max-width:1180px;margin-inline:auto;width:100%}
   .dhikr-manage-actions{display:grid;grid-template-columns:1fr 1fr}
   .dhikr-manage-actions button{min-height:44px}
 }
+
+
+body[data-user-bg="1"],body[data-user-bg="1"]::before,.lock{background-position:var(--yomi-bg-position,center)!important;background-size:var(--yomi-bg-size,cover)!important}.prayer-card button{flex:1;min-height:48px}.prayer-card input{width:22px;height:22px;flex:none}
