@@ -6,6 +6,9 @@
     data.fastingLog??=[]; data.fastingPrefs??={mondayThursday:true,whiteDays:true,arafah:true,ashura:true};
     data.debtPeople??=[]; data.clients??=[]; data.learningSpaces??=[];
     data.designSettings??={background:null,stickers:[]}; data.designSettings.stickers??=[];
+    data.designSettings.applyAll ??= true;
+    data.designSettings.targetPage ??= 'home';
+    data.designSettings.panelTransparency ??= 35;
     data.cyclePeriodLength??=7;
     for(const c of data.clients){c.projects??=[];for(const p of c.projects){
       p.projectType??='مشروع';p.assets??=[];p.payments??=[];p.checklist??=[];p.publishDelay??=1;
@@ -74,10 +77,25 @@
     return '<div class="panel"><button class="soft" data-v3-course-back>‹ كل الدورات</button><h2>'+safe(c.title)+'</h2><form id="v3CourseItem"><div class="row"><label class="field">العنوان<input name="title" required></label><label class="field">النوع<select name="type"><option value="note">ملاحظة</option><option value="video">فيديو/رابط</option><option value="image">صورة نوت</option></select></label><label class="field">الرابط<input name="url" type="url"></label><label class="field">الصورة<input name="file" type="file" accept="image/png,image/jpeg,image/webp"></label></div><label class="field">ملاحظاتي<textarea name="note"></textarea></label><label><input name="watched" type="checkbox"> تم</label><p class="sub" data-v3-learning-status></p><button class="primary">حفظ</button></form></div><div class="panel">'+(c.items.map(i=>'<div class="learning-item '+(i.watched?'done-card':'')+'">'+(i.media?'<div class="learning-media media-box" data-v3-media="'+safe(i.media.local||i.media.path||'')+'"></div>':i.src?'<img src="'+i.src+'" alt="">':'')+'<div class="grow"><b>'+safe(i.title)+'</b><small>'+safe(i.type)+'</small><p>'+safe(i.note||'')+'</p>'+(i.url?'<a href="'+safe(i.url)+'" target="_blank">فتح الرابط</a>':'')+'</div><button data-v3-course-toggle="'+i.id+'">'+(i.watched?'إرجاع':'تم')+'</button></div>').join('')||'<div class="empty">ما في مواد.</div>')+'</div>'
   }
   function customize(){
-    const d=data.designSettings;
-    return '<div class="panel"><h2>تصميم يومي</h2><form id="v3Bg"><label class="field">صورة الخلفية<input name="file" type="file" accept="image/png,image/jpeg,image/webp" required></label><div class="upload-preview" data-v3-bg-prev></div><p class="sub" data-v3-bg-status></p><button class="primary">حفظ الخلفية</button><button type="button" class="soft" data-v3-bg-clear>إزالة</button></form></div>'+
-    '<div class="panel"><h3>Stickers</h3><form id="v3Sticker"><div class="row"><label class="field">صورة Sticker<input name="file" type="file" accept="image/png,image/webp,image/jpeg"></label><label class="field">أو Emoji<input name="text" maxlength="8"></label><label class="field">الصفحة<select name="target"><option value="all">كل التطبيق</option><option value="lock">صفحة الدخول</option><option value="home">يومي</option><option value="planner">التقويم</option><option value="worship">عبادتي</option><option value="learning">تعلّمي</option><option value="clients">العملاء</option><option value="finance">مالي</option></select></label></div><div class="row"><label class="field">أفقي<input name="x" type="range" min="5" max="95" value="85"></label><label class="field">عمودي<input name="y" type="range" min="5" max="95" value="18"></label><label class="field">الحجم<input name="size" type="range" min="24" max="140" value="54"></label></div><div class="upload-preview" data-v3-sticker-prev></div><button class="soft">إضافة Sticker</button></form>'+(d.stickers.map(s=>'<div class="item"><div class="grow"><div class="sticker-thumb" '+((s.local||s.path)?'data-v3-media="'+safe(s.local||s.path)+'"':'')+'>'+safe(s.text||'')+'</div><small>'+safe(s.target||'all')+' · '+s.size+'px</small></div><button data-v3-sticker-toggle="'+s.id+'">'+(s.hidden?'إظهار':'إخفاء')+'</button><button data-v3-sticker-del="'+s.id+'">حذف</button></div>').join('')||'<div class="empty">ما في Stickers.</div>')+'</div>'
+    const d=data.designSettings,trans=Number(d.panelTransparency??35);
+    const pagesOptions=[
+      ['home','يومي'],['worship','عبادتي'],['planner','التقويم'],['clients','العملاء'],['learning','تعلّمي'],
+      ['finance','مالي'],['tasks','مهامي'],['wellness','عاداتي'],['quran','وردي القرآني'],['achievements','إنجازاتي'],
+      ['notes','ملاحظات'],['diary','مذكرتي'],['memories','ذكرياتي'],['care','عنايتي'],['cycle','دورتي'],['reports','التقارير'],
+      ['customize','تخصيص'],['lock','صفحة الدخول']
+    ];
+    return '<div class="panel customize-main"><h2>تصميم يومي</h2><p class="sub">أولًا ارفعي الصورة، وبعدها تحكمي بالشفافية ومكان تطبيق التصميم.</p>'+
+    '<form id="v3Bg"><label class="field">صورة الخلفية<input name="file" type="file" accept="image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp" required></label><div class="upload-preview" data-v3-bg-prev></div><p class="sub upload-status" data-v3-bg-status>'+(d.backgroundMedia?'✓ في خلفية محفوظة حاليًا':'اختاري صورة JPG أو PNG أو WebP')+'</p><div class="row"><button class="primary">رفع وحفظ الصورة</button><button type="button" class="soft" data-v3-bg-clear>إزالة الخلفية</button></div></form></div>'+
+    '<div class="panel"><h3>الشفافية وتطبيق التصميم</h3><form id="v3DesignScope">'+
+      '<label class="design-switch"><input name="applyAll" type="checkbox" '+(d.applyAll!==false?'checked':'')+'><span>تطبيق الخلفية والشفافية على كل الصفحات</span></label>'+
+      '<label class="field">إذا لم يكن على كل الصفحات، اختاري الصفحة<select name="target">'+pagesOptions.map(([k,v])=>'<option value="'+k+'" '+(d.targetPage===k?'selected':'')+'>'+v+'</option>').join('')+'</select></label>'+
+      '<label class="field transparency-control"><span>شفافية المربعات: <b data-v3-trans-value>'+trans+'%</b></span><input name="transparency" type="range" min="0" max="80" step="1" value="'+trans+'"><small class="sub">0% = مربعات واضحة، 80% = شفافة جدًا</small></label>'+
+      '<div class="transparency-preview"><div class="preview-card" data-v3-trans-preview>معاينة المربعات</div></div>'+
+      '<div class="row"><button class="primary">حفظ التصميم</button><button type="button" class="soft" data-v3-design-reset>رجوع للإعدادات الأصلية</button></div>'+
+    '</form></div>'+
+    '<div class="panel"><h3>Stickers</h3><form id="v3Sticker"><div class="row"><label class="field">صورة Sticker<input name="file" type="file" accept="image/png,image/webp,image/jpeg,.jpg,.jpeg,.png,.webp"></label><label class="field">أو Emoji<input name="text" maxlength="8"></label><label class="field">الصفحة<select name="target"><option value="all">كل التطبيق</option><option value="lock">صفحة الدخول</option><option value="home">يومي</option><option value="planner">التقويم</option><option value="worship">عبادتي</option><option value="learning">تعلّمي</option><option value="clients">العملاء</option><option value="finance">مالي</option></select></label></div><div class="row"><label class="field">أفقي<input name="x" type="range" min="5" max="95" value="85"></label><label class="field">عمودي<input name="y" type="range" min="5" max="95" value="18"></label><label class="field">الحجم<input name="size" type="range" min="24" max="140" value="54"></label></div><div class="upload-preview" data-v3-sticker-prev></div><button class="soft">إضافة Sticker</button></form>'+(d.stickers.map(s=>'<div class="item"><div class="grow"><div class="sticker-thumb" '+((s.local||s.path)?'data-v3-media="'+safe(s.local||s.path)+'"':'')+'>'+safe(s.text||'')+'</div><small>'+safe(s.target||'all')+' · '+s.size+'px</small></div><button data-v3-sticker-toggle="'+s.id+'">'+(s.hidden?'إظهار':'إخفاء')+'</button><button data-v3-sticker-del="'+s.id+'">حذف</button></div>').join('')||'<div class="empty">ما في Stickers.</div>')+'</div>'
   }
+
   function specialDateHome(){
     const dates=data.importantDates||[],visible=dates.filter(x=>x.showHome!==false),hidden=dates.filter(x=>x.showHome===false);
     const cards=visible.map(x=>{
@@ -135,10 +153,20 @@
   function records(){const r=[];for(const c of data.clients)for(const p of c.projects||[])for(const a of p.assets||[])if(a.local)r.push(a);for(const c of data.learningSpaces)for(const i of c.items||[])if(i.media?.local)r.push(i.media);if(data.designSettings.backgroundMedia?.local)r.push(data.designSettings.backgroundMedia);for(const s of data.designSettings.stickers||[])if(s.local)r.push(s);return r}
   async function syncMedia(){const s=window.yomiMemoriesSession?.();if(!s||!navigator.onLine)return;for(const r of records()){const old=r.local;try{const b=await get(old);if(!b)continue;const ext=b.type.includes('webp')?'webp':'jpg',path=s.user.id+'/planner-'+id()+'.'+ext,{error}=await s.client.storage.from(bucket).upload(path,b,{contentType:b.type,upsert:false});if(error)throw error;await put(s.user.id+':'+path,b);r.path=path;delete r.local;save();await del(old)}catch(e){console.error(e)}}}
   async function blobFor(ref){let b=await get(ref);const s=window.yomiMemoriesSession?.();if(!b&&s){b=await get(s.user.id+':'+ref);if(!b&&ref.startsWith(s.user.id+'/')&&navigator.onLine){const {data:x,error}=await s.client.storage.from(bucket).download(ref);if(error)throw error;b=x;await put(s.user.id+':'+ref,b)}}return b}
+  function designApplies(){
+    const d=data.designSettings||{},lockVisible=!document.getElementById('lock')?.classList.contains('hidden');
+    if(d.applyAll!==false)return true;
+    return lockVisible ? d.targetPage==='lock' : d.targetPage===page;
+  }
   async function paint(){
     for(const u of urls)URL.revokeObjectURL(u);urls.clear();
     for(const box of document.querySelectorAll('[data-v3-media]'))try{const b=await blobFor(box.dataset.v3Media);if(!b||!box.isConnected)continue;const u=URL.createObjectURL(b);urls.add(u);const im=document.createElement('img');im.src=u;im.alt='';box.replaceChildren(im)}catch{}
-    const bg=data.designSettings.backgroundMedia;if(bg)try{const b=await blobFor(bg.local||bg.path);if(b){const u=URL.createObjectURL(b);urls.add(u);document.documentElement.style.setProperty('--yomi-user-bg','url("'+u+'")');document.body.dataset.userBg='1'}}catch{}
+    const applies=designApplies(),d=data.designSettings||{},trans=Math.max(0,Math.min(80,Number(d.panelTransparency??35)));
+    document.body.dataset.yomiDesign=applies?'1':'0';
+    document.documentElement.style.setProperty('--yomi-panel-alpha',String((100-trans)/100));
+    const bg=d.backgroundMedia;
+    if(applies&&bg)try{const b=await blobFor(bg.local||bg.path);if(b){const u=URL.createObjectURL(b);urls.add(u);document.documentElement.style.setProperty('--yomi-user-bg','url("'+u+'")');document.body.dataset.userBg='1'}}catch{}
+    else{document.documentElement.style.setProperty('--yomi-user-bg','none');document.body.dataset.userBg='0'}
     syncMedia()
   }
   function stickers(){
@@ -184,6 +212,13 @@
 
     const bg=$('#v3Bg');if(bg){const input=bg.elements.file,prev=bg.querySelector('[data-v3-bg-prev]'),st=bg.querySelector('[data-v3-bg-status]');input.onchange=()=>{prev.innerHTML='';const f=input.files?.[0];if(f){const im=document.createElement('img');im.src=URL.createObjectURL(f);im.onload=()=>URL.revokeObjectURL(im.src);prev.appendChild(im)}};bg.onsubmit=async e=>{e.preventDefault();const file=input.files?.[0];if(!file){st.textContent='اختاري صورة أولًا.';return}st.textContent='جارٍ حفظ الخلفية…';try{data.designSettings.backgroundMedia=await saveImage(file,{max:1800,q:.8});data.designSettings.background=null;save();render()}catch(err){console.error('Background save failed',err);st.textContent='تعذّر حفظ الخلفية. جرّبي JPG/PNG/WebP أو صورة أصغر.'}}}
     document.querySelector('[data-v3-bg-clear]')?.addEventListener('click',async()=>{const x=data.designSettings.backgroundMedia;if(x?.local)await del(x.local).catch(()=>{});data.designSettings.backgroundMedia=null;data.designSettings.background=null;document.documentElement.style.setProperty('--yomi-user-bg','none');document.body.dataset.userBg='0';save();render()});
+    const ds=$('#v3DesignScope');if(ds){
+      const all=ds.elements.applyAll,target=ds.elements.target,slider=ds.elements.transparency,label=ds.querySelector('[data-v3-trans-value]'),preview=ds.querySelector('[data-v3-trans-preview]');
+      const live=()=>{target.disabled=all.checked;label.textContent=slider.value+'%';preview.style.background='rgba(255,253,250,'+((100-Number(slider.value))/100)+')'};
+      all.onchange=live;slider.oninput=live;live();
+      ds.onsubmit=e=>{e.preventDefault();data.designSettings.applyAll=all.checked;data.designSettings.targetPage=target.value;data.designSettings.panelTransparency=Number(slider.value);save();render()};
+      ds.querySelector('[data-v3-design-reset]').onclick=()=>{data.designSettings.applyAll=true;data.designSettings.targetPage='home';data.designSettings.panelTransparency=35;save();render()};
+    }
     const sf=$('#v3Sticker');if(sf){const input=sf.elements.file,prev=sf.querySelector('[data-v3-sticker-prev]');input.onchange=()=>{prev.innerHTML='';const f=input.files?.[0];if(f){const im=document.createElement('img');im.src=URL.createObjectURL(f);im.onload=()=>URL.revokeObjectURL(im.src);prev.appendChild(im)}};sf.onsubmit=async e=>{e.preventDefault();const f=new FormData(sf),file=input.files?.[0],text=String(f.get('text')||'').trim();if(!file&&!text){alert('اختاري صورة Sticker أو اكتبي Emoji');return}try{let med={};if(file)med=await saveImage(file,{max:700,q:.9,alpha:true});data.designSettings.stickers.push({id:id(),...med,text,target:f.get('target'),x:Number(f.get('x')),y:Number(f.get('y')),size:Number(f.get('size')),hidden:false});save();render()}catch(err){console.error('Sticker save failed',err);alert('تعذّر حفظ Sticker. جرّبي PNG أو WebP أو JPG أصغر.')}}}
     document.querySelectorAll('[data-v3-sticker-toggle]').forEach(b=>b.onclick=()=>{const s=data.designSettings.stickers.find(x=>x.id===b.dataset.v3StickerToggle);s.hidden=!s.hidden;save();render()});
     document.querySelectorAll('[data-v3-sticker-del]').forEach(b=>b.onclick=async()=>{const s=data.designSettings.stickers.find(x=>x.id===b.dataset.v3StickerDel);if(s?.local)await del(s.local).catch(()=>{});data.designSettings.stickers=data.designSettings.stickers.filter(x=>x.id!==b.dataset.v3StickerDel);save();render()});
