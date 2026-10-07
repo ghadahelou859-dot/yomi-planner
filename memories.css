@@ -24,3 +24,52 @@
 @media(max-width:720px){.memory-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.memory-landing .primary{width:100%}.memory-tile-caption{padding:9px}.memory-tile-caption strong{font-size:.88rem}.memory-editor .memory-photo{flex-basis:88%}}
 @media(max-width:360px){.memory-grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.memory-tile{transition:none}}
+
+
+/* ذكرياتي — صفحة قصة بصرية */
+.memory-landing-glass{
+  background:rgba(245,245,238,.54)!important;
+  backdrop-filter:blur(18px) saturate(1.05);
+  -webkit-backdrop-filter:blur(18px) saturate(1.05);
+}
+.memory-kicker{display:block;font-size:.72rem;letter-spacing:.06em;opacity:.72;margin-bottom:5px}
+.memory-story-grid{display:grid;gap:22px}
+.memory-story{
+  width:100%;padding:0;border:0;background:transparent;color:inherit;text-align:inherit;
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(110px,24%);gap:12px;cursor:pointer
+}
+.memory-story-main{position:relative;min-height:430px;border-radius:28px;overflow:hidden;background:#273329}
+.memory-story-main>.memory-photo{position:absolute;inset:0;aspect-ratio:auto;padding:0}
+.memory-story-main>.memory-photo img{width:100%;height:100%;object-fit:cover;border-radius:0}
+.memory-story-main::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,17,12,.38),rgba(7,17,12,.05) 70%)}
+.memory-story-glass{
+  position:absolute;z-index:2;inset:28px auto 28px 28px;width:min(52%,420px);padding:24px;
+  border:1px solid rgba(255,255,255,.48);border-radius:26px;background:rgba(28,35,30,.28);
+  color:white;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  display:flex;flex-direction:column;justify-content:center;align-items:flex-start;text-align:left
+}
+.memory-story-glass .memory-index{font-size:.8rem;opacity:.8;margin-bottom:auto}
+.memory-story-glass small{opacity:.82;margin-top:auto}
+.memory-story-glass strong{font-size:clamp(1.5rem,3vw,2.6rem);line-height:1.05;margin:8px 0 12px}
+.memory-story-glass p{margin:0;white-space:pre-wrap;line-height:1.55;font-size:.9rem;opacity:.92}
+.memory-story-side{display:grid;gap:12px;align-content:start}
+.memory-side-photo{position:relative;border-radius:22px;overflow:hidden;min-height:170px;background:#273329}
+.memory-side-photo .memory-photo{position:absolute;inset:0;aspect-ratio:auto;padding:0}
+.memory-side-photo .memory-photo img{width:100%;height:100%;object-fit:cover;border-radius:0}
+.memory-side-photo b{position:absolute;right:12px;bottom:10px;color:white;font-size:.8rem;text-shadow:0 1px 4px #000}
+.memory-editor{
+  background:rgba(250,247,241,.62)!important;
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)
+}
+@media(max-width:720px){
+  .memory-story{grid-template-columns:1fr}
+  .memory-story-main{min-height:520px}
+  .memory-story-glass{inset:24px 20px 24px 20px;width:auto}
+  .memory-story-side{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .memory-side-photo{min-height:135px}
+}
+@media(max-width:430px){
+  .memory-story-main{min-height:470px}
+  .memory-story-glass{padding:18px;border-radius:22px}
+  .memory-story-glass strong{font-size:1.75rem}
+}
