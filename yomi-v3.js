@@ -149,7 +149,20 @@
     const fallback=await new Promise(ok=>cv.toBlob(ok,'image/png'));
     if(!fallback)throw Error('compress');return fallback;
   }
-  async function saveImage(file,opt={}){const b=await imageBlob(file,opt.max||1500,opt.q||.8,!!opt.alpha),local='local:'+id();await put(local,b);return {local,mime:b.type}}
+  async function saveImage(file,opt={}){
+    if(!file?.size)throw Error('no-file');
+    let b;
+    try{b=await imageBlob(file,opt.max||1500,opt.q||.8,!!opt.alpha)}
+    catch(err){
+      console.warn('Image compression failed; saving original file instead',err);
+      if(file.size>15*1024*1024)throw Error('file-too-large');
+      b=file;
+    }
+    const local='local:'+id();
+    await put(local,b);
+    const verify=await get(local);if(!verify)throw Error('store-failed');
+    return {local,mime:b.type||file.type||'image/jpeg',name:file.name||''}
+  }
   function records(){const r=[];for(const c of data.clients)for(const p of c.projects||[])for(const a of p.assets||[])if(a.local)r.push(a);for(const c of data.learningSpaces)for(const i of c.items||[])if(i.media?.local)r.push(i.media);if(data.designSettings.backgroundMedia?.local)r.push(data.designSettings.backgroundMedia);for(const s of data.designSettings.stickers||[])if(s.local)r.push(s);return r}
   async function syncMedia(){const s=window.yomiMemoriesSession?.();if(!s||!navigator.onLine)return;for(const r of records()){const old=r.local;try{const b=await get(old);if(!b)continue;const ext=b.type.includes('webp')?'webp':'jpg',path=s.user.id+'/planner-'+id()+'.'+ext,{error}=await s.client.storage.from(bucket).upload(path,b,{contentType:b.type,upsert:false});if(error)throw error;await put(s.user.id+':'+path,b);r.path=path;delete r.local;save();await del(old)}catch(e){console.error(e)}}}
   async function blobFor(ref){let b=await get(ref);const s=window.yomiMemoriesSession?.();if(!b&&s){b=await get(s.user.id+':'+ref);if(!b&&ref.startsWith(s.user.id+'/')&&navigator.onLine){const {data:x,error}=await s.client.storage.from(bucket).download(ref);if(error)throw error;b=x;await put(s.user.id+':'+ref,b)}}return b}
@@ -210,7 +223,30 @@
     const ci=$('#v3CourseItem');if(ci)ci.onsubmit=async e=>{e.preventDefault();const c=data.learningSpaces.find(x=>x.id===state.course),f=new FormData(ci),file=ci.elements.file.files?.[0],st=ci.querySelector('[data-v3-learning-status]');try{let media=null;if(file)media=await saveImage(file,{max:1400,q:.78});c.items.push({id:id(),title:f.get('title').trim(),type:f.get('type'),url:f.get('url'),media,note:f.get('note').trim(),watched:f.get('watched')==='on'});save();render()}catch{st.textContent='تعذّر حفظ الصورة.'}};
     document.querySelectorAll('[data-v3-course-toggle]').forEach(b=>b.onclick=()=>{const c=data.learningSpaces.find(x=>x.id===state.course),i=c.items.find(x=>x.id===b.dataset.v3CourseToggle);i.watched=!i.watched;save();render()});
 
-    const bg=$('#v3Bg');if(bg){const input=bg.elements.file,prev=bg.querySelector('[data-v3-bg-prev]'),st=bg.querySelector('[data-v3-bg-status]');input.onchange=()=>{prev.innerHTML='';const f=input.files?.[0];if(f){const im=document.createElement('img');im.src=URL.createObjectURL(f);im.onload=()=>URL.revokeObjectURL(im.src);prev.appendChild(im)}};bg.onsubmit=async e=>{e.preventDefault();const file=input.files?.[0];if(!file){st.textContent='اختاري صورة أولًا.';return}st.textContent='جارٍ حفظ الخلفية…';try{data.designSettings.backgroundMedia=await saveImage(file,{max:1800,q:.8});data.designSettings.background=null;save();render()}catch(err){console.error('Background save failed',err);st.textContent='تعذّر حفظ الخلفية. جرّبي JPG/PNG/WebP أو صورة أصغر.'}}}
+    const bg=$('#v3Bg');if(bg){
+      const input=bg.elements.file,prev=bg.querySelector('[data-v3-bg-prev]'),st=bg.querySelector('[data-v3-bg-status]');
+      const saveBackground=async file=>{
+        if(!file)return;
+        st.textContent='جارٍ رفع وحفظ الصورة…';
+        try{
+          const media=await saveImage(file,{max:1800,q:.8});
+          data.designSettings.backgroundMedia=media;data.designSettings.background=null;save();
+          st.textContent='✓ تم حفظ الصورة بنجاح';
+          await paint();
+          setTimeout(()=>{if(page==='customize')render()},250);
+        }catch(err){
+          console.error('Background save failed',err);
+          st.textContent=err?.message==='file-too-large'?'الصورة كبيرة جدًا. اختاري صورة أقل من 15MB.':'تعذّر حفظ الصورة. جرّبي JPG/PNG/WebP.';
+        }
+      };
+      input.onchange=async()=>{
+        prev.innerHTML='';const f=input.files?.[0];if(!f){st.textContent='لم يتم اختيار صورة.';return}
+        const url=URL.createObjectURL(f),im=document.createElement('img');im.src=url;im.alt='معاينة الخلفية';prev.appendChild(im);
+        im.onload=()=>URL.revokeObjectURL(url);
+        await saveBackground(f);
+      };
+      bg.onsubmit=async e=>{e.preventDefault();const file=input.files?.[0];if(!file){st.textContent='اختاري صورة أولًا.';return}await saveBackground(file)};
+    }
     document.querySelector('[data-v3-bg-clear]')?.addEventListener('click',async()=>{const x=data.designSettings.backgroundMedia;if(x?.local)await del(x.local).catch(()=>{});data.designSettings.backgroundMedia=null;data.designSettings.background=null;document.documentElement.style.setProperty('--yomi-user-bg','none');document.body.dataset.userBg='0';save();render()});
     const ds=$('#v3DesignScope');if(ds){
       const all=ds.elements.applyAll,target=ds.elements.target,slider=ds.elements.transparency,label=ds.querySelector('[data-v3-trans-value]'),preview=ds.querySelector('[data-v3-trans-preview]');
