@@ -115,7 +115,39 @@
       '<label class="field" data-nav-page-picker>اختاري الصفحة<select name="target">'+pagesOptions.map(([k,v])=>'<option value="'+k+'">'+v+'</option>').join('')+'</select></label>'+
       '<label class="field">حالة الشريط<select name="visible"><option value="show">إظهار الشريط</option><option value="hide">إخفاء الشريط</option></select></label>'+
       '<button class="primary">تطبيق على شريط الصفحات</button></form></div>'+
+    '<div class="panel customize-page-preview"><div class="row between"><div><h3>معاينة الصفحة كاملة</h3><p class="sub">شاهدي الشكل قبل التطبيق. التغييرات هون للمعاينة فقط.</p></div><div class="preview-device-switch"><button type="button" class="soft active" data-v3-preview-device="desktop">لابتوب</button><button type="button" class="soft" data-v3-preview-device="mobile">موبايل</button></div></div>'+
+      '<label class="field">الصفحة التي تريدين معاينتها<select id="v3PreviewPage"><option value="lock">صفحة الدخول</option>'+pagesOptions.map(([k,v])=>'<option value="'+k+'" '+((bgSaved.targetPage||transTarget)==k?'selected':'')+'>'+v+'</option>').join('')+'</select></label>'+
+      '<div class="full-page-preview desktop" data-v3-full-preview><div class="full-preview-screen"></div></div></div>'+
     '<div class="panel"><h3>Stickers</h3><form id="v3Sticker"><div class="row"><label class="field">صورة Sticker<input name="file" type="file" accept="image/png,image/webp,image/jpeg,.jpg,.jpeg,.png,.webp"></label><label class="field">أو Emoji<input name="text" maxlength="8"></label><label class="field">الصفحة<select name="target"><option value="all">كل التطبيق</option><option value="lock">صفحة الدخول</option><option value="home">يومي</option><option value="planner">التقويم</option><option value="worship">عبادتي</option><option value="learning">تعلّمي</option><option value="clients">العملاء</option><option value="finance">مالي</option></select></label></div><div class="row"><label class="field">أفقي<input name="x" type="range" min="5" max="95" value="85"></label><label class="field">عمودي<input name="y" type="range" min="5" max="95" value="18"></label><label class="field">الحجم<input name="size" type="range" min="24" max="140" value="54"></label></div><div class="upload-preview" data-v3-sticker-prev></div><button class="soft">إضافة Sticker</button></form>'+(d.stickers.map(s=>'<div class="item"><div class="grow"><div class="sticker-thumb" '+((s.local||s.path)?'data-v3-media="'+safe(s.local||s.path)+'"':'')+'>'+safe(s.text||'')+'</div><small>'+safe(s.target||'all')+' · '+s.size+'px</small></div><button data-v3-sticker-toggle="'+s.id+'">'+(s.hidden?'إظهار':'إخفاء')+'</button><button data-v3-sticker-del="'+s.id+'">حذف</button></div>').join('')||'<div class="empty">ما في Stickers.</div>')+'</div>'
+  }
+
+  function previewPageLabel(k){
+    return ({lock:'صفحة الدخول',home:'يومي',worship:'عبادتي',planner:'التقويم',clients:'العملاء',learning:'تعلّمي',finance:'مالي',tasks:'مهامي',wellness:'عاداتي',quran:'وردي القرآني',achievements:'إنجازاتي',notes:'ملاحظات',diary:'مذكرتي',memories:'ذكرياتي',care:'عنايتي',cycle:'دورتي',reports:'التقارير',customize:'تخصيص'})[k]||'يومي'
+  }
+  function previewBody(k){
+    if(k==='lock')return '<div class="mock-lock-card"><div class="mock-flower">🌺</div><h2>أهلاً بك في يومي</h2><label>الإيميل<div class="mock-input">name@example.com</div></label><label>رمز الدخول<div class="mock-input mock-pin">••••</div></label><div class="mock-primary">دخول</div></div>';
+    if(k==='planner'){
+      const cells=Array.from({length:35},(_,i)=>'<div class="mock-day '+([8,13,21].includes(i)?'has-event ':'')+(i===16?'selected':'')+'"><b>'+((i%30)+1)+'</b><span></span></div>').join('');
+      return '<div class="mock-page-heading"><div><small>Calendar Planner</small><h2>التقويم</h2></div><div class="mock-pill">أكتوبر 2026</div></div><div class="mock-calendar">'+cells+'</div><div class="mock-card wide"><b>مواعيد اليوم</b><p>مشروع عميل · مهمة · موعد</p></div>';
+    }
+    if(k==='diary')return '<div class="mock-editorial"><div class="mock-card tall"><small>#Back to me</small><h2>Behind the story~</h2><div class="mock-line"></div><div class="mock-line short"></div><div class="mock-input tallbox"></div><div class="mock-primary">حفظ في مذكرتي</div></div><div class="mock-card tall"><small>Archived by you</small><h3>قصصي المحفوظة</h3><div class="mock-story-row"></div><div class="mock-story-row"></div><div class="mock-story-row short"></div></div></div>';
+    if(k==='memories')return '<div class="mock-page-heading"><div><small>#Back to memories</small><h2>Behind the story~</h2></div><div class="mock-primary small">＋ ذكرى</div></div><div class="mock-memory-main"><div class="mock-memory-glass"><small>07.10.2026</small><h2>My story</h2><p>تفاصيل الذكرى تظهر فوق الصورة بطريقة Glass.</p></div></div><div class="mock-memory-side"><div></div><div></div></div>';
+    if(k==='clients')return '<div class="mock-page-heading"><h2>العملاء والمشاريع</h2><div class="mock-pill">مشروع جاري</div></div><div class="mock-grid"><div class="mock-card"><b>عميل 01</b><p>3 مشاريع</p></div><div class="mock-card"><b>عميل 02</b><p>مشروع واحد</p></div><div class="mock-card"><b>وقت العمل</b><p>2 س 35 د</p></div><div class="mock-card"><b>سجل العمل</b><p>آخر تحديث اليوم</p></div></div>';
+    if(k==='tasks')return '<div class="mock-page-heading"><h2>مهامي</h2><div class="mock-pill">اليوم</div></div><div class="mock-card wide"><div class="mock-task">○ مهمة جديدة</div><div class="mock-task">○ مهمة ثانية</div><div class="mock-task done">✓ مهمة منجزة</div></div><div class="mock-grid"><div class="mock-card"><b>إنجاز اليوم</b><p>67%</p></div><div class="mock-card"><b>الاستمرارية</b><p>8 أيام</p></div></div>';
+    const label=previewPageLabel(k);
+    return '<div class="mock-page-heading"><div><small>يومي</small><h2>'+safe(label)+'</h2></div><div class="mock-pill">'+dateLabel(today())+'</div></div><div class="mock-grid"><div class="mock-card"><b>بطاقة رئيسية</b><p>المحتوى يظهر هنا.</p></div><div class="mock-card"><b>ملخص</b><p>بيانات الصفحة.</p></div><div class="mock-card wide"><b>'+safe(label)+'</b><div class="mock-line"></div><div class="mock-line short"></div></div></div>';
+  }
+  function refreshFullPreview(){
+    const wrap=document.querySelector('[data-v3-full-preview]'),screen=wrap?.querySelector('.full-preview-screen'),sel=document.getElementById('v3PreviewPage');if(!wrap||!screen||!sel)return;
+    const k=sel.value,bgForm=document.getElementById('v3Bg'),transForm=document.getElementById('v3Transparency'),navForm=document.getElementById('v3NavVisibility');
+    const savedBg=localStorage.getItem(BG_KEY)||'',bgUrl=pendingBackgroundPreviewUrl||savedBg;
+    const trans=transForm?Math.max(0,Math.min(95,Number(transForm.elements.transparency.value||35))):35,alpha=Math.max(.05,(100-trans)/100);
+    const navVisible=navForm?navForm.elements.visible.value!=='hide':(navConfig().pages?.[k]!==false);
+    const labels=['يومي','عبادتي','التقويم','العملاء','مهامي'];
+    const navHtml=k==='lock'?'':(navVisible?'<aside class="mock-nav">'+labels.map((x,i)=>'<span class="'+((k==='home'&&i===0)||(k==='planner'&&i===2)||(k==='clients'&&i===3)||(k==='tasks'&&i===4)?'active':'')+'">'+x+'</span>').join('')+'</aside>':'');
+    screen.style.setProperty('--mock-alpha',String(alpha));
+    screen.style.backgroundImage=bgUrl?'linear-gradient(rgba(24,24,24,.08),rgba(24,24,24,.08)),url("'+bgUrl+'")':'linear-gradient(135deg,#eee2d4,#f7f1e8)';
+    screen.innerHTML=k==='lock'?previewBody(k):'<div class="mock-topbar"><b>يومي ✿</b><span>'+safe(previewPageLabel(k))+'</span></div><div class="mock-app-shell">'+navHtml+'<main class="mock-content">'+previewBody(k)+'</main></div>';
   }
 
   function specialDateHome(){
@@ -298,7 +330,7 @@
         if(!file){st.textContent='لم يتم اختيار صورة.';return}
         pendingBackgroundPreviewUrl=URL.createObjectURL(file);
         const im=document.createElement('img');im.src=pendingBackgroundPreviewUrl;im.alt='معاينة الخلفية';prev.appendChild(im);
-        st.textContent='✓ الصورة جاهزة. اختاري مكانها ثم اضغطي «تطبيق الصورة».';
+        st.textContent='✓ الصورة جاهزة. اختاري مكانها ثم اضغطي «تطبيق الصورة».';refreshFullPreview();
       };
       bg.onsubmit=async e=>{
         e.preventDefault();
@@ -325,7 +357,7 @@
       const destination=ts.elements.destination,target=ts.elements.target,pagePicker=ts.querySelector('[data-trans-page-picker]'),slider=ts.elements.transparency,label=ts.querySelector('[data-v3-trans-value]'),preview=ts.querySelector('[data-v3-trans-preview]');
       const showValue=()=>{const cfg=transparencyConfig(),v=destination.value==='page'?(cfg.pages?.[target.value]??slider.value):slider.value;slider.value=Math.max(0,Math.min(95,Number(v)));label.textContent=slider.value+'%';preview.style.background='rgba(255,253,250,'+((100-Number(slider.value))/100)+')'};
       const live=()=>{pagePicker.hidden=destination.value!=='page';showValue()};
-      destination.onchange=live;target.onchange=showValue;slider.oninput=()=>{label.textContent=slider.value+'%';preview.style.background='rgba(255,253,250,'+((100-Number(slider.value))/100)+')'};live();
+      destination.onchange=live;target.onchange=showValue;slider.oninput=()=>{label.textContent=slider.value+'%';preview.style.background='rgba(255,253,250,'+((100-Number(slider.value))/100)+')';refreshFullPreview()};live();
       ts.onsubmit=e=>{
         e.preventDefault();
         const cfg=transparencyConfig(),pages=cfg.pages||{},v=Math.max(0,Math.min(95,Number(slider.value))),dest=destination.value,appPages=['home','worship','planner','clients','learning','finance','tasks','wellness','quran','achievements','notes','diary','memories','care','cycle','reports','customize'];
@@ -350,6 +382,11 @@
       const navLive=()=>{picker.hidden=destination.value!=='page'};destination.onchange=navLive;navLive();
       nv.onsubmit=e=>{e.preventDefault();const x=navConfig(),visible=nv.elements.visible.value==='show',dest=destination.value,appPages=['home','worship','planner','clients','learning','finance','tasks','wellness','quran','achievements','notes','diary','memories','care','cycle','reports','customize'];if(dest==='all')for(const k of appPages)x.pages[k]=visible;else x.pages[target.value]=visible;x.lastDestination=dest;x.lastTarget=target.value;localStorage.setItem(NAV_KEY,JSON.stringify(x));render()};
     }
+    const previewPage=document.getElementById('v3PreviewPage'),previewWrap=document.querySelector('[data-v3-full-preview]');
+    previewPage?.addEventListener('change',refreshFullPreview);
+    document.querySelectorAll('[data-v3-preview-device]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-v3-preview-device]').forEach(x=>x.classList.toggle('active',x===b));if(previewWrap){previewWrap.classList.toggle('mobile',b.dataset.v3PreviewDevice==='mobile');previewWrap.classList.toggle('desktop',b.dataset.v3PreviewDevice!=='mobile')}});
+    for(const formId of ['v3Bg','v3Transparency','v3NavVisibility']){const f=document.getElementById(formId);if(f)f.addEventListener('input',refreshFullPreview)}
+    setTimeout(refreshFullPreview,0);
     const sf=$('#v3Sticker');if(sf){const input=sf.elements.file,prev=sf.querySelector('[data-v3-sticker-prev]');input.onchange=()=>{prev.innerHTML='';const f=input.files?.[0];if(f){const im=document.createElement('img');im.src=URL.createObjectURL(f);im.onload=()=>URL.revokeObjectURL(im.src);prev.appendChild(im)}};sf.onsubmit=async e=>{e.preventDefault();const f=new FormData(sf),file=input.files?.[0],text=String(f.get('text')||'').trim();if(!file&&!text){alert('اختاري صورة Sticker أو اكتبي Emoji');return}try{let med={};if(file)med=await saveImage(file,{max:700,q:.9,alpha:true});data.designSettings.stickers.push({id:id(),...med,text,target:f.get('target'),x:Number(f.get('x')),y:Number(f.get('y')),size:Number(f.get('size')),hidden:false});save();render()}catch(err){console.error('Sticker save failed',err);alert('تعذّر حفظ Sticker. جرّبي PNG أو WebP أو JPG أصغر.')}}}
     document.querySelectorAll('[data-v3-sticker-toggle]').forEach(b=>b.onclick=()=>{const s=data.designSettings.stickers.find(x=>x.id===b.dataset.v3StickerToggle);s.hidden=!s.hidden;save();render()});
     document.querySelectorAll('[data-v3-sticker-del]').forEach(b=>b.onclick=async()=>{const s=data.designSettings.stickers.find(x=>x.id===b.dataset.v3StickerDel);if(s?.local)await del(s.local).catch(()=>{});data.designSettings.stickers=data.designSettings.stickers.filter(x=>x.id!==b.dataset.v3StickerDel);save();render()});
