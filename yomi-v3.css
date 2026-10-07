@@ -23,3 +23,41 @@ body[data-user-bg="1"]::before{opacity:.24}
  .check-row{align-items:flex-start}
  .fast-tip{width:100%;text-align:center}
 }
+
+/* شفافية أوضح داخل التطبيق فقط — لا تغيّر صفحة الدخول */
+body[data-user-bg="1"] .panel{
+  background:rgba(255,253,250,.66);
+  backdrop-filter:blur(15px) saturate(1.05);
+  -webkit-backdrop-filter:blur(15px) saturate(1.05);
+  border-color:rgba(255,255,255,.58);
+  box-shadow:0 10px 30px rgba(77,53,65,.12)
+}
+body[data-user-bg="1"] .stat,
+body[data-user-bg="1"] .notice,
+body[data-user-bg="1"] .client-card,
+body[data-user-bg="1"] .project-card,
+body[data-user-bg="1"] .debt-person,
+body[data-user-bg="1"] .cycle-edit-card{
+  background:rgba(255,250,244,.62);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border-color:rgba(255,255,255,.48)
+}
+body[data-user-bg="1"] .nav{background:rgba(255,253,250,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.v3-special-home{position:relative}
+.special-home-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(120,90,70,.12)}
+.special-home-row:last-child{border-bottom:0}
+.special-home-row .grow{flex:1}
+.special-home-row small{display:block;margin-top:4px;color:#806d75}
+.cycle-usual{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cycle-usual input{width:70px;border:1px solid #ded2c7;border-radius:10px;padding:8px;background:rgba(255,255,255,.75)}
+.cycle-edit-card{border:1px solid #eadfd5;border-radius:17px;padding:14px;margin:12px 0;background:rgba(255,255,255,.72)}
+.cycle-duration{min-width:100px;padding:10px 12px;border-radius:13px;background:rgba(246,239,232,.72);display:grid;gap:4px;text-align:center}
+.cycle-duration span{font-size:.78rem;color:#806d75}.cycle-duration b{font-size:1.05rem}
+@media(max-width:720px){
+ body[data-user-bg="1"] .panel{background:rgba(255,253,250,.7)}
+ .special-home-row{align-items:flex-start;flex-wrap:wrap}
+ .special-home-row .soft{margin-inline-start:auto}
+ .cycle-edit-card .field{min-width:calc(50% - 8px)}
+ .cycle-duration{width:100%}
+}
