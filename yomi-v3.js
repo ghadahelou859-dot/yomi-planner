@@ -134,6 +134,16 @@
     }
     return '<div class="panel"><h3>أذكار الصباح والمساء والنوم</h3><div class="prayer-grid">'+names.map(n=>{const items=dailyAdhkarText[n]||[],ic=data.adhkarItemChecks?.[selected]?.[n]||{},done=items.filter((_,i)=>!!ic[i]).length;return '<div class="prayer-card adhkar-launch-card"><button type="button" class="adhkar-open-btn" data-adhkar-open="'+n+'"><span>'+n+'</span><small>'+done+' / '+items.length+'</small></button><label class="adhkar-done-check" title="تعليم كمكتمل"><input type="checkbox" data-daily-adhkar="'+n+'" '+(checks[n]?'checked':'')+'><span>✓</span></label></div>'}).join('')+'</div></div>';
   }
+  function adhkarReportPanel(){
+    const names=['أذكار الصباح','أذكار المساء','أذكار النوم'];
+    const days=Object.keys(data.adhkarChecks||{}).filter(d=>belongs(d)).sort();
+    const rows=names.map(name=>({name,count:days.filter(d=>!!data.adhkarChecks?.[d]?.[name]).length}));
+    const all=days.filter(d=>names.every(name=>!!data.adhkarChecks?.[d]?.[name])).length;
+    const any=days.filter(d=>names.some(name=>!!data.adhkarChecks?.[d]?.[name])).length;
+    return '<div class="panel"><h3>متابعة أذكار الصباح والمساء والنوم</h3><p class="sub">هذا السجل يظهر في التقارير فقط، ويحسب الإكمال التلقائي من التكات الداخلية أو التكة اليدوية إذا قرأتِ الأذكار من خارج التطبيق.</p><div class="grid">'+
+      rows.map(x=>'<div class="stat">'+safe(x.name)+'<b>'+x.count+' يوم</b></div>').join('')+
+      '<div class="stat">الثلاثة مكتملة<b>'+all+' يوم</b></div><div class="stat">أيام فيها أذكار مسجّلة<b>'+any+' يوم</b></div></div></div>';
+  }
   function prayerDetails(){
     const n=state.prayer;if(!n)return '';
     const q=data.quran,last=Number(q.lastPage)||0,logs=q.log.filter(x=>x.date===selected&&x.prayer===n),works=(data.prayerWorks||[]).filter(x=>x.prayer===n),done=works.filter(x=>x.completed?.[selected]).length,allDone=works.length>0&&done===works.length,manual=!!data.prayerChecks?.[selected]?.[n],complete=allDone||manual,pctDone=works.length?Math.round(done/works.length*100):(complete?100:0);
@@ -772,6 +782,7 @@
     if(page==='home'){document.querySelectorAll('.special-date-card').forEach(x=>x.remove());$('#view').insertAdjacentHTML('afterbegin',specialDateHome()+homeExtra());attach()}
     if(page==='cycle'){$('#view').insertAdjacentHTML('beforeend',cycleExtra());attach()}
     if(page==='finance'){document.querySelector('.y2-debts')?.remove();$('#view').insertAdjacentHTML('beforeend',debtExtra());attach()}
+    if(page==='reports'){$('#view').insertAdjacentHTML('beforeend',adhkarReportPanel())}
     stickers();paint()
   };
   window.addEventListener('yomi-pin-unlocked',()=>{stickers();paint()});
