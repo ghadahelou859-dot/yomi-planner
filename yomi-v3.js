@@ -161,11 +161,11 @@
     '<div class="panel customize-page-preview"><div class="row between"><div><h3>معاينة الصفحة كاملة</h3><p class="sub">اختاري الصفحة ثم افتحي معاينة كبيرة قبل التطبيق.</p></div><button type="button" class="primary" data-v3-preview-open>فتح المعاينة</button></div>'+
       '<label class="field">الصفحة التي تريدين معاينتها<select id="v3PreviewPage"><option value="lock">صفحة الدخول</option>'+pagesOptions.map(([k,v])=>'<option value="'+k+'" '+((bgSaved.targetPage||transTarget)==k?'selected':'')+'>'+v+'</option>').join('')+'</select></label>'+
       '<dialog id="v3PreviewDialog" class="preview-dialog"><div class="preview-dialog-head"><div><h3>معاينة الصفحة</h3><p class="sub">هذه معاينة فقط، بدون حفظ.</p></div><div class="preview-device-switch"><button type="button" class="soft active" data-v3-preview-device="desktop">لابتوب</button><button type="button" class="soft" data-v3-preview-device="mobile">موبايل</button><button type="button" class="soft" data-v3-preview-close>إغلاق</button></div></div><div class="full-page-preview desktop" data-v3-full-preview><div class="full-preview-screen"></div></div></dialog></div>'+
-    '<div class="panel"><h3>Stickers</h3><p class="sub">ممكن ترفعي PNG بخلفية شفافة أو تستخدمي Emoji، واختاري إذا يكون ثابت على الشاشة أو مرتبط بالصفحة.</p><form id="v3Sticker"><div class="row"><label class="field">صورة Sticker<input name="file" type="file" accept="image/png,image/webp,image/jpeg,.jpg,.jpeg,.png,.webp"></label><label class="field">أو Emoji<input name="text" maxlength="8" placeholder="مثلاً 🌸"></label><label class="field">الصفحة<select name="target"><option value="all">كل التطبيق</option><option value="lock">صفحة الدخول</option><option value="home">يومي</option><option value="planner">التقويم</option><option value="worship">عبادتي</option><option value="learning">تعلّمي</option><option value="clients">العملاء</option><option value="finance">مالي</option></select></label><label class="field">التثبيت<select name="positionMode"><option value="screen">ثابت على الشاشة</option><option value="page">مرتبط بالصفحة</option></select></label></div><div class="row"><label class="field">أفقي<input name="x" type="range" min="5" max="95" value="85"></label><label class="field">عمودي<input name="y" type="range" min="5" max="95" value="18"></label><label class="field">الحجم<input name="size" type="range" min="24" max="140" value="54"></label></div><div class="sticker-preview-wrap"><b>معاينة قبل الحفظ</b><div class="upload-preview sticker-preview-box" data-v3-sticker-prev><span class="sub">اختاري صورة أو Emoji لتظهر المعاينة هنا.</span></div></div><p class="sub sticker-save-status" data-v3-sticker-status>'+safe(state.stickerStatus||'')+'</p><button class="primary sticker-save-btn">حفظ الـSticker</button></form><h4 class="sticker-saved-title">Stickers المحفوظة</h4>'+(d.stickers.map(s=>'<div class="item"><div class="grow"><div class="sticker-thumb" '+((s.local||s.path)?'data-v3-media="'+safe(s.path||s.local)+'"':'')+'>'+safe(s.text||'')+'</div><small>'+safe(s.target||'all')+' · '+(s.positionMode==='page'?'مرتبط بالصفحة':'ثابت على الشاشة')+' · '+s.size+'px</small></div><button data-v3-sticker-toggle="'+s.id+'">'+(s.hidden?'إظهار':'إخفاء')+'</button><button data-v3-sticker-del="'+s.id+'">حذف</button></div>').join('')||'<div class="empty">ما في Stickers محفوظة بعد.</div>')+'</div>'
+    '<div class="panel"><h3>Stickers</h3><p class="sub">ارفعي صورة أو استخدمي Emoji، وبعدها شوفي مكانه الحقيقي تقريبًا على الصفحة قبل الحفظ.</p><form id="v3Sticker"><div class="row"><label class="field">صورة Sticker<input name="file" type="file" accept="image/png,image/webp,image/jpeg,.jpg,.jpeg,.png,.webp"></label><label class="field">أو Emoji<input name="text" maxlength="8" placeholder="مثلاً 🌸"></label><label class="field">الصفحة<select name="target"><option value="all">كل التطبيق</option><option value="lock">صفحة الدخول</option><option value="home">يومي</option><option value="planner">التقويم</option><option value="worship">عبادتي</option><option value="learning">تعلّمي</option><option value="clients">العملاء</option><option value="finance">مالي</option></select></label><label class="field">التثبيت<select name="positionMode"><option value="screen">ثابت على الشاشة</option><option value="page">مرتبط بالصفحة</option></select></label></div><div class="row"><label class="field">أفقي <b data-sticker-x-label>85%</b><input name="x" type="range" min="5" max="95" value="85"></label><label class="field">عمودي <b data-sticker-y-label>18%</b><input name="y" type="range" min="5" max="95" value="18"></label><label class="field">الحجم <b data-sticker-size-label>54px</b><input name="size" type="range" min="24" max="140" value="54"></label></div><div class="sticker-preview-wrap"><b>معاينة الصورة</b><div class="upload-preview sticker-preview-box" data-v3-sticker-prev><span class="sub">اختاري صورة أو Emoji لتظهر المعاينة هنا.</span></div></div><div class="sticker-placement-wrap"><div class="row between"><div><b>معاينة مكان الـSticker</b><small class="sub" data-sticker-page-label>الصفحة: كل التطبيق</small></div><span class="badge" data-sticker-mode-label>ثابت على الشاشة</span></div><div class="sticker-placement-preview" data-v3-sticker-placement><div class="sticker-mock-top"><span>يومي</span><i></i><i></i></div><div class="sticker-mock-card"></div><div class="sticker-mock-card small"></div><div class="sticker-placement-item" data-v3-sticker-placement-item><span class="sub">اختاري Sticker</span></div></div></div><p class="sub sticker-save-status" data-v3-sticker-status>'+safe(state.stickerStatus||'')+'</p><button class="primary sticker-save-btn">حفظ الـSticker</button></form><h4 class="sticker-saved-title">Stickers المحفوظة</h4>'+(d.stickers.map(s=>'<div class="item sticker-saved-row"><div class="grow"><div class="sticker-thumb" '+((s.local||s.path)?'data-v3-media="'+safe(s.path||s.local)+'"':'')+'>'+safe(s.text||'')+'</div><small>الصفحة: '+safe(previewPageLabel(s.target||'all'))+' · '+(s.positionMode==='page'?'مرتبط بالصفحة':'ثابت على الشاشة')+' · أفقي '+Number(s.x||0)+'% · عمودي '+Number(s.y||0)+'% · '+Number(s.size||0)+'px</small></div><button type="button" class="soft" data-v3-sticker-preview="'+s.id+'">معاينة مكانه</button><button data-v3-sticker-toggle="'+s.id+'">'+(s.hidden?'إظهار':'إخفاء')+'</button><button data-v3-sticker-del="'+s.id+'">حذف</button></div>').join('')||'<div class="empty">ما في Stickers محفوظة بعد.</div>')+'</div>'
   }
 
   function previewPageLabel(k){
-    return ({lock:'صفحة الدخول',home:'يومي',worship:'عبادتي',planner:'التقويم',clients:'العملاء',learning:'تعلّمي',finance:'مالي',tasks:'مهامي',wellness:'عاداتي',quran:'وردي القرآني',achievements:'إنجازاتي',notes:'ملاحظات',diary:'مذكرتي',memories:'ذكرياتي',care:'عنايتي',cycle:'دورتي',reports:'التقارير',customize:'تخصيص'})[k]||'يومي'
+    return ({all:'كل التطبيق',lock:'صفحة الدخول',home:'يومي',worship:'عبادتي',planner:'التقويم',clients:'العملاء',learning:'تعلّمي',finance:'مالي',tasks:'مهامي',wellness:'عاداتي',quran:'وردي القرآني',achievements:'إنجازاتي',notes:'ملاحظات',diary:'مذكرتي',memories:'ذكرياتي',care:'عنايتي',cycle:'دورتي',reports:'التقارير',customize:'تخصيص'})[k]||'يومي'
   }
   function previewBody(k){
     if(k==='lock')return '<div class="mock-lock-card"><div class="mock-flower">🌺</div><h2>أهلاً بك في يومي</h2><label>الإيميل<div class="mock-input">name@example.com</div></label><label>رمز الدخول<div class="mock-input mock-pin">••••</div></label><div class="mock-primary">دخول</div></div>';
@@ -209,8 +209,17 @@
   }
 
   function homeExtra(){
-    const dh=(data.dhikrs||[]).filter(x=>activeDhikr(x,selected)).slice(0,4),work=clientItems(monthKey(selected)).filter(x=>x.date>=selected).slice(0,4);
-    return '<div class="panel quick-dhikr"><div class="row between"><h3>أذكاري السريعة</h3><button class="soft" data-go="worship" data-worship-target="dhikr">الأذكار</button></div>'+(dh.map(x=>'<div class="item"><div class="grow"><b>'+safe(x.title)+'</b><small>'+dhikrCount(x,selected)+' / '+dhikrTargetOn(x,selected)+'</small></div><button data-v3-dhikr="'+x.id+'">+1</button><button data-v3-dhikr-many="'+x.id+'">إضافة عدد</button></div>').join('')||'<div class="empty">أضيفي ذكرًا من مهامي.</div>')+'</div><div class="panel"><div class="row between"><h3>مواعيد مشاريع العملاء</h3><button class="soft" data-go="planner">التقويم</button></div>'+(work.map(x=>'<div class="item"><span class="event-chip" style="--chip:'+x.color+'">'+x.icon+'</span><div class="grow"><b>'+safe(x.title)+'</b><small>'+dateLabel(x.date)+'</small></div><button data-v3-open="'+x.cid+':'+x.pid+'">فتح</button></div>').join('')||'<div class="empty">ما في مواعيد قادمة.</div>')+'</div>'
+    const dh=(data.dhikrs||[]).filter(x=>activeDhikr(x,selected)).slice(0,4),
+          work=clientItems(monthKey(selected)).filter(x=>x.date>=selected).slice(0,4),
+          todayRows=plannerRows(monthKey(selected)).filter(x=>x.date===selected).slice(0,4),
+          tomorrow=dayAfter(selected),
+          tomorrowRows=plannerRows(monthKey(tomorrow)).filter(x=>x.date===tomorrow).slice(0,2);
+    const kindLabel=x=>x.kind==='client'?'مشروع عميل':x.kind==='task'?'مهمة':x.kind==='project'?'مشروع':x.kind==='important'?'تاريخ مهم':'موعد';
+    return '<div class="panel home-calendar-card"><div class="row between"><div><h3>📅 تقويمي اليوم</h3><p class="sub">'+dateLabel(selected)+'</p></div><button class="primary" data-go="planner">فتح التقويم</button></div>'+
+      (todayRows.map(x=>'<div class="item home-calendar-row"><span class="event-chip" style="--chip:'+x.color+'">'+x.icon+'</span><div class="grow"><b>'+safe(x.title)+'</b><small>'+(x.time?safe(x.time)+' · ':'')+kindLabel(x)+'</small></div>'+(x.kind==='client'?'<button data-v3-open="'+x.cid+':'+x.pid+'">فتح</button>':'')+'</div>').join('')||'<div class="empty">يومك فاضي من المواعيد 🌿</div>')+
+      '<div class="home-calendar-tomorrow"><b>غدًا</b>'+(tomorrowRows.length?tomorrowRows.map(x=>'<span>'+x.icon+' '+safe(x.title)+'</span>').join(''):'<span>ما في مواعيد مسجّلة.</span>')+'</div></div>'+
+      '<div class="panel quick-dhikr"><div class="row between"><h3>أذكاري السريعة</h3><button class="soft" data-go="worship" data-worship-target="dhikr">الأذكار</button></div>'+(dh.map(x=>'<div class="item"><div class="grow"><b>'+safe(x.title)+'</b><small>'+dhikrCount(x,selected)+' / '+dhikrTargetOn(x,selected)+'</small></div><button data-v3-dhikr="'+x.id+'">+1</button><button data-v3-dhikr-many="'+x.id+'">إضافة عدد</button></div>').join('')||'<div class="empty">أضيفي ذكرًا من مهامي.</div>')+'</div>'+
+      '<div class="panel"><div class="row between"><h3>مواعيد مشاريع العملاء</h3><button class="soft" data-go="planner">التقويم</button></div>'+(work.map(x=>'<div class="item"><span class="event-chip" style="--chip:'+x.color+'">'+x.icon+'</span><div class="grow"><b>'+safe(x.title)+'</b><small>'+dateLabel(x.date)+'</small></div><button data-v3-open="'+x.cid+':'+x.pid+'">فتح</button></div>').join('')||'<div class="empty">ما في مواعيد قادمة.</div>')+'</div>'
   }
   function cycleExtra(){
     const ps=[...data.periods].sort((a,b)=>b.start.localeCompare(a.start)),open=ps.find(x=>!x.end),len=Number(data.cyclePeriodLength||7);
@@ -512,16 +521,35 @@
     document.querySelectorAll('[data-v3-preview-device]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-v3-preview-device]').forEach(x=>x.classList.toggle('active',x===b));if(previewWrap){previewWrap.classList.toggle('mobile',b.dataset.v3PreviewDevice==='mobile');previewWrap.classList.toggle('desktop',b.dataset.v3PreviewDevice!=='mobile');refreshFullPreview()}});
     for(const formId of ['v3Bg','v3Transparency','v3NavVisibility']){const f=document.getElementById(formId);if(f)f.addEventListener('input',()=>{if(previewDialog?.open)refreshFullPreview()})}
     const sf=$('#v3Sticker');if(sf){
-      const input=sf.elements.file,prev=sf.querySelector('[data-v3-sticker-prev]'),st=sf.querySelector('[data-v3-sticker-status]'),emoji=sf.elements.text;
-      const showPreview=()=>{
-        prev.innerHTML='';
+      const input=sf.elements.file,prev=sf.querySelector('[data-v3-sticker-prev]'),st=sf.querySelector('[data-v3-sticker-status]'),emoji=sf.elements.text,
+            placement=sf.querySelector('[data-v3-sticker-placement-item]'),target=sf.elements.target,mode=sf.elements.positionMode,
+            xInput=sf.elements.x,yInput=sf.elements.y,sizeInput=sf.elements.size,pageLabel=sf.querySelector('[data-sticker-page-label]'),modeLabel=sf.querySelector('[data-sticker-mode-label]'),
+            xLabel=sf.querySelector('[data-sticker-x-label]'),yLabel=sf.querySelector('[data-sticker-y-label]'),sizeLabel=sf.querySelector('[data-sticker-size-label]');
+      let previewUrl='';
+      const contentInto=(host)=>{
+        host.innerHTML='';
         const file=input.files?.[0],text=String(emoji.value||'').trim();
-        if(file){const im=document.createElement('img');im.src=URL.createObjectURL(file);im.alt='معاينة Sticker';im.onload=()=>URL.revokeObjectURL(im.src);prev.appendChild(im)}
-        else if(text){const x=document.createElement('div');x.className='sticker-emoji-preview';x.textContent=text;prev.appendChild(x)}
-        else prev.innerHTML='<span class="sub">اختاري صورة أو Emoji لتظهر المعاينة هنا.</span>';
+        if(file){
+          const im=document.createElement('img');im.alt='معاينة Sticker';
+          im.src=previewUrl||(previewUrl=URL.createObjectURL(file));host.appendChild(im)
+        }else if(text){const x=document.createElement('div');x.className='sticker-emoji-preview';x.textContent=text;host.appendChild(x)}
+        else host.innerHTML='<span class="sub">اختاري Sticker</span>';
+      };
+      const showPreview=()=>{
+        if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=''}
+        contentInto(prev);contentInto(placement);updatePlacement()
+      };
+      const updatePlacement=()=>{
+        const xv=Number(xInput.value),yv=Number(yInput.value),sv=Number(sizeInput.value);
+        placement.style.left=xv+'%';placement.style.top=yv+'%';placement.style.width=sv+'px';placement.style.height=sv+'px';
+        xLabel.textContent=xv+'%';yLabel.textContent=yv+'%';sizeLabel.textContent=sv+'px';
+        pageLabel.textContent='الصفحة: '+previewPageLabel(target.value);
+        modeLabel.textContent=mode.value==='page'?'مرتبط بالصفحة':'ثابت على الشاشة';
       };
       input.onchange=()=>{state.stickerStatus='';showPreview()};
       emoji.oninput=()=>{state.stickerStatus='';if(!input.files?.[0])showPreview()};
+      [target,mode,xInput,yInput,sizeInput].forEach(el=>el.addEventListener('input',updatePlacement));
+      updatePlacement();
       sf.onsubmit=async e=>{
         e.preventDefault();
         const f=new FormData(sf),file=input.files?.[0],text=String(f.get('text')||'').trim();
@@ -535,12 +563,23 @@
         try{
           let med={};if(file)med=await saveRawFile(file);
           data.designSettings.stickers.push({id:id(),...med,text,target:f.get('target'),positionMode:f.get('positionMode')||'screen',x:Number(f.get('x')),y:Number(f.get('y')),size:Number(f.get('size')),hidden:false});
-          save();await syncMedia();state.stickerStatus='✓ تم حفظ الـSticker بنجاح.';render()
+          save();await syncMedia();if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=''}state.stickerStatus='✓ تم حفظ الـSticker بنجاح.';render()
         }catch(err){
           console.error('Sticker save failed',err);state.stickerStatus='تعذّر حفظ الـSticker. جرّبي صورة أصغر أو صيغة PNG/WebP/JPG.';st.textContent=state.stickerStatus;
         }
       };
     }
+    document.querySelectorAll('[data-v3-sticker-preview]').forEach(async b=>b.onclick=async()=>{
+      const s=data.designSettings.stickers.find(x=>x.id===b.dataset.v3StickerPreview),sf=$('#v3Sticker');if(!s||!sf)return;
+      sf.elements.target.value=s.target||'all';sf.elements.positionMode.value=s.positionMode||'screen';sf.elements.x.value=Number(s.x??85);sf.elements.y.value=Number(s.y??18);sf.elements.size.value=Number(s.size??54);
+      const placement=sf.querySelector('[data-v3-sticker-placement-item]'),prev=sf.querySelector('[data-v3-sticker-prev]');
+      const renderSaved=async host=>{host.innerHTML='';if(s.path||s.local){const blob=await blobFor(s.path||s.local);if(blob){const im=document.createElement('img'),u=URL.createObjectURL(blob);im.src=u;im.onload=()=>URL.revokeObjectURL(u);host.appendChild(im);return}}const d=document.createElement('div');d.className='sticker-emoji-preview';d.textContent=s.text||'Sticker';host.appendChild(d)};
+      await renderSaved(prev);await renderSaved(placement);
+      placement.style.left=Number(s.x??85)+'%';placement.style.top=Number(s.y??18)+'%';placement.style.width=Number(s.size??54)+'px';placement.style.height=Number(s.size??54)+'px';
+      sf.querySelector('[data-sticker-x-label]').textContent=Number(s.x??85)+'%';sf.querySelector('[data-sticker-y-label]').textContent=Number(s.y??18)+'%';sf.querySelector('[data-sticker-size-label]').textContent=Number(s.size??54)+'px';
+      sf.querySelector('[data-sticker-page-label]').textContent='الصفحة: '+previewPageLabel(s.target||'all');sf.querySelector('[data-sticker-mode-label]').textContent=s.positionMode==='page'?'مرتبط بالصفحة':'ثابت على الشاشة';
+      sf.scrollIntoView({behavior:'smooth',block:'start'});
+    });
     document.querySelectorAll('[data-v3-sticker-toggle]').forEach(b=>b.onclick=()=>{const s=data.designSettings.stickers.find(x=>x.id===b.dataset.v3StickerToggle);s.hidden=!s.hidden;save();render()});
     document.querySelectorAll('[data-v3-sticker-del]').forEach(b=>b.onclick=async()=>{const s=data.designSettings.stickers.find(x=>x.id===b.dataset.v3StickerDel);if(s?.local)await del(s.local).catch(()=>{});data.designSettings.stickers=data.designSettings.stickers.filter(x=>x.id!==b.dataset.v3StickerDel);save();render()});
 
