@@ -2,7 +2,7 @@
 (() => {
   window.yomiV3DesignActive=true;
   const BG_KEY='yomi-bg-v3', BG_SCOPE_KEY='yomi-bg-scope-v3', TRANS_KEY='yomi-transparency-v1', NAV_KEY='yomi-nav-visibility-v1';
-  const state={client:null,project:null,course:null,prayer:null,reopenPrayerManage:false,worshipJump:null,stickerStatus:''};
+  const state={client:null,project:null,course:null,prayer:null,reopenPrayerManage:false,worshipJump:null,stickerStatus:'',stickerDraft:null};
   const bucket='yomi-memories', urls=new Set();
   let pendingBackgroundFile=null,pendingBackgroundPreviewUrl=null,pendingPortraitFile=null,pendingPortraitPreviewUrl=null,projectClockInterval=null;
   const formatDuration=ms=>{ms=Math.max(0,Number(ms)||0);const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return String(h).padStart(2,'0')+' س : '+String(m).padStart(2,'0')+' د : '+String(sec).padStart(2,'0')+' ث'};
@@ -141,6 +141,7 @@
     else if(bgSaved.includeLogin)bgDestination='all-login';
     const transDestination=tCfg.lastDestination||'page',transTarget=tCfg.lastTarget||'home',trans=Number(tPages[transTarget]??35);
     const currentBg=d.background,currentBgRef=d.backgroundMedia?.path||d.backgroundMedia?.local||'',portraitBgRef=d.portraitBackgroundMedia?.path||d.portraitBackgroundMedia?.local||'';
+    const sd=state.stickerDraft??=( {file:null,text:'',target:'all',positionMode:'screen',x:85,y:18,size:54,device:'desktop'} );
     return '<div class="panel customize-main"><h2>تصميم يومي</h2><p class="sub">الخلفية والشفافية صار لكل واحدة زر تطبيق ومكان مستقل.</p>'+
       '<form id="v3Bg"><h3>صورة عرضية للخلفية</h3><p class="sub">ارفعي الصورة من الهاتف أو اللابتوب. سجّلي الدخول بنفس الحساب حتى تظهر على الجهازين.</p><label class="upload-zone" for="v3BgFile"><input id="v3BgFile" name="file" class="upload-zone-input" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"><span class="upload-zone-icon">⬆️</span><b>اضغطي هنا لاختيار صورة</b><small>JPG · PNG · WebP</small></label><div class="upload-preview upload-preview-large" data-v3-bg-prev>'+(currentBgRef?'<div class="media-box bg-current-media" data-v3-media="'+safe(currentBgRef)+'"></div>':currentBg?'<img src="'+currentBg+'" alt="الخلفية الحالية">':'')+'</div><p class="sub upload-status" data-v3-bg-status>'+((currentBgRef||currentBg)?'✓ في خلفية محفوظة ومربوطة بالحساب':'ما تم اختيار صورة بعد')+'</p>'+      '<div class="portrait-bg-block"><h3>صورة طولية للموبايل</h3><p class="sub">اختيارية. إذا رفعتيها، تُستخدم تلقائيًا على شاشة الموبايل بدل الصورة العرضية.</p><label class="upload-zone portrait-upload" for="v3BgPortraitFile"><input id="v3BgPortraitFile" name="portraitFile" class="upload-zone-input" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"><span class="upload-zone-icon">📱</span><b>اختاري صورة طولية</b><small>يفضل 9:16 · JPG · PNG · WebP</small></label><div class="upload-preview upload-preview-large portrait-preview" data-v3-bg-portrait-prev>'+(portraitBgRef?'<div class="media-box bg-current-media portrait-current-media" data-v3-media="'+safe(portraitBgRef)+'"></div>':'')+'</div><p class="sub upload-status" data-v3-bg-portrait-status>'+(portraitBgRef?'✓ في صورة طولية محفوظة للحساب':'ما تم اختيار صورة طولية بعد')+'</p><button type="button" class="soft" data-v3-bg-portrait-clear>إزالة الصورة الطولية</button></div>'+
       '<label class="field">تطبيق الصورة على<select name="destination"><option value="login" '+(bgDestination==='login'?'selected':'')+'>صفحة الدخول فقط</option><option value="all" '+(bgDestination==='all'?'selected':'')+'>كل صفحات التطبيق</option><option value="all-login" '+(bgDestination==='all-login'?'selected':'')+'>كل الصفحات + صفحة الدخول</option><option value="page" '+(bgDestination==='page'?'selected':'')+'>صفحة محددة</option></select></label>'+
@@ -161,7 +162,7 @@
     '<div class="panel customize-page-preview"><div class="row between"><div><h3>معاينة الصفحة كاملة</h3><p class="sub">اختاري الصفحة ثم افتحي معاينة كبيرة قبل التطبيق.</p></div><button type="button" class="primary" data-v3-preview-open>فتح المعاينة</button></div>'+
       '<label class="field">الصفحة التي تريدين معاينتها<select id="v3PreviewPage"><option value="lock">صفحة الدخول</option>'+pagesOptions.map(([k,v])=>'<option value="'+k+'" '+((bgSaved.targetPage||transTarget)==k?'selected':'')+'>'+v+'</option>').join('')+'</select></label>'+
       '<dialog id="v3PreviewDialog" class="preview-dialog"><div class="preview-dialog-head"><div><h3>معاينة الصفحة</h3><p class="sub">هذه معاينة فقط، بدون حفظ.</p></div><div class="preview-device-switch"><button type="button" class="soft active" data-v3-preview-device="desktop">لابتوب</button><button type="button" class="soft" data-v3-preview-device="mobile">موبايل</button><button type="button" class="soft" data-v3-preview-close>إغلاق</button></div></div><div class="full-page-preview desktop" data-v3-full-preview><div class="full-preview-screen"></div></div></dialog></div>'+
-    '<div class="panel"><h3>Stickers</h3><p class="sub">ارفعي صورة أو استخدمي Emoji، وبعدها شوفي مكانه الحقيقي تقريبًا على الصفحة قبل الحفظ.</p><form id="v3Sticker"><div class="row"><label class="field">صورة Sticker<input name="file" type="file" accept="image/png,image/webp,image/jpeg,.jpg,.jpeg,.png,.webp"></label><label class="field">أو Emoji<input name="text" maxlength="8" placeholder="مثلاً 🌸"></label><label class="field">الصفحة<select name="target"><option value="all">كل التطبيق</option><option value="lock">صفحة الدخول</option><option value="home">يومي</option><option value="planner">التقويم</option><option value="worship">عبادتي</option><option value="learning">تعلّمي</option><option value="clients">العملاء</option><option value="finance">مالي</option></select></label><label class="field">التثبيت<select name="positionMode"><option value="screen">ثابت على الشاشة</option><option value="page">مرتبط بالصفحة</option></select></label></div><div class="row"><label class="field">أفقي <b data-sticker-x-label>85%</b><input name="x" type="range" min="5" max="95" value="85"></label><label class="field">عمودي <b data-sticker-y-label>18%</b><input name="y" type="range" min="5" max="95" value="18"></label><label class="field">الحجم <b data-sticker-size-label>54px</b><input name="size" type="range" min="24" max="140" value="54"></label></div><div class="sticker-preview-wrap"><b>معاينة الصورة</b><div class="upload-preview sticker-preview-box" data-v3-sticker-prev><span class="sub">اختاري صورة أو Emoji لتظهر المعاينة هنا.</span></div></div><div class="sticker-placement-wrap"><div class="row between"><div><b>معاينة مباشرة على الصفحة</b><small class="sub" data-sticker-page-label>الصفحة: كل التطبيق</small></div><span class="badge" data-sticker-mode-label>ثابت على الشاشة</span></div><div class="sticker-device-switch"><button type="button" class="soft active" data-sticker-device="desktop">لابتوب</button><button type="button" class="soft" data-sticker-device="mobile">موبايل</button><small class="sub">اضغطي بأي مكان في المعاينة أو اسحبي الـSticker لتحديد موقعه.</small></div><div class="sticker-live-page-preview desktop" data-v3-sticker-placement><div class="full-preview-screen" data-v3-sticker-live-screen></div><div class="sticker-placement-item" data-v3-sticker-placement-item><span class="sub">اختاري Sticker</span></div></div></div><p class="sub sticker-save-status" data-v3-sticker-status>'+safe(state.stickerStatus||'')+'</p><button class="primary sticker-save-btn">حفظ الـSticker</button></form><h4 class="sticker-saved-title">Stickers المحفوظة</h4>'+(d.stickers.map(s=>'<div class="item sticker-saved-row"><div class="grow"><div class="sticker-thumb" '+((s.local||s.path)?'data-v3-media="'+safe(s.path||s.local)+'"':'')+'>'+safe(s.text||'')+'</div><small>الصفحة: '+safe(previewPageLabel(s.target||'all'))+' · '+(s.positionMode==='page'?'مرتبط بالصفحة':'ثابت على الشاشة')+' · أفقي '+Number(s.x||0)+'% · عمودي '+Number(s.y||0)+'% · '+Number(s.size||0)+'px</small></div><button type="button" class="soft" data-v3-sticker-preview="'+s.id+'">معاينة مكانه</button><button data-v3-sticker-toggle="'+s.id+'">'+(s.hidden?'إظهار':'إخفاء')+'</button><button data-v3-sticker-del="'+s.id+'">حذف</button></div>').join('')||'<div class="empty">ما في Stickers محفوظة بعد.</div>')+'</div>'
+    '<div class="panel"><h3>Stickers</h3><p class="sub">ارفعي الصورة أولًا، وبعدها اختاري الصفحة والمكان والحجم. كل اختيار سيظل محفوظًا لحد ما تضغطي حفظ.</p><form id="v3Sticker"><div class="row"><label class="field">صورة Sticker<input name="file" type="file" accept="image/png,image/webp,image/jpeg,.jpg,.jpeg,.png,.webp"><small class="sub" data-sticker-file-name>'+(sd.file?'✓ مختارة: '+safe(sd.file.name||'صورة Sticker'):'ما تم اختيار صورة بعد')+'</small></label><label class="field">أو Emoji<input name="text" maxlength="8" placeholder="مثلاً 🌸" value="'+safe(sd.text||'')+'"></label><label class="field">الصفحة<select name="target"><option value="all" '+(sd.target==='all'?'selected':'')+'>كل التطبيق</option><option value="lock" '+(sd.target==='lock'?'selected':'')+'>صفحة الدخول</option><option value="home" '+(sd.target==='home'?'selected':'')+'>يومي</option><option value="planner" '+(sd.target==='planner'?'selected':'')+'>التقويم</option><option value="worship" '+(sd.target==='worship'?'selected':'')+'>عبادتي</option><option value="learning" '+(sd.target==='learning'?'selected':'')+'>تعلّمي</option><option value="clients" '+(sd.target==='clients'?'selected':'')+'>العملاء</option><option value="finance" '+(sd.target==='finance'?'selected':'')+'>مالي</option></select></label><label class="field">التثبيت<select name="positionMode"><option value="screen" '+(sd.positionMode==='screen'?'selected':'')+'>ثابت على الشاشة</option><option value="page" '+(sd.positionMode==='page'?'selected':'')+'>مرتبط بالصفحة</option></select></label></div><div class="row"><label class="field">أفقي <b data-sticker-x-label>'+Math.round(Number(sd.x??85))+'%</b><input name="x" type="range" min="3" max="97" step="0.1" value="'+Number(sd.x??85)+'"></label><label class="field">عمودي <b data-sticker-y-label>'+Math.round(Number(sd.y??18))+'%</b><input name="y" type="range" min="3" max="97" step="0.1" value="'+Number(sd.y??18)+'"></label><label class="field">الحجم <b data-sticker-size-label>'+Math.round(Number(sd.size??54))+'px</b><input name="size" type="range" min="24" max="180" value="'+Number(sd.size??54)+'"></label></div><div class="sticker-preview-wrap"><b>معاينة الصورة</b><div class="upload-preview sticker-preview-box" data-v3-sticker-prev><span class="sub">اختاري صورة أو Emoji لتظهر المعاينة هنا.</span></div></div><div class="sticker-placement-wrap"><div class="row between"><div><b>معاينة مباشرة على الصفحة</b><small class="sub" data-sticker-page-label>الصفحة: '+safe(previewPageLabel(sd.target||'all'))+'</small></div><span class="badge" data-sticker-mode-label>'+(sd.positionMode==='page'?'مرتبط بالصفحة':'ثابت على الشاشة')+'</span></div><div class="sticker-device-switch"><button type="button" class="soft '+(sd.device!=='mobile'?'active':'')+'" data-sticker-device="desktop">لابتوب</button><button type="button" class="soft '+(sd.device==='mobile'?'active':'')+'" data-sticker-device="mobile">موبايل</button><small class="sub">اضغطي على أي مكان بالصفحة أو اسحبي الـSticker.</small></div><div class="sticker-live-page-preview '+(sd.device==='mobile'?'mobile':'desktop')+'" data-v3-sticker-placement><div class="full-preview-screen" data-v3-sticker-live-screen><div class="sticker-placement-item" data-v3-sticker-placement-item><span class="sub">اختاري Sticker</span></div></div></div></div><p class="sub sticker-save-status" data-v3-sticker-status>'+safe(state.stickerStatus||'')+'</p><button class="primary sticker-save-btn">حفظ الـSticker</button></form><h4 class="sticker-saved-title">Stickers المحفوظة</h4>'+(d.stickers.map(s=>'<div class="item sticker-saved-row"><div class="grow"><div class="sticker-thumb" '+((s.local||s.path)?'data-v3-media="'+safe(s.path||s.local)+'"':'')+'>'+safe(s.text||'')+'</div><small>الصفحة: '+safe(previewPageLabel(s.target||'all'))+' · '+(s.positionMode==='page'?'مرتبط بالصفحة':'ثابت على الشاشة')+' · أفقي '+Number(s.x||0)+'% · عمودي '+Number(s.y||0)+'% · '+Number(s.size||0)+'px</small></div><button type="button" class="soft" data-v3-sticker-preview="'+s.id+'">معاينة مكانه</button><button data-v3-sticker-toggle="'+s.id+'">'+(s.hidden?'إظهار':'إخفاء')+'</button><button data-v3-sticker-del="'+s.id+'">حذف</button></div>').join('')||'<div class="empty">ما في Stickers محفوظة بعد.</div>')+'</div>'
   }
 
   function previewPageLabel(k){
@@ -521,92 +522,110 @@
     document.querySelectorAll('[data-v3-preview-device]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-v3-preview-device]').forEach(x=>x.classList.toggle('active',x===b));if(previewWrap){previewWrap.classList.toggle('mobile',b.dataset.v3PreviewDevice==='mobile');previewWrap.classList.toggle('desktop',b.dataset.v3PreviewDevice!=='mobile');refreshFullPreview()}});
     for(const formId of ['v3Bg','v3Transparency','v3NavVisibility']){const f=document.getElementById(formId);if(f)f.addEventListener('input',()=>{if(previewDialog?.open)refreshFullPreview()})}
     const sf=$('#v3Sticker');if(sf){
-      const input=sf.elements.file,prev=sf.querySelector('[data-v3-sticker-prev]'),st=sf.querySelector('[data-v3-sticker-status]'),emoji=sf.elements.text,
+      const draft=state.stickerDraft??=( {file:null,text:'',target:'all',positionMode:'screen',x:85,y:18,size:54,device:'desktop'} ),
+            input=sf.elements.file,prev=sf.querySelector('[data-v3-sticker-prev]'),st=sf.querySelector('[data-v3-sticker-status]'),emoji=sf.elements.text,
             placement=sf.querySelector('[data-v3-sticker-placement-item]'),previewWrap=sf.querySelector('[data-v3-sticker-placement]'),liveScreen=sf.querySelector('[data-v3-sticker-live-screen]'),
             target=sf.elements.target,mode=sf.elements.positionMode,xInput=sf.elements.x,yInput=sf.elements.y,sizeInput=sf.elements.size,
-            pageLabel=sf.querySelector('[data-sticker-page-label]'),modeLabel=sf.querySelector('[data-sticker-mode-label]'),
+            pageLabel=sf.querySelector('[data-sticker-page-label]'),modeLabel=sf.querySelector('[data-sticker-mode-label]'),fileName=sf.querySelector('[data-sticker-file-name]'),
             xLabel=sf.querySelector('[data-sticker-x-label]'),yLabel=sf.querySelector('[data-sticker-y-label]'),sizeLabel=sf.querySelector('[data-sticker-size-label]');
-      let previewUrl='',dragging=false;
+      let dragging=false,previewSeq=0;
 
       const makePreviewContent=(host)=>{
         host.innerHTML='';
-        const file=input.files?.[0],text=String(emoji.value||'').trim();
-        if(file){
-          const im=document.createElement('img');im.alt='معاينة Sticker';
-          im.src=previewUrl||(previewUrl=URL.createObjectURL(file));host.appendChild(im)
-        }else if(text){
-          const x=document.createElement('div');x.className='sticker-emoji-preview';x.textContent=text;host.appendChild(x)
+        if(draft.file){
+          const im=document.createElement('img'),u=URL.createObjectURL(draft.file);
+          im.alt='معاينة Sticker';im.src=u;im.onload=()=>URL.revokeObjectURL(u);im.onerror=()=>URL.revokeObjectURL(u);host.appendChild(im)
+        }else if(String(draft.text||'').trim()){
+          const x=document.createElement('div');x.className='sticker-emoji-preview';x.textContent=String(draft.text||'').trim();host.appendChild(x)
         }else host.innerHTML='<span class="sub">اختاري Sticker</span>';
       };
 
-      const updatePlacement=()=>{
-        const xv=Math.max(3,Math.min(97,Number(xInput.value)||50)),yv=Math.max(3,Math.min(97,Number(yInput.value)||50)),sv=Math.max(24,Math.min(180,Number(sizeInput.value)||54));
-        placement.style.left=xv+'%';placement.style.top=yv+'%';placement.style.width=sv+'px';placement.style.height=sv+'px';
-        xInput.value=xv;yInput.value=yv;sizeInput.value=sv;
-        xLabel.textContent=Math.round(xv)+'%';yLabel.textContent=Math.round(yv)+'%';sizeLabel.textContent=Math.round(sv)+'px';
-        pageLabel.textContent='الصفحة: '+previewPageLabel(target.value);
-        modeLabel.textContent=mode.value==='page'?'مرتبط بالصفحة':'ثابت على الشاشة';
+      const syncControlsFromDraft=()=>{
+        emoji.value=draft.text||'';target.value=draft.target||'all';mode.value=draft.positionMode||'screen';
+        xInput.value=Number(draft.x??85);yInput.value=Number(draft.y??18);sizeInput.value=Number(draft.size??54);
+        previewWrap.classList.toggle('mobile',draft.device==='mobile');previewWrap.classList.toggle('desktop',draft.device!=='mobile');
+        sf.querySelectorAll('[data-sticker-device]').forEach(b=>b.classList.toggle('active',b.dataset.stickerDevice===(draft.device||'desktop')));
+        if(fileName)fileName.textContent=draft.file?'✓ مختارة: '+(draft.file.name||'صورة Sticker'):'ما تم اختيار صورة بعد';
       };
 
-      const pagePreviewKey=()=>target.value==='all'?'home':target.value;
+      const updatePlacement=()=>{
+        draft.x=Math.max(3,Math.min(97,Number(draft.x)||50));draft.y=Math.max(3,Math.min(97,Number(draft.y)||50));draft.size=Math.max(24,Math.min(180,Number(draft.size)||54));
+        placement.style.left=draft.x+'%';placement.style.top=draft.y+'%';placement.style.width=draft.size+'px';placement.style.height=draft.size+'px';
+        xInput.value=draft.x;yInput.value=draft.y;sizeInput.value=draft.size;
+        xLabel.textContent=Math.round(draft.x)+'%';yLabel.textContent=Math.round(draft.y)+'%';sizeLabel.textContent=Math.round(draft.size)+'px';
+        pageLabel.textContent='الصفحة: '+previewPageLabel(draft.target||'all');
+        modeLabel.textContent=draft.positionMode==='page'?'مرتبط بالصفحة':'ثابت على الشاشة';
+      };
+
+      const pagePreviewKey=()=>draft.target==='all'?'home':draft.target;
       const renderStickerPagePreview=async()=>{
-        const k=pagePreviewKey(),mobile=previewWrap.classList.contains('mobile'),bgForm=document.getElementById('v3Bg'),transForm=document.getElementById('v3Transparency');
+        const seq=++previewSeq,k=pagePreviewKey(),mobile=draft.device==='mobile',bgForm=document.getElementById('v3Bg');
         let bgUrl=mobile?(pendingPortraitPreviewUrl||''):(pendingBackgroundPreviewUrl||data.designSettings.background||'');
         const media=mobile&&data.designSettings.portraitBackgroundMedia?data.designSettings.portraitBackgroundMedia:data.designSettings.backgroundMedia;
         if(!bgUrl&&media){
-          try{const blob=await blobFor(media.path||media.local);if(blob){const u=URL.createObjectURL(blob);urls.add(u);bgUrl=u}}catch{}
+          try{
+            const blob=await blobFor(media.path||media.local);
+            if(seq!==previewSeq)return;
+            if(blob){const u=URL.createObjectURL(blob);urls.add(u);bgUrl=u}
+          }catch{}
         }
+        if(seq!==previewSeq)return;
         const cfg=transparencyConfig(),trans=Number(cfg.pages?.[k]??35),alpha=Math.max(.05,(100-trans)/100),navVisible=navConfig().pages?.[k]!==false;
         const labels=['يومي','عبادتي','التقويم','العملاء','مهامي'];
         const navHtml=k==='lock'?'':(navVisible?'<aside class="mock-nav">'+labels.map((x,i)=>'<span class="'+((k==='home'&&i===0)||(k==='planner'&&i===2)||(k==='clients'&&i===3)||(k==='tasks'&&i===4)?'active':'')+'">'+x+'</span>').join('')+'</aside>':'');
-        liveScreen.dataset.previewPage=k;
-        liveScreen.style.setProperty('--mock-alpha',String(alpha));
+        liveScreen.dataset.previewPage=k;liveScreen.style.setProperty('--mock-alpha',String(alpha));
         const ds=data.designSettings,zoom=Number(bgForm?.elements.bgZoom.value??ds.bgZoom??100);
         liveScreen.style.backgroundPosition=(bgForm?.elements.bgX.value??ds.bgX??50)+'% '+(bgForm?.elements.bgY.value??ds.bgY??50)+'%';
         liveScreen.style.backgroundSize=k==='lock'?'100% 100%':(zoom===100?'cover':zoom+'% auto');
         liveScreen.style.backgroundImage=bgUrl?'linear-gradient(rgba(24,24,24,.06),rgba(24,24,24,.06)),url("'+bgUrl+'")':'linear-gradient(135deg,#eee2d4,#f7f1e8)';
         liveScreen.innerHTML=k==='lock'?previewBody(k):'<div class="mock-topbar"><b>يومي ✿</b><span>'+safe(previewPageLabel(k))+'</span></div><div class="mock-app-shell">'+navHtml+'<main class="mock-content">'+previewBody(k)+'</main></div>';
+        liveScreen.appendChild(placement);
+        makePreviewContent(placement);updatePlacement();
+      };
+
+      const refreshStickerOnly=()=>{makePreviewContent(prev);makePreviewContent(placement);updatePlacement()};
+
+      const moveStickerFromPointer=e=>{
+        const rect=liveScreen.getBoundingClientRect();if(!rect.width||!rect.height)return;
+        draft.x=Math.max(3,Math.min(97,((e.clientX-rect.left)/rect.width)*100));
+        draft.y=Math.max(3,Math.min(97,((e.clientY-rect.top)/rect.height)*100));
         updatePlacement();
       };
 
-      const showPreview=()=>{
-        if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=''}
-        makePreviewContent(prev);makePreviewContent(placement);updatePlacement();
-      };
-
-      const moveStickerFromPointer=e=>{
-        const rect=previewWrap.getBoundingClientRect();if(!rect.width||!rect.height)return;
-        const xv=Math.max(3,Math.min(97,((e.clientX-rect.left)/rect.width)*100)),yv=Math.max(3,Math.min(97,((e.clientY-rect.top)/rect.height)*100));
-        xInput.value=xv;yInput.value=yv;updatePlacement();
-      };
-
       placement.addEventListener('pointerdown',e=>{
-        if(!input.files?.[0]&&!String(emoji.value||'').trim())return;
+        if(!draft.file&&!String(draft.text||'').trim())return;
         dragging=true;placement.setPointerCapture?.(e.pointerId);moveStickerFromPointer(e);e.preventDefault();
       });
       placement.addEventListener('pointermove',e=>{if(dragging)moveStickerFromPointer(e)});
       placement.addEventListener('pointerup',e=>{dragging=false;placement.releasePointerCapture?.(e.pointerId)});
       placement.addEventListener('pointercancel',()=>{dragging=false});
-      previewWrap.addEventListener('pointerdown',e=>{
-        if(e.target===placement||placement.contains(e.target)||!input.files?.[0]&&!String(emoji.value||'').trim())return;
+      liveScreen.addEventListener('pointerdown',e=>{
+        if(e.target===placement||placement.contains(e.target)||!draft.file&&!String(draft.text||'').trim())return;
         moveStickerFromPointer(e);
       });
 
-      input.onchange=()=>{state.stickerStatus='';showPreview()};
-      emoji.oninput=()=>{state.stickerStatus='';if(!input.files?.[0])showPreview()};
-      [mode,xInput,yInput,sizeInput].forEach(el=>el.addEventListener('input',updatePlacement));
-      target.addEventListener('change',()=>{renderStickerPagePreview();updatePlacement()});
+      input.onchange=()=>{
+        const f=input.files?.[0];if(!f)return;
+        draft.file=f;state.stickerStatus='';if(fileName)fileName.textContent='✓ مختارة: '+(f.name||'صورة Sticker');refreshStickerOnly()
+      };
+      emoji.oninput=()=>{draft.text=emoji.value;state.stickerStatus='';if(!draft.file)refreshStickerOnly()};
+      target.addEventListener('change',()=>{draft.target=target.value;renderStickerPagePreview()});
+      mode.addEventListener('change',()=>{draft.positionMode=mode.value;updatePlacement()});
+      xInput.addEventListener('input',()=>{draft.x=Number(xInput.value);updatePlacement()});
+      yInput.addEventListener('input',()=>{draft.y=Number(yInput.value);updatePlacement()});
+      sizeInput.addEventListener('input',()=>{draft.size=Number(sizeInput.value);updatePlacement()});
       sf.querySelectorAll('[data-sticker-device]').forEach(b=>b.onclick=()=>{
+        draft.device=b.dataset.stickerDevice==='mobile'?'mobile':'desktop';
         sf.querySelectorAll('[data-sticker-device]').forEach(x=>x.classList.toggle('active',x===b));
-        previewWrap.classList.toggle('mobile',b.dataset.stickerDevice==='mobile');previewWrap.classList.toggle('desktop',b.dataset.stickerDevice!=='mobile');
+        previewWrap.classList.toggle('mobile',draft.device==='mobile');previewWrap.classList.toggle('desktop',draft.device!=='mobile');
         renderStickerPagePreview();
       });
 
-      updatePlacement();renderStickerPagePreview();
+      syncControlsFromDraft();refreshStickerOnly();renderStickerPagePreview();
 
       sf.onsubmit=async e=>{
         e.preventDefault();
-        const f=new FormData(sf),file=input.files?.[0],text=String(f.get('text')||'').trim();
+        const file=draft.file,text=String(draft.text||'').trim();
         if(!file&&!text){state.stickerStatus='اختاري صورة Sticker أو اكتبي Emoji أولًا.';st.textContent=state.stickerStatus;return}
         if(file){
           const ext=(file.name.split('.').pop()||'').toLowerCase(),okType=['image/png','image/webp','image/jpeg'].includes(file.type)||['png','webp','jpg','jpeg'].includes(ext);
@@ -616,8 +635,11 @@
         st.textContent='جارٍ حفظ الـSticker…';state.stickerStatus='جارٍ حفظ الـSticker…';
         try{
           let med={};if(file)med=await saveRawFile(file);
-          data.designSettings.stickers.push({id:id(),...med,text,target:f.get('target'),positionMode:f.get('positionMode')||'screen',x:Number(f.get('x')),y:Number(f.get('y')),size:Number(f.get('size')),hidden:false});
-          save();await syncMedia();if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=''}state.stickerStatus='✓ تم حفظ الـSticker بنجاح، وسيظهر في نفس المكان على الصفحة المختارة.';render()
+          data.designSettings.stickers.push({id:id(),...med,text,target:draft.target||'all',positionMode:draft.positionMode||'screen',x:Number(draft.x),y:Number(draft.y),size:Number(draft.size),hidden:false});
+          save();await syncMedia();
+          state.stickerStatus='✓ تم حفظ الـSticker بنجاح، وسيظهر في نفس المكان على الصفحة المختارة.';
+          state.stickerDraft={file:null,text:'',target:'all',positionMode:'screen',x:85,y:18,size:54,device:draft.device||'desktop'};
+          render()
         }catch(err){
           console.error('Sticker save failed',err);state.stickerStatus='تعذّر حفظ الـSticker. جرّبي صورة أصغر أو صيغة PNG/WebP/JPG.';st.textContent=state.stickerStatus;
         }
@@ -625,7 +647,7 @@
     }
     document.querySelectorAll('[data-v3-sticker-preview]').forEach(async b=>b.onclick=async()=>{
       const s=data.designSettings.stickers.find(x=>x.id===b.dataset.v3StickerPreview),sf=$('#v3Sticker');if(!s||!sf)return;
-      sf.elements.target.value=s.target||'all';sf.elements.positionMode.value=s.positionMode||'screen';sf.elements.x.value=Number(s.x??85);sf.elements.y.value=Number(s.y??18);sf.elements.size.value=Number(s.size??54);sf.elements.target.dispatchEvent(new Event('change',{bubbles:true}));
+      state.stickerDraft??={file:null,text:'',target:'all',positionMode:'screen',x:85,y:18,size:54,device:'desktop'};Object.assign(state.stickerDraft,{target:s.target||'all',positionMode:s.positionMode||'screen',x:Number(s.x??85),y:Number(s.y??18),size:Number(s.size??54)});sf.elements.target.value=state.stickerDraft.target;sf.elements.positionMode.value=state.stickerDraft.positionMode;sf.elements.x.value=state.stickerDraft.x;sf.elements.y.value=state.stickerDraft.y;sf.elements.size.value=state.stickerDraft.size;sf.elements.target.dispatchEvent(new Event('change',{bubbles:true}));
       const placement=sf.querySelector('[data-v3-sticker-placement-item]'),prev=sf.querySelector('[data-v3-sticker-prev]');
       const renderSaved=async host=>{host.innerHTML='';if(s.path||s.local){const blob=await blobFor(s.path||s.local);if(blob){const im=document.createElement('img'),u=URL.createObjectURL(blob);im.src=u;im.onload=()=>URL.revokeObjectURL(u);host.appendChild(im);return}}const d=document.createElement('div');d.className='sticker-emoji-preview';d.textContent=s.text||'Sticker';host.appendChild(d)};
       await renderSaved(prev);await renderSaved(placement);
