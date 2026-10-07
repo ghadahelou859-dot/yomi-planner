@@ -143,3 +143,20 @@ body[data-yomi-design="1"] .cycle-edit-card{
 .upload-preview-large{margin-top:14px}
 .upload-preview-large img{width:min(100%,420px);height:220px;object-fit:cover}
 [data-page-picker][hidden]{display:none!important}
+
+
+/* سجل العمل ووقت المشاريع */
+.project-time-panel .project-total-time{display:grid;gap:2px;text-align:center;min-width:130px}
+.project-stopwatch{font-variant-numeric:tabular-nums;text-align:center;font-size:2rem;font-weight:700;padding:18px;border-radius:18px;background:rgba(255,255,255,.48);margin:14px 0}
+.project-timer-actions{justify-content:center}
+.time-session-list{margin-top:12px}
+.work-log-list{margin-top:12px;display:grid;gap:10px}
+.work-log-row{display:flex;align-items:center;gap:12px;padding:11px 12px;border:1px solid rgba(120,90,70,.12);border-radius:14px;background:rgba(255,255,255,.45)}
+.work-log-date{min-width:92px;font-size:.82rem;color:#806d75}
+.work-log-row small{display:block;margin-top:3px;color:#806d75}
+@media(max-width:720px){
+ .project-time-panel .row.between{align-items:flex-start}
+ .project-total-time{width:100%;text-align:right}
+ .work-log-row{align-items:flex-start;flex-wrap:wrap}
+ .work-log-date{width:100%}
+}
