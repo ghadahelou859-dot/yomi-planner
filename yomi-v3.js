@@ -145,6 +145,7 @@
     const navVisible=navForm?navForm.elements.visible.value!=='hide':(navConfig().pages?.[k]!==false);
     const labels=['يومي','عبادتي','التقويم','العملاء','مهامي'];
     const navHtml=k==='lock'?'':(navVisible?'<aside class="mock-nav">'+labels.map((x,i)=>'<span class="'+((k==='home'&&i===0)||(k==='planner'&&i===2)||(k==='clients'&&i===3)||(k==='tasks'&&i===4)?'active':'')+'">'+x+'</span>').join('')+'</aside>':'');
+    screen.dataset.previewPage=k;
     screen.style.setProperty('--mock-alpha',String(alpha));
     screen.style.backgroundImage=bgUrl?'linear-gradient(rgba(24,24,24,.08),rgba(24,24,24,.08)),url("'+bgUrl+'")':'linear-gradient(135deg,#eee2d4,#f7f1e8)';
     screen.innerHTML=k==='lock'?previewBody(k):'<div class="mock-topbar"><b>يومي ✿</b><span>'+safe(previewPageLabel(k))+'</span></div><div class="mock-app-shell">'+navHtml+'<main class="mock-content">'+previewBody(k)+'</main></div>';
