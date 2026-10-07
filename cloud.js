@@ -19,7 +19,7 @@ if (ready && !window.YOMI_CLOUD_READY) {
   const conflictDialog = document.getElementById('conflictDialog');
   const shape = d => ({...initial(), ...(d || {})});
   const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
-  const nonempty = d => ['tasks','achievements','expenses','incomes','debts','reminders','notes','periods','restDays','dhikrs','waterEntries','readings','journal','habits','routines','timerSessions','budgets','bills','projects','savings','careLogs','diary','memories','subscriptions','givingPayments','appIdeas','calendarEvents','importantDates','clients','learningSpaces','weightEntries','debtPeople','fastingLog'].some(k => d[k]?.length) || !!d.designSettings?.backgroundMedia || !!d.designSettings?.stickers?.length || !!d.cyclePeriodLength || !!d.cycleSettings?.minDays || !!d.waterGoal || !!d.quran?.lastPage || !!d.quran?.log?.length || !!d.quran?.tracks?.length || !!d.quran?.extraLogs?.length || Number(d.givingRates?.salary ?? 5)!==5 || Number(d.givingRates?.work ?? 15)!==15;
+  const nonempty = d => ['tasks','achievements','expenses','incomes','debts','reminders','notes','periods','restDays','dhikrs','waterEntries','readings','journal','habits','routines','timerSessions','budgets','bills','projects','savings','careLogs','diary','memories','subscriptions','givingPayments','appIdeas','calendarEvents','importantDates','clients','learningSpaces','weightEntries','debtPeople','fastingLog','prayerWorks'].some(k => d[k]?.length) || Object.keys(d.adhkarChecks||{}).length>0 || Object.keys(d.prayerChecks||{}).length>0 || !!d.designSettings?.background || !!d.designSettings?.backgroundMedia || !!d.designSettings?.stickers?.length || !!d.cyclePeriodLength || !!d.cycleSettings?.minDays || !!d.waterGoal || !!d.quran?.lastPage || !!d.quran?.log?.length || !!d.quran?.tracks?.length || !!d.quran?.extraLogs?.length || Number(d.givingRates?.salary ?? 5)!==5 || Number(d.givingRates?.work ?? 15)!==15;
   const paint = s => {badge.hidden = false;badge.textContent = s};
   const paintSynced = updatedAt => {
     const time = updatedAt && new Intl.DateTimeFormat('ar-PS', {hour:'numeric',minute:'2-digit',timeZone:'Asia/Jerusalem'}).format(new Date(updatedAt));
@@ -250,3 +250,4 @@ if (ready && !window.YOMI_CLOUD_READY) {
     gate.hidden=false;badge.hidden=true;document.getElementById('signOutBtn').hidden=true;
   };
 }
+
