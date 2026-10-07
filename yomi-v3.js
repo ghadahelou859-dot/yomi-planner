@@ -2,9 +2,9 @@
 (() => {
   window.yomiV3DesignActive=true;
   const BG_KEY='yomi-bg-v3', BG_SCOPE_KEY='yomi-bg-scope-v3', TRANS_KEY='yomi-transparency-v1', NAV_KEY='yomi-nav-visibility-v1';
-  const state={client:null,project:null,course:null,prayer:null};
+  const state={client:null,project:null,course:null,prayer:null,reopenPrayerManage:false};
   const bucket='yomi-memories', urls=new Set();
-  let pendingBackgroundFile=null,pendingBackgroundPreviewUrl=null,projectClockInterval=null;
+  let pendingBackgroundFile=null,pendingBackgroundPreviewUrl=null,pendingPortraitFile=null,pendingPortraitPreviewUrl=null,projectClockInterval=null;
   const formatDuration=ms=>{ms=Math.max(0,Number(ms)||0);const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return String(h).padStart(2,'0')+' س : '+String(m).padStart(2,'0')+' د : '+String(sec).padStart(2,'0')+' ث'};
   const projectElapsed=p=>{const t=p.timerState||{elapsed:0,running:false,startedAt:null};return Number(t.elapsed||0)+(t.running&&t.startedAt?Math.max(0,Date.now()-Number(t.startedAt)):0)};
   const projectTotalTime=p=>sum((p.timeSessions||[]).map(x=>Number(x.duration)||0))+projectElapsed(p);
@@ -19,6 +19,7 @@
     data.designSettings.transparency ??= null;
     data.designSettings.navVisibility ??= null;
     data.designSettings.audioMode ??= null;
+    data.designSettings.portraitBackgroundMedia ??= null;
     data.prayerChecks??={};data.adhkarChecks??={};data.prayerWorks??=[];
     data.quran??={lastPage:0,log:[]};data.quran.log??=[];
     if(data.designSettings.background===null&&!data.designSettings.backgroundMigrated){
@@ -72,10 +73,11 @@
     try{const p=new Intl.DateTimeFormat('en-u-ca-islamic',{day:'numeric',month:'numeric',timeZone:TZ}).formatToParts(d),hd=Number(p.find(x=>x.type==='day')?.value),hm=Number(p.find(x=>x.type==='month')?.value);if(data.fastingPrefs.whiteDays&&[13,14,15].includes(hd))t.push('الأيام البيض');if(data.fastingPrefs.ashura&&hm===1&&hd===10)t.push('عاشوراء');if(data.fastingPrefs.arafah&&hm===12&&hd===9)t.push('عرفة')}catch{}return t
   }
   function worship(){
+    if(state.prayer)return prayerDetails();
     const prayers=['الفجر','الظهر','العصر','المغرب','العشاء'],p=data.prayerChecks?.[selected]||{},fast=data.fastingLog.find(x=>x.date===selected),tips=fastTips(),dh=(data.dhikrs||[]).filter(x=>activeDhikr(x,selected));
     const prayerCard=n=>{const works=(data.prayerWorks||[]).filter(x=>x.prayer===n),done=works.filter(x=>x.completed?.[selected]).length,autoDone=works.length>0&&done===works.length,doneNow=!!p[n]||autoDone;return '<button type="button" class="prayer-card prayer-page-card '+(doneNow?'prayer-complete':'')+'" data-prayer-open="'+n+'"><span class="prayer-card-title">🕌 '+n+'</span><small>'+(works.length?done+' / '+works.length+' أعمال':doneNow?'✓ منجزة':'اضغطي لفتح الصفحة')+'</small><span class="prayer-card-state">'+(doneNow?'✓ منجزة':'فتح الصفحة')+'</span></button>'};
     return '<div class="panel"><h2>عبادتي</h2><p class="sub">اضغطي على أي صلاة لفتح صفحتها وإدارة الأعمال والورد المرتبط فيها.</p>'+datePicker()+'<div class="prayer-grid">'+prayers.map(prayerCard).join('')+'</div><p class="sub">المسجّل اليوم: '+prayers.filter(n=>p[n]||((data.prayerWorks||[]).filter(x=>x.prayer===n).length>0&&(data.prayerWorks||[]).filter(x=>x.prayer===n).every(x=>x.completed?.[selected]))).length+' من 5.</p></div>'+
-    adhkarDaily()+prayerDetails()+quran()+ '<div class="panel"><div class="row between"><h3>الصيام</h3>'+(tips.length?'<span class="fast-tip">🌙 تذكير: '+safe(tips.join(' · '))+'</span>':'')+'</div><form id="v3Fast" class="row"><label class="field">نوع الصيام<select name="type">'+['قضاء رمضان','نفل','نذر','كفارة','لوجه الله تعالى'].map(v=>'<option '+(fast?.type===v?'selected':'')+'>'+v+'</option>').join('')+'</select></label><label class="field">التاريخ<input name="date" type="date" value="'+selected+'"></label><label class="field">ملاحظة<input name="note" value="'+safe(fast?.note||'')+'"></label><button class="primary">'+(fast?'تحديث':'تسجيل')+'</button></form>'+(fast?'<div class="notice">مسجّل: '+safe(fast.type)+' <button class="soft" data-v3-fast-del="'+fast.id+'">حذف</button></div>':'')+'<details><summary>تذكيرات صيام النفل</summary><div class="fasting-prefs"><label><input type="checkbox" data-v3-pref="mondayThursday" '+(data.fastingPrefs.mondayThursday?'checked':'')+'> الاثنين والخميس</label><label><input type="checkbox" data-v3-pref="whiteDays" '+(data.fastingPrefs.whiteDays?'checked':'')+'> الأيام البيض</label><label><input type="checkbox" data-v3-pref="arafah" '+(data.fastingPrefs.arafah?'checked':'')+'> عرفة</label><label><input type="checkbox" data-v3-pref="ashura" '+(data.fastingPrefs.ashura?'checked':'')+'> عاشوراء</label></div></details></div>'+
+    adhkarDaily()+quran()+ '<div class="panel"><div class="row between"><h3>الصيام</h3>'+(tips.length?'<span class="fast-tip">🌙 تذكير: '+safe(tips.join(' · '))+'</span>':'')+'</div><form id="v3Fast" class="row"><label class="field">نوع الصيام<select name="type">'+['قضاء رمضان','نفل','نذر','كفارة','لوجه الله تعالى'].map(v=>'<option '+(fast?.type===v?'selected':'')+'>'+v+'</option>').join('')+'</select></label><label class="field">التاريخ<input name="date" type="date" value="'+selected+'"></label><label class="field">ملاحظة<input name="note" value="'+safe(fast?.note||'')+'"></label><button class="primary">'+(fast?'تحديث':'تسجيل')+'</button></form>'+(fast?'<div class="notice">مسجّل: '+safe(fast.type)+' <button class="soft" data-v3-fast-del="'+fast.id+'">حذف</button></div>':'')+'<details><summary>تذكيرات صيام النفل</summary><div class="fasting-prefs"><label><input type="checkbox" data-v3-pref="mondayThursday" '+(data.fastingPrefs.mondayThursday?'checked':'')+'> الاثنين والخميس</label><label><input type="checkbox" data-v3-pref="whiteDays" '+(data.fastingPrefs.whiteDays?'checked':'')+'> الأيام البيض</label><label><input type="checkbox" data-v3-pref="arafah" '+(data.fastingPrefs.arafah?'checked':'')+'> عرفة</label><label><input type="checkbox" data-v3-pref="ashura" '+(data.fastingPrefs.ashura?'checked':'')+'> عاشوراء</label></div></details></div>'+
     '<div class="panel worship-dhikr-panel"><div class="row between"><div><h3>أذكاري</h3><p class="sub">الإضافة والتعديل والحذف من هون فقط.</p></div><strong>مجموع اليوم: '+sum((data.dhikrs||[]).map(x=>dhikrCount(x,selected)))+'</strong></div>'+
       '<form id="v3DhikrNew" class="dhikr-new-form"><label class="field">الذكر<input name="title" required placeholder="مثلاً: سبحان الله"></label><label class="field">الهدف اليومي<input name="target" type="number" inputmode="numeric" min="1" step="1" required value="33"></label><label class="field">يبدأ يوم<input name="start" type="date" required value="'+selected+'"></label><label class="field">ينتهي يوم (اختياري)<input name="end" type="date"></label><button class="primary">إضافة ذكر</button></form>'+
       (dh.map(x=>'<div class="dhikr-manage-card"><div class="dhikr-copy"><b>'+safe(x.title)+'</b><small>'+dhikrCount(x,selected)+' / '+dhikrTargetOn(x,selected)+' اليوم'+(dhikrCount(x,selected)>=dhikrTargetOn(x,selected)?' · ✓ مكتمل':'')+'</small><div class="bar"><i style="width:'+Math.min(100,pct(dhikrCount(x,selected),dhikrTargetOn(x,selected)))+'%"></i></div></div><div class="dhikr-count-row"><button class="dhikr-plus" data-v3-dhikr="'+x.id+'">+1</button><label class="field dhikr-number-field">إضافة عدد<input type="number" inputmode="numeric" min="1" step="1" placeholder="مثلاً 40" data-v3-dhikr-amount="'+x.id+'"></label><button class="primary" data-v3-dhikr-add="'+x.id+'">إضافة</button></div><div class="dhikr-manage-actions"><button class="soft" data-v3-dhikr-edit="'+x.id+'">تصحيح المجموع</button><button class="soft" data-v3-dhikr-target="'+x.id+'">تعديل الهدف</button><button class="soft" data-v3-dhikr-stop="'+x.id+'">إيقاف</button><button class="danger" data-v3-dhikr-del="'+x.id+'">حذف</button></div></div>').join('')||'<div class="empty">أضيفي أول ذكر من هون.</div>')+
@@ -86,17 +88,24 @@
     return '<div class="panel"><h3>أذكار الصباح والمساء</h3><div class="prayer-grid">'+['أذكار الصباح','أذكار المساء'].map(n=>'<label class="prayer-card"><input type="checkbox" data-daily-adhkar="'+n+'" '+(checks[n]?'checked':'')+'><span>'+n+(checks[n]?' · ✓ تمت اليوم':'')+'</span></label>').join('')+'</div></div>';
   }
   function prayerDetails(){
-    const n=state.prayer;if(!n)return '<div class="notice prayer-open-hint">اختاري صلاة من الأعلى لفتح صفحتها الخاصة.</div>';
+    const n=state.prayer;if(!n)return '';
     const q=data.quran,last=Number(q.lastPage)||0,logs=q.log.filter(x=>x.date===selected&&x.prayer===n),works=(data.prayerWorks||[]).filter(x=>x.prayer===n),done=works.filter(x=>x.completed?.[selected]).length,allDone=works.length>0&&done===works.length,manual=!!data.prayerChecks?.[selected]?.[n],complete=allDone||manual,pctDone=works.length?Math.round(done/works.length*100):(complete?100:0);
-    return '<div class="panel prayer-detail-page">'+
-      '<div class="row between prayer-detail-head"><div><button type="button" class="soft" data-prayer-back>‹ كل الصلوات</button><h2>🕌 صلاة '+safe(n)+'</h2><p class="sub">'+dateLabel(selected)+'</p></div><div class="prayer-status-badge '+(complete?'complete':'')+'">'+(complete?'✓ منجزة':'قيد الإنجاز')+'</div></div>'+
+    return '<div class="prayer-standalone">'+
+      '<div class="panel prayer-detail-page">'+
+      '<div class="row between prayer-detail-head"><div><button type="button" class="soft" data-prayer-back>‹ عبادتي</button><h2>🕌 صلاة '+safe(n)+'</h2><p class="sub">'+dateLabel(selected)+'</p></div><div class="prayer-status-badge '+(complete?'complete':'')+'">'+(complete?'✓ منجزة':'قيد الإنجاز')+'</div></div>'+
       '<div class="prayer-progress"><div class="row between"><b>إنجاز الأعمال</b><span>'+done+' / '+works.length+(works.length?' · '+pctDone+'%':'')+'</span></div><div class="bar"><i style="width:'+pctDone+'%"></i></div>'+(works.length&&allDone?'<p class="sub">✓ اكتملت كل الأعمال، وتم اعتبار الصلاة منجزة تلقائيًا.</p>':'')+'</div>'+
       '<div class="prayer-section"><div class="row between"><h3>الورد القرآني</h3><span class="badge">آخر صفحة '+last+'</span></div><div class="notice">'+(last<604?'القراءة التالية تبدأ من صفحة '+(last+1):'أتممتِ الختمة ✓')+'</div>'+logs.map(x=>'<div class="prayer-log">✓ '+(x.from===x.to?'تمت قراءة صفحة '+x.to:'تمت قراءة الصفحات '+x.from+'–'+x.to)+'</div>').join('')+
       (last<604?'<form id="prayerQuran" class="row prayer-quran-form"><label class="field">قرأتِ حتى صفحة<input name="page" type="number" inputmode="numeric" min="'+(last+1)+'" max="604" step="1" value="'+(last+1)+'" required></label><button class="primary">تسجيل القراءة</button></form>':'')+
       '<p class="sub">هذا نفس الورد الموجود في «وردي القرآني»، ويكمل معك بين الصلوات والأيام.</p></div>'+
-      '<div class="prayer-section"><div class="row between"><div><h3>الأعمال بعد الصلاة</h3><p class="sub">علّمي «تم الإنجاز» لكل عمل. عند اكتمالها كلها، الصلاة تصير منجزة تلقائيًا.</p></div><button type="button" class="soft" data-prayer-mark-manual="'+n+'">'+(manual?'إلغاء الإنجاز اليدوي':'تحديد الصلاة منجزة يدويًا')+'</button></div>'+
-      (works.map(x=>'<div class="prayer-work-card '+(x.completed?.[selected]?'done':'')+'"><label class="prayer-work-check"><input type="checkbox" data-prayer-work="'+x.id+'" '+(x.completed?.[selected]?'checked':'')+'><span>'+safe(x.title)+'</span></label><div class="prayer-work-actions"><button type="button" class="soft" data-prayer-work-edit="'+x.id+'">تعديل</button><button type="button" class="danger" data-prayer-work-delete="'+x.id+'">حذف</button></div></div>').join('')||'<div class="empty">ما أضفتِ أعمالًا لهذه الصلاة بعد.</div>')+
-      '<form id="prayerWorkNew" class="row prayer-work-new"><label class="field">إضافة عمل لهذه الصلاة<input name="title" placeholder="مثلاً: أذكار بعد الصلاة أو سورة يس" required></label><button class="primary">إضافة عمل</button></form></div>'+
+      '<div class="prayer-section"><div class="row between"><div><h3>الأعمال بعد الصلاة</h3><p class="sub">هون التنفيذ اليومي فقط. للإضافة والتعديل والحذف افتحي شباك إدارة الأعمال.</p></div><button type="button" class="soft" data-prayer-manage>⚙ إدارة أعمال الصلاة</button></div>'+
+      (works.map(x=>'<label class="prayer-work-card '+(x.completed?.[selected]?'done':'')+' prayer-work-execute"><span class="prayer-work-check"><input type="checkbox" data-prayer-work="'+x.id+'" '+(x.completed?.[selected]?'checked':'')+'><span>'+safe(x.title)+'</span></span><b>'+(x.completed?.[selected]?'✓ تم الإنجاز':'بانتظار الإنجاز')+'</b></label>').join('')||'<div class="empty">ما أضفتِ أعمالًا لهذه الصلاة. افتحي «إدارة أعمال الصلاة» لإضافتها.</div>')+
+      '<div class="row prayer-manual-row"><button type="button" class="soft" data-prayer-mark-manual="'+n+'">'+(manual?'إلغاء الإنجاز اليدوي':'تحديد الصلاة منجزة يدويًا')+'</button></div>'+
+      '</div>'+
+      '</div>'+
+      '<dialog id="prayerManageDialog" class="prayer-manage-dialog"><div class="row between prayer-manage-head"><div><h2>إدارة أعمال صلاة '+safe(n)+'</h2><p class="sub">أضيفي أو عدلي الأعمال، وبعدها سكّري الشباك وكمّلي التنفيذ من صفحة الصلاة.</p></div><button type="button" class="soft" data-prayer-manage-close>إغلاق</button></div>'+
+      '<div class="prayer-manage-list">'+(works.map(x=>'<div class="prayer-manage-item"><div class="grow"><b>'+safe(x.title)+'</b><small>'+(x.completed?.[selected]?'✓ منجز اليوم':'غير منجز اليوم')+'</small></div><button type="button" class="soft" data-prayer-work-edit="'+x.id+'">تعديل</button><button type="button" class="danger" data-prayer-work-delete="'+x.id+'">حذف</button></div>').join('')||'<div class="empty">ما في أعمال مضافة بعد.</div>')+'</div>'+
+      '<form id="prayerWorkNew" class="prayer-work-new"><label class="field">عمل مرتبط بهذه الصلاة<input name="title" placeholder="مثلاً: أذكار بعد الصلاة أو سورة يس" required></label><button class="primary">إضافة العمل</button></form>'+
+      '</dialog>'+
     '</div>';
   }
   function clients(){
@@ -128,9 +137,9 @@
     if(bgSaved.applyAll===false)bgDestination=bgSaved.targetPage==='lock'?'login':'page';
     else if(bgSaved.includeLogin)bgDestination='all-login';
     const transDestination=tCfg.lastDestination||'page',transTarget=tCfg.lastTarget||'home',trans=Number(tPages[transTarget]??35);
-    const currentBg=d.background,currentBgRef=d.backgroundMedia?.path||d.backgroundMedia?.local||'';
+    const currentBg=d.background,currentBgRef=d.backgroundMedia?.path||d.backgroundMedia?.local||'',portraitBgRef=d.portraitBackgroundMedia?.path||d.portraitBackgroundMedia?.local||'';
     return '<div class="panel customize-main"><h2>تصميم يومي</h2><p class="sub">الخلفية والشفافية صار لكل واحدة زر تطبيق ومكان مستقل.</p>'+
-      '<form id="v3Bg"><h3>صورة عرضية للخلفية</h3><p class="sub">ارفعي الصورة من الهاتف أو اللابتوب. سجّلي الدخول بنفس الحساب حتى تظهر على الجهازين.</p><label class="upload-zone" for="v3BgFile"><input id="v3BgFile" name="file" class="upload-zone-input" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"><span class="upload-zone-icon">⬆️</span><b>اضغطي هنا لاختيار صورة</b><small>JPG · PNG · WebP</small></label><div class="upload-preview upload-preview-large" data-v3-bg-prev>'+(currentBgRef?'<div class="media-box bg-current-media" data-v3-media="'+safe(currentBgRef)+'"></div>':currentBg?'<img src="'+currentBg+'" alt="الخلفية الحالية">':'')+'</div><p class="sub upload-status" data-v3-bg-status>'+((currentBgRef||currentBg)?'✓ في خلفية محفوظة ومربوطة بالحساب':'ما تم اختيار صورة بعد')+'</p>'+
+      '<form id="v3Bg"><h3>صورة عرضية للخلفية</h3><p class="sub">ارفعي الصورة من الهاتف أو اللابتوب. سجّلي الدخول بنفس الحساب حتى تظهر على الجهازين.</p><label class="upload-zone" for="v3BgFile"><input id="v3BgFile" name="file" class="upload-zone-input" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"><span class="upload-zone-icon">⬆️</span><b>اضغطي هنا لاختيار صورة</b><small>JPG · PNG · WebP</small></label><div class="upload-preview upload-preview-large" data-v3-bg-prev>'+(currentBgRef?'<div class="media-box bg-current-media" data-v3-media="'+safe(currentBgRef)+'"></div>':currentBg?'<img src="'+currentBg+'" alt="الخلفية الحالية">':'')+'</div><p class="sub upload-status" data-v3-bg-status>'+((currentBgRef||currentBg)?'✓ في خلفية محفوظة ومربوطة بالحساب':'ما تم اختيار صورة بعد')+'</p>'+      '<div class="portrait-bg-block"><h3>صورة طولية للموبايل</h3><p class="sub">اختيارية. إذا رفعتيها، تُستخدم تلقائيًا على شاشة الموبايل بدل الصورة العرضية.</p><label class="upload-zone portrait-upload" for="v3BgPortraitFile"><input id="v3BgPortraitFile" name="portraitFile" class="upload-zone-input" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"><span class="upload-zone-icon">📱</span><b>اختاري صورة طولية</b><small>يفضل 9:16 · JPG · PNG · WebP</small></label><div class="upload-preview upload-preview-large portrait-preview" data-v3-bg-portrait-prev>'+(portraitBgRef?'<div class="media-box bg-current-media portrait-current-media" data-v3-media="'+safe(portraitBgRef)+'"></div>':'')+'</div><p class="sub upload-status" data-v3-bg-portrait-status>'+(portraitBgRef?'✓ في صورة طولية محفوظة للحساب':'ما تم اختيار صورة طولية بعد')+'</p><button type="button" class="soft" data-v3-bg-portrait-clear>إزالة الصورة الطولية</button></div>'+
       '<label class="field">تطبيق الصورة على<select name="destination"><option value="login" '+(bgDestination==='login'?'selected':'')+'>صفحة الدخول فقط</option><option value="all" '+(bgDestination==='all'?'selected':'')+'>كل صفحات التطبيق</option><option value="all-login" '+(bgDestination==='all-login'?'selected':'')+'>كل الصفحات + صفحة الدخول</option><option value="page" '+(bgDestination==='page'?'selected':'')+'>صفحة محددة</option></select></label>'+
       '<label class="field" data-bg-page-picker>اختاري الصفحة<select name="target">'+pagesOptions.map(([k,v])=>'<option value="'+k+'" '+(bgSaved.targetPage===k?'selected':'')+'>'+v+'</option>').join('')+'</select></label>'+
       '<div class="row"><label class="field">مكان الصورة أفقيًا<input name="bgX" type="range" min="0" max="100" value="'+Number(d.bgX??50)+'"></label><label class="field">مكان الصورة عموديًا<input name="bgY" type="range" min="0" max="100" value="'+Number(d.bgY??50)+'"></label><label class="field">تكبير الصورة<input name="bgZoom" type="range" min="100" max="200" value="'+Number(d.bgZoom??100)+'"></label></div><div class="row"><button class="primary">تطبيق الصورة</button><button type="button" class="soft" data-v3-bg-clear>إزالة الخلفية الحالية</button></div></form></div>'+
@@ -171,7 +180,7 @@
   async function refreshFullPreview(){
     const wrap=document.querySelector('[data-v3-full-preview]'),screen=wrap?.querySelector('.full-preview-screen'),sel=document.getElementById('v3PreviewPage');if(!wrap||!screen||!sel)return;
     const k=sel.value,bgForm=document.getElementById('v3Bg'),transForm=document.getElementById('v3Transparency'),navForm=document.getElementById('v3NavVisibility');
-    let savedBg=data.designSettings.background||'',bgUrl=pendingBackgroundPreviewUrl||savedBg;if(!bgUrl&&data.designSettings.backgroundMedia){try{const blob=await blobFor(data.designSettings.backgroundMedia.path||data.designSettings.backgroundMedia.local);if(blob){bgUrl=URL.createObjectURL(blob);urls.add(bgUrl)}}catch{}}
+    const previewMobile=wrap.classList.contains('mobile');let savedBg=data.designSettings.background||'',bgUrl=previewMobile?(pendingPortraitPreviewUrl||''):(pendingBackgroundPreviewUrl||savedBg),previewMedia=previewMobile&&data.designSettings.portraitBackgroundMedia?data.designSettings.portraitBackgroundMedia:data.designSettings.backgroundMedia;if(!bgUrl&&previewMedia){try{const blob=await blobFor(previewMedia.path||previewMedia.local);if(blob){bgUrl=URL.createObjectURL(blob);urls.add(bgUrl)}}catch{}}
     const trans=transForm?Math.max(0,Math.min(95,Number(transForm.elements.transparency.value||35))):35,alpha=Math.max(.05,(100-trans)/100);
     const navVisible=navForm?navForm.elements.visible.value!=='hide':(navConfig().pages?.[k]!==false);
     const labels=['يومي','عبادتي','التقويم','العملاء','مهامي'];
@@ -252,7 +261,7 @@
     const verify=await get(local);if(!verify)throw Error('store-failed');
     return {local,mime:b.type||file.type||'image/jpeg',name:file.name||''}
   }
-  function records(){const r=[];for(const c of data.clients)for(const p of c.projects||[])for(const a of p.assets||[])if(a.local&&!a.path)r.push(a);for(const c of data.learningSpaces)for(const i of c.items||[])if(i.media?.local&&!i.media?.path)r.push(i.media);if(data.designSettings.backgroundMedia?.local&&!data.designSettings.backgroundMedia?.path)r.push(data.designSettings.backgroundMedia);if(data.designSettings.audioMedia?.local&&!data.designSettings.audioMedia?.path)r.push(data.designSettings.audioMedia);for(const s of data.designSettings.stickers||[])if(s.local&&!s.path)r.push(s);return r}
+  function records(){const r=[];for(const c of data.clients)for(const p of c.projects||[])for(const a of p.assets||[])if(a.local&&!a.path)r.push(a);for(const c of data.learningSpaces)for(const i of c.items||[])if(i.media?.local&&!i.media?.path)r.push(i.media);if(data.designSettings.backgroundMedia?.local&&!data.designSettings.backgroundMedia?.path)r.push(data.designSettings.backgroundMedia);if(data.designSettings.portraitBackgroundMedia?.local&&!data.designSettings.portraitBackgroundMedia?.path)r.push(data.designSettings.portraitBackgroundMedia);if(data.designSettings.audioMedia?.local&&!data.designSettings.audioMedia?.path)r.push(data.designSettings.audioMedia);for(const s of data.designSettings.stickers||[])if(s.local&&!s.path)r.push(s);return r}
   function extForBlob(b,name=''){const t=String(b?.type||'').toLowerCase();if(t.includes('webp'))return'webp';if(t.includes('png'))return'png';if(t.includes('jpeg')||t.includes('jpg'))return'jpg';if(t.includes('mpeg'))return'mp3';if(t.includes('mp4')||t.includes('m4a'))return'm4a';if(t.includes('wav'))return'wav';if(t.includes('ogg'))return'ogg';if(t.includes('aac'))return'aac';if(t.includes('webm'))return'webm';const e=String(name||'').split('.').pop()?.toLowerCase();return e&&/^[a-z0-9]{2,5}$/.test(e)?e:'bin'}
   async function syncMedia(){const s=window.yomiMemoriesSession?.();if(!s||!navigator.onLine)return;for(const r of records()){const old=r.local;try{const blob=await get(old);if(!blob)continue;const ext=extForBlob(blob,r.name),path=s.user.id+'/planner-'+id()+'.'+ext,{error}=await s.client.storage.from(bucket).upload(path,blob,{contentType:blob.type||r.mime||'application/octet-stream',upsert:false});if(error)throw error;await put(path,blob);await put(s.user.id+':'+path,blob);r.path=path;save()}catch(e){console.error('Media sync failed',e)}}}
   async function blobFor(ref){let blob=await get(ref);const s=window.yomiMemoriesSession?.();if(!blob&&s){blob=await get(s.user.id+':'+ref);if(!blob&&ref.startsWith(s.user.id+'/')&&navigator.onLine){const {data:x,error}=await s.client.storage.from(bucket).download(ref);if(error)throw error;blob=x;await put(ref,blob);await put(s.user.id+':'+ref,blob)}}return blob}
@@ -314,7 +323,7 @@
     document.body.dataset.yomiPage=lockVisible?'lock':page;
     document.body.dataset.yomiDesign=hasTransparency?'1':'0';
     document.documentElement.style.setProperty('--yomi-panel-alpha',String((100-trans)/100));
-    let bgData='',bgMedia=data.designSettings?.backgroundMedia;
+    let bgData='',isPhone=matchMedia('(max-width:720px)').matches,portraitMedia=data.designSettings?.portraitBackgroundMedia,bgMedia=isPhone&&portraitMedia?portraitMedia:data.designSettings?.backgroundMedia;
     if(backgroundApplies()&&bgMedia&&(bgMedia.path||bgMedia.local)){try{const blob=await blobFor(bgMedia.path||bgMedia.local);if(blob){bgData=URL.createObjectURL(blob);urls.add(bgData)}}catch(e){console.error('Background load failed',e)}}
     if(!bgData&&backgroundApplies())bgData=data.designSettings?.background||'';
     if(bgData){document.documentElement.style.setProperty('--yomi-user-bg','url("'+bgData+'")');document.body.dataset.userBg='1'}
@@ -333,12 +342,16 @@
     document.querySelectorAll('[data-daily-adhkar]').forEach(b=>b.onchange=()=>{data.adhkarChecks[selected]??={};data.adhkarChecks[selected][b.dataset.dailyAdhkar]=b.checked;save();render()});
     const syncPrayerCompletion=n=>{data.prayerChecks[selected]??={};const works=(data.prayerWorks||[]).filter(x=>x.prayer===n);if(works.length&&works.every(x=>x.completed?.[selected]))data.prayerChecks[selected][n]=true;else if(data.prayerChecks[selected][n]==='auto')delete data.prayerChecks[selected][n]};
     document.querySelectorAll('[data-prayer-open]').forEach(b=>b.onclick=()=>{state.prayer=b.dataset.prayerOpen;render()});
+    const prayerManageDialog=document.getElementById('prayerManageDialog');
+    document.querySelector('[data-prayer-manage]')?.addEventListener('click',()=>{if(prayerManageDialog?.showModal)prayerManageDialog.showModal();else prayerManageDialog?.setAttribute('open','')});
+    document.querySelector('[data-prayer-manage-close]')?.addEventListener('click',()=>prayerManageDialog?.close?.());
+    prayerManageDialog?.addEventListener('click',e=>{if(e.target===prayerManageDialog)prayerManageDialog.close()});
     document.querySelector('[data-prayer-back]')?.addEventListener('click',()=>{state.prayer=null;render()});
     const pq=$('#prayerQuran');if(pq)pq.onsubmit=e=>{e.preventDefault();const from=Number(data.quran.lastPage||0)+1,to=parseCount(pq.elements.page.value);if(!Number.isSafeInteger(to)||to<from||to>604){alert('اكتبي صفحة صحيحة من '+from+' إلى 604');return}data.quran.log.push({id:id(),date:selected,prayer:state.prayer,from,to});data.quran.lastPage=to;save();render()};
-    const pw=$('#prayerWorkNew');if(pw)pw.onsubmit=e=>{e.preventDefault();const title=pw.elements.title.value.trim();if(!title)return;data.prayerWorks.push({id:id(),prayer:state.prayer,title,completed:{}});save();render()};
+    const pw=$('#prayerWorkNew');if(pw)pw.onsubmit=e=>{e.preventDefault();const title=pw.elements.title.value.trim();if(!title)return;data.prayerWorks.push({id:id(),prayer:state.prayer,title,completed:{}});state.reopenPrayerManage=true;save();render()};
     document.querySelectorAll('[data-prayer-work]').forEach(b=>b.onchange=()=>{const x=data.prayerWorks.find(x=>x.id===b.dataset.prayerWork);x.completed??={};if(b.checked)x.completed[selected]=true;else delete x.completed[selected];data.prayerChecks[selected]??={};const works=data.prayerWorks.filter(w=>w.prayer===state.prayer);if(works.length&&works.every(w=>w.completed?.[selected]))data.prayerChecks[selected][state.prayer]=true;else if(data.prayerChecks[selected][state.prayer]===true)delete data.prayerChecks[selected][state.prayer];save();render()});
-    document.querySelectorAll('[data-prayer-work-edit]').forEach(b=>b.onclick=()=>{const x=data.prayerWorks.find(x=>x.id===b.dataset.prayerWorkEdit);if(!x)return;const v=prompt('عدّلي اسم العمل',x.title);if(v===null)return;const title=v.trim();if(!title)return;x.title=title;save();render()});
-    document.querySelectorAll('[data-prayer-work-delete]').forEach(b=>b.onclick=()=>{if(confirm('حذف هذا العمل؟')){const x=data.prayerWorks.find(x=>x.id===b.dataset.prayerWorkDelete),prayer=x?.prayer;data.prayerWorks=data.prayerWorks.filter(x=>x.id!==b.dataset.prayerWorkDelete);if(prayer){const works=data.prayerWorks.filter(w=>w.prayer===prayer);data.prayerChecks[selected]??={};if(works.length&&works.every(w=>w.completed?.[selected]))data.prayerChecks[selected][prayer]=true;else delete data.prayerChecks[selected][prayer]}save();render()}});
+    document.querySelectorAll('[data-prayer-work-edit]').forEach(b=>b.onclick=()=>{const x=data.prayerWorks.find(x=>x.id===b.dataset.prayerWorkEdit);if(!x)return;const v=prompt('عدّلي اسم العمل',x.title);if(v===null)return;const title=v.trim();if(!title)return;x.title=title;state.reopenPrayerManage=true;save();render()});
+    document.querySelectorAll('[data-prayer-work-delete]').forEach(b=>b.onclick=()=>{if(confirm('حذف هذا العمل؟')){const x=data.prayerWorks.find(x=>x.id===b.dataset.prayerWorkDelete),prayer=x?.prayer;data.prayerWorks=data.prayerWorks.filter(x=>x.id!==b.dataset.prayerWorkDelete);if(prayer){const works=data.prayerWorks.filter(w=>w.prayer===prayer);data.prayerChecks[selected]??={};if(works.length&&works.every(w=>w.completed?.[selected]))data.prayerChecks[selected][prayer]=true;else delete data.prayerChecks[selected][prayer]}state.reopenPrayerManage=true;save();render()}});
     document.querySelectorAll('[data-prayer-mark-manual]').forEach(b=>b.onclick=()=>{data.prayerChecks[selected]??={};const n=b.dataset.prayerMarkManual;if(data.prayerChecks[selected][n])delete data.prayerChecks[selected][n];else data.prayerChecks[selected][n]=true;save();render()});
 
     document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{page=b.dataset.go;render()});
@@ -391,7 +404,7 @@
     document.querySelectorAll('[data-v3-course-toggle]').forEach(b=>b.onclick=()=>{const c=data.learningSpaces.find(x=>x.id===state.course),i=c.items.find(x=>x.id===b.dataset.v3CourseToggle);i.watched=!i.watched;save();render()});
 
     const bg=$('#v3Bg');if(bg){
-      const input=bg.elements.file,prev=bg.querySelector('[data-v3-bg-prev]'),st=bg.querySelector('[data-v3-bg-status]'),destination=bg.elements.destination,target=bg.elements.target,pagePicker=bg.querySelector('[data-bg-page-picker]');
+      const input=bg.elements.file,portraitInput=bg.elements.portraitFile,prev=bg.querySelector('[data-v3-bg-prev]'),portraitPrev=bg.querySelector('[data-v3-bg-portrait-prev]'),st=bg.querySelector('[data-v3-bg-status]'),portraitSt=bg.querySelector('[data-v3-bg-portrait-status]'),destination=bg.elements.destination,target=bg.elements.target,pagePicker=bg.querySelector('[data-bg-page-picker]');
       const liveBg=()=>{pagePicker.hidden=destination.value!=='page'};
       destination.onchange=liveBg;liveBg();
       input.addEventListener('click',()=>{window.yomiFilePickerActive=true});
@@ -404,6 +417,18 @@
         const im=document.createElement('img');im.src=pendingBackgroundPreviewUrl;im.alt='معاينة الخلفية';prev.appendChild(im);
         st.textContent='✓ الصورة جاهزة. اختاري مكانها ثم اضغطي «تطبيق الصورة».';refreshFullPreview();
       };
+      if(portraitInput){
+        portraitInput.addEventListener('click',()=>{window.yomiFilePickerActive=true});
+        portraitInput.onchange=()=>{
+          window.yomiFilePickerActive=false;
+          const file=portraitInput.files?.[0];pendingPortraitFile=file||null;portraitPrev.innerHTML='';
+          if(pendingPortraitPreviewUrl){URL.revokeObjectURL(pendingPortraitPreviewUrl);pendingPortraitPreviewUrl=null}
+          if(!file){portraitSt.textContent='لم يتم اختيار صورة طولية.';return}
+          pendingPortraitPreviewUrl=URL.createObjectURL(file);
+          const im=document.createElement('img');im.src=pendingPortraitPreviewUrl;im.alt='معاينة الصورة الطولية';portraitPrev.appendChild(im);
+          portraitSt.textContent='✓ الصورة الطولية جاهزة للحفظ.';refreshFullPreview();
+        };
+      }
       bg.onsubmit=async e=>{
         e.preventDefault();
         try{
@@ -413,6 +438,10 @@
             data.designSettings.background='';
             localStorage.removeItem(BG_KEY);
             pendingBackgroundFile=null;
+          }
+          if(pendingPortraitFile){
+            data.designSettings.portraitBackgroundMedia=await saveImage(pendingPortraitFile,{max:1800,q:.84});
+            pendingPortraitFile=null;
           }
           if(!data.designSettings.backgroundMedia&&!data.designSettings.background){st.textContent='اختاري صورة أولًا.';return}
           const dest=destination.value,scope={applyAll:dest==='all'||dest==='all-login',includeLogin:dest==='all-login',targetPage:dest==='login'?'lock':dest==='page'?target.value:'home'};
@@ -426,6 +455,11 @@
       const oldBg=data.designSettings.backgroundMedia;if(oldBg?.local)del(oldBg.local).catch(()=>{});data.designSettings.background='';data.designSettings.backgroundMedia=null;data.designSettings.backgroundMigrated=true;save();localStorage.removeItem(BG_KEY);localStorage.removeItem(BG_SCOPE_KEY);pendingBackgroundFile=null;
       if(pendingBackgroundPreviewUrl){URL.revokeObjectURL(pendingBackgroundPreviewUrl);pendingBackgroundPreviewUrl=null}
       document.documentElement.style.setProperty('--yomi-user-bg','none');document.body.dataset.userBg='0';render()
+    });
+    document.querySelector('[data-v3-bg-portrait-clear]')?.addEventListener('click',()=>{
+      const old=data.designSettings.portraitBackgroundMedia;if(old?.local)del(old.local).catch(()=>{});data.designSettings.portraitBackgroundMedia=null;save();pendingPortraitFile=null;
+      if(pendingPortraitPreviewUrl){URL.revokeObjectURL(pendingPortraitPreviewUrl);pendingPortraitPreviewUrl=null}
+      render()
     });
     const ts=$('#v3Transparency');if(ts){
       const destination=ts.elements.destination,target=ts.elements.target,pagePicker=ts.querySelector('[data-trans-page-picker]'),slider=ts.elements.transparency,label=ts.querySelector('[data-v3-trans-value]'),preview=ts.querySelector('[data-v3-trans-preview]');
@@ -481,7 +515,7 @@
   const oldRender=render;
   render=function(){
     ensure();if(page==='quran')page='worship';const custom={planner,worship,clients,learning,customize};
-    if(custom[page]){nav();$('#todayLabel').textContent=dateLabel(today());$('#view').innerHTML=custom[page]();attachCommon();window.yomiTimerRender?.();window.yomiThemeApply?.();attach();stickers();paint();return}
+    if(custom[page]){nav();$('#todayLabel').textContent=dateLabel(today());$('#view').innerHTML=custom[page]();attachCommon();window.yomiTimerRender?.();window.yomiThemeApply?.();attach();stickers();paint();if(state.reopenPrayerManage&&page==='worship'&&state.prayer){state.reopenPrayerManage=false;setTimeout(()=>document.getElementById('prayerManageDialog')?.showModal?.(),0)}return}
     oldRender();
     if(page==='home'){document.querySelectorAll('.special-date-card').forEach(x=>x.remove());$('#view').insertAdjacentHTML('afterbegin',specialDateHome()+homeExtra());attach()}
     if(page==='cycle'){$('#view').insertAdjacentHTML('beforeend',cycleExtra());attach()}
