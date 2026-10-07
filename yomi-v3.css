@@ -234,3 +234,5 @@ body[data-nav-hidden="1"] #view{max-width:1180px;margin-inline:auto;width:100%}
   .yomi-nav-reveal{bottom:calc(14px + env(safe-area-inset-bottom))}
   .diary-editor-panel>h2{font-size:2.25rem}
 }
+
+.nav[hidden]{display:none!important}
