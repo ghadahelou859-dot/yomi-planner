@@ -1,0 +1,25 @@
+/* Yomi v3 visual layer */
+.glass-panel{background:color-mix(in srgb,#fffdfa 78%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-color:#ffffff80}
+.upload-preview{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.upload-preview img{width:110px;height:90px;object-fit:cover;border-radius:14px;border:1px solid #e7d8cb;background:#fff}
+.media-box{min-height:80px;border-radius:12px;background:#f4eee8;display:grid;place-items:center;overflow:hidden}
+.media-box img,.sticker-thumb img{width:100%;height:100%;object-fit:cover}
+.learning-media{width:110px;height:90px;flex:0 0 110px}
+.project-type{display:inline-flex;padding:6px 10px;border-radius:999px;background:#f2e8dc;color:#704e5a;font-size:.82rem}
+.stat-small{font-size:1rem!important;line-height:1.35}
+.check-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #efe8e1}
+.check-row span{flex:1}.check-row button{background:#f4ece5;border-radius:9px;padding:6px 10px;color:#704e5a}
+.fasting-prefs{display:grid;gap:10px;padding:12px 0}.fast-tip{padding:7px 11px;border-radius:999px;background:#f5ede4;color:#6b4f59;font-size:.84rem}
+.quick-dhikr .item button{white-space:nowrap}
+.yomi-v3-sticker{position:fixed;transform:translate(-50%,-50%);z-index:7;pointer-events:none;display:grid;place-items:center;filter:drop-shadow(0 4px 8px #0002)}
+.yomi-v3-sticker img{width:100%;height:100%;object-fit:contain}
+.sticker-thumb{width:58px;height:58px;display:grid;place-items:center;font-size:2rem;overflow:hidden;border-radius:12px;background:#f6efe8}
+body[data-user-bg="1"]::before{opacity:.24}
+.v3-cycle .item,.v3-debts .debt-person{background:color-mix(in srgb,#fff 82%,transparent)}
+@media(max-width:720px){
+ .upload-preview img{width:86px;height:72px}
+ .learning-media{width:100%;height:auto;aspect-ratio:4/3;flex-basis:100%}
+ .yomi-v3-sticker{opacity:.88}
+ .check-row{align-items:flex-start}
+ .fast-tip{width:100%;text-align:center}
+}
