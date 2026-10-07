@@ -87,7 +87,7 @@
   }
   function adhkarDaily(){
     const checks=data.adhkarChecks[selected]||{};
-    return '<div class="panel"><h3>أذكار الصباح والمساء</h3><div class="prayer-grid">'+['أذكار الصباح','أذكار المساء'].map(n=>'<label class="prayer-card"><input type="checkbox" data-daily-adhkar="'+n+'" '+(checks[n]?'checked':'')+'><span>'+n+(checks[n]?' · ✓ تمت اليوم':'')+'</span></label>').join('')+'</div></div>';
+    return '<div class="panel"><h3>أذكار الصباح والمساء والنوم</h3><div class="prayer-grid">'+['أذكار الصباح','أذكار المساء','أذكار النوم'].map(n=>'<label class="prayer-card"><input type="checkbox" data-daily-adhkar="'+n+'" '+(checks[n]?'checked':'')+'><span>'+n+(checks[n]?' · ✓ تمت اليوم':'')+'</span></label>').join('')+'</div></div>';
   }
   function prayerDetails(){
     const n=state.prayer;if(!n)return '';
