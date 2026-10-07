@@ -1,7 +1,7 @@
 /* يومي 3.0 — تحسينات المشاريع، عبادتي، التقويم، الرفع والتخصيص */
 (() => {
   window.yomiV3DesignActive=true;
-  const BG_KEY='yomi-bg-v3', BG_SCOPE_KEY='yomi-bg-scope-v3';
+  const BG_KEY='yomi-bg-v3', BG_SCOPE_KEY='yomi-bg-scope-v3', TRANS_KEY='yomi-transparency-v1';
   const state={client:null,project:null,course:null};
   const bucket='yomi-memories', urls=new Set();
   let pendingBackgroundFile=null,pendingBackgroundPreviewUrl=null,projectClockInterval=null;
@@ -86,25 +86,29 @@
     return '<div class="panel"><button class="soft" data-v3-course-back>‹ كل الدورات</button><h2>'+safe(c.title)+'</h2><form id="v3CourseItem"><div class="row"><label class="field">العنوان<input name="title" required></label><label class="field">النوع<select name="type"><option value="note">ملاحظة</option><option value="video">فيديو/رابط</option><option value="image">صورة نوت</option></select></label><label class="field">الرابط<input name="url" type="url"></label><label class="field">الصورة<input name="file" type="file" accept="image/png,image/jpeg,image/webp"></label></div><label class="field">ملاحظاتي<textarea name="note"></textarea></label><label><input name="watched" type="checkbox"> تم</label><p class="sub" data-v3-learning-status></p><button class="primary">حفظ</button></form></div><div class="panel">'+(c.items.map(i=>'<div class="learning-item '+(i.watched?'done-card':'')+'">'+(i.media?'<div class="learning-media media-box" data-v3-media="'+safe(i.media.local||i.media.path||'')+'"></div>':i.src?'<img src="'+i.src+'" alt="">':'')+'<div class="grow"><b>'+safe(i.title)+'</b><small>'+safe(i.type)+'</small><p>'+safe(i.note||'')+'</p>'+(i.url?'<a href="'+safe(i.url)+'" target="_blank">فتح الرابط</a>':'')+'</div><button data-v3-course-toggle="'+i.id+'">'+(i.watched?'إرجاع':'تم')+'</button></div>').join('')||'<div class="empty">ما في مواد.</div>')+'</div>'
   }
   function customize(){
-    const d=data.designSettings,trans=Number(d.panelTransparency??35),saved=JSON.parse(localStorage.getItem(BG_SCOPE_KEY)||'null')||d;
+    const d=data.designSettings,bgSaved=JSON.parse(localStorage.getItem(BG_SCOPE_KEY)||'null')||d,tCfg=transparencyConfig(),tPages=tCfg.pages||{};
     const pagesOptions=[
       ['home','يومي'],['worship','عبادتي'],['planner','التقويم'],['clients','العملاء'],['learning','تعلّمي'],
       ['finance','مالي'],['tasks','مهامي'],['wellness','عاداتي'],['quran','وردي القرآني'],['achievements','إنجازاتي'],
       ['notes','ملاحظات'],['diary','مذكرتي'],['memories','ذكرياتي'],['care','عنايتي'],['cycle','دورتي'],['reports','التقارير'],
       ['customize','تخصيص']
     ];
-    let destination='all';
-    if(saved.applyAll===false) destination=saved.targetPage==='lock'?'login':'page';
-    else if(saved.includeLogin) destination='all-login';
+    let bgDestination='all';
+    if(bgSaved.applyAll===false)bgDestination=bgSaved.targetPage==='lock'?'login':'page';
+    else if(bgSaved.includeLogin)bgDestination='all-login';
+    const transDestination=tCfg.lastDestination||'page',transTarget=tCfg.lastTarget||'home',trans=Number(tPages[transTarget]??35);
     const currentBg=localStorage.getItem(BG_KEY);
-    return '<div class="panel customize-main"><h2>تصميم يومي</h2><p class="sub">ارفعي الصورة من المربع الكبير، شوفي المعاينة، بعدين اختاري المكان واحفظي.</p>'+
-      '<form id="v3Bg"><label class="upload-zone" for="v3BgFile"><input id="v3BgFile" name="file" class="upload-zone-input" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"><span class="upload-zone-icon">⬆️</span><b>اضغطي هنا لاختيار صورة</b><small>JPG · PNG · WebP</small></label><div class="upload-preview upload-preview-large" data-v3-bg-prev>'+(currentBg?'<img src="'+currentBg+'" alt="الخلفية الحالية">':'')+'</div><p class="sub upload-status" data-v3-bg-status>'+(currentBg?'✓ في خلفية محفوظة حاليًا':'ما تم اختيار صورة بعد')+'</p><button type="button" class="soft" data-v3-bg-clear>إزالة الخلفية الحالية</button></form></div>'+
-    '<div class="panel"><h3>وين بدك الصورة؟</h3><form id="v3DesignScope">'+
-      '<label class="field">مكان التطبيق<select name="destination"><option value="login" '+(destination==='login'?'selected':'')+'>صفحة الدخول فقط</option><option value="all" '+(destination==='all'?'selected':'')+'>كل صفحات التطبيق</option><option value="all-login" '+(destination==='all-login'?'selected':'')+'>كل الصفحات + صفحة الدخول</option><option value="page" '+(destination==='page'?'selected':'')+'>صفحة محددة</option></select></label>'+
-      '<label class="field" data-page-picker>اختاري الصفحة<select name="target">'+pagesOptions.map(([k,v])=>'<option value="'+k+'" '+(saved.targetPage===k?'selected':'')+'>'+v+'</option>').join('')+'</select></label>'+
-      '<label class="field transparency-control"><span>شفافية المربعات: <b data-v3-trans-value>'+trans+'%</b></span><input name="transparency" type="range" min="0" max="80" step="1" value="'+trans+'"><small class="sub">0% = واضحة، 80% = شفافة جدًا</small></label>'+
+    return '<div class="panel customize-main"><h2>تصميم يومي</h2><p class="sub">الخلفية والشفافية صار لكل واحدة زر تطبيق ومكان مستقل.</p>'+
+      '<form id="v3Bg"><h3>صورة الخلفية</h3><label class="upload-zone" for="v3BgFile"><input id="v3BgFile" name="file" class="upload-zone-input" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"><span class="upload-zone-icon">⬆️</span><b>اضغطي هنا لاختيار صورة</b><small>JPG · PNG · WebP</small></label><div class="upload-preview upload-preview-large" data-v3-bg-prev>'+(currentBg?'<img src="'+currentBg+'" alt="الخلفية الحالية">':'')+'</div><p class="sub upload-status" data-v3-bg-status>'+(currentBg?'✓ في خلفية محفوظة حاليًا':'ما تم اختيار صورة بعد')+'</p>'+
+      '<label class="field">تطبيق الصورة على<select name="destination"><option value="login" '+(bgDestination==='login'?'selected':'')+'>صفحة الدخول فقط</option><option value="all" '+(bgDestination==='all'?'selected':'')+'>كل صفحات التطبيق</option><option value="all-login" '+(bgDestination==='all-login'?'selected':'')+'>كل الصفحات + صفحة الدخول</option><option value="page" '+(bgDestination==='page'?'selected':'')+'>صفحة محددة</option></select></label>'+
+      '<label class="field" data-bg-page-picker>اختاري الصفحة<select name="target">'+pagesOptions.map(([k,v])=>'<option value="'+k+'" '+(bgSaved.targetPage===k?'selected':'')+'>'+v+'</option>').join('')+'</select></label>'+
+      '<div class="row"><button class="primary">تطبيق الصورة</button><button type="button" class="soft" data-v3-bg-clear>إزالة الخلفية الحالية</button></div></form></div>'+
+    '<div class="panel"><h3>شفافية المربعات</h3><p class="sub">اختاري الصفحة والشفافية بشكل مستقل عن الصورة.</p><form id="v3Transparency">'+
+      '<label class="field">تطبيق الشفافية على<select name="destination"><option value="login" '+(transDestination==='login'?'selected':'')+'>صفحة الدخول فقط</option><option value="all" '+(transDestination==='all'?'selected':'')+'>كل صفحات التطبيق</option><option value="all-login" '+(transDestination==='all-login'?'selected':'')+'>كل الصفحات + صفحة الدخول</option><option value="page" '+(transDestination==='page'?'selected':'')+'>صفحة محددة</option></select></label>'+
+      '<label class="field" data-trans-page-picker>اختاري الصفحة<select name="target">'+pagesOptions.map(([k,v])=>'<option value="'+k+'" '+(transTarget===k?'selected':'')+'>'+v+'</option>').join('')+'</select></label>'+
+      '<label class="field transparency-control"><span>الشفافية: <b data-v3-trans-value>'+trans+'%</b></span><input name="transparency" type="range" min="0" max="95" step="1" value="'+trans+'"><small class="sub">0% = واضحة، 95% = شفافة جدًا</small></label>'+
       '<div class="transparency-preview"><div class="preview-card" data-v3-trans-preview>معاينة المربعات</div></div>'+
-      '<div class="row"><button class="primary" data-v3-apply>حفظ وتطبيق</button><button type="button" class="soft" data-v3-design-reset>رجوع للإعدادات الأصلية</button></div>'+
+      '<div class="row"><button class="primary">تطبيق الشفافية</button><button type="button" class="soft" data-v3-trans-reset>إلغاء شفافية الصفحة المختارة</button></div>'+
     '</form></div>'+
     '<div class="panel"><h3>Stickers</h3><form id="v3Sticker"><div class="row"><label class="field">صورة Sticker<input name="file" type="file" accept="image/png,image/webp,image/jpeg,.jpg,.jpeg,.png,.webp"></label><label class="field">أو Emoji<input name="text" maxlength="8"></label><label class="field">الصفحة<select name="target"><option value="all">كل التطبيق</option><option value="lock">صفحة الدخول</option><option value="home">يومي</option><option value="planner">التقويم</option><option value="worship">عبادتي</option><option value="learning">تعلّمي</option><option value="clients">العملاء</option><option value="finance">مالي</option></select></label></div><div class="row"><label class="field">أفقي<input name="x" type="range" min="5" max="95" value="85"></label><label class="field">عمودي<input name="y" type="range" min="5" max="95" value="18"></label><label class="field">الحجم<input name="size" type="range" min="24" max="140" value="54"></label></div><div class="upload-preview" data-v3-sticker-prev></div><button class="soft">إضافة Sticker</button></form>'+(d.stickers.map(s=>'<div class="item"><div class="grow"><div class="sticker-thumb" '+((s.local||s.path)?'data-v3-media="'+safe(s.local||s.path)+'"':'')+'>'+safe(s.text||'')+'</div><small>'+safe(s.target||'all')+' · '+s.size+'px</small></div><button data-v3-sticker-toggle="'+s.id+'">'+(s.hidden?'إظهار':'إخفاء')+'</button><button data-v3-sticker-del="'+s.id+'">حذف</button></div>').join('')||'<div class="empty">ما في Stickers.</div>')+'</div>'
   }
@@ -179,21 +183,33 @@
   function records(){const r=[];for(const c of data.clients)for(const p of c.projects||[])for(const a of p.assets||[])if(a.local&&!a.path)r.push(a);for(const c of data.learningSpaces)for(const i of c.items||[])if(i.media?.local&&!i.media?.path)r.push(i.media);if(data.designSettings.backgroundMedia?.local&&!data.designSettings.backgroundMedia?.path)r.push(data.designSettings.backgroundMedia);for(const s of data.designSettings.stickers||[])if(s.local&&!s.path)r.push(s);return r}
   async function syncMedia(){const s=window.yomiMemoriesSession?.();if(!s||!navigator.onLine)return;for(const r of records()){const old=r.local;try{const b=await get(old);if(!b)continue;const ext=b.type.includes('webp')?'webp':'jpg',path=s.user.id+'/planner-'+id()+'.'+ext,{error}=await s.client.storage.from(bucket).upload(path,b,{contentType:b.type,upsert:false});if(error)throw error;await put(s.user.id+':'+path,b);r.path=path;save()}catch(e){console.error(e)}}}
   async function blobFor(ref){let b=await get(ref);const s=window.yomiMemoriesSession?.();if(!b&&s){b=await get(s.user.id+':'+ref);if(!b&&ref.startsWith(s.user.id+'/')&&navigator.onLine){const {data:x,error}=await s.client.storage.from(bucket).download(ref);if(error)throw error;b=x;await put(s.user.id+':'+ref,b)}}return b}
-  function designApplies(){
-    const saved=JSON.parse(localStorage.getItem(BG_SCOPE_KEY)||'null');
-    const d=saved||data.designSettings||{},lockVisible=!document.getElementById('lock')?.classList.contains('hidden');
+  function backgroundApplies(){
+    const d=JSON.parse(localStorage.getItem(BG_SCOPE_KEY)||'null')||data.designSettings||{},lockVisible=!document.getElementById('lock')?.classList.contains('hidden');
     if(lockVisible)return d.applyAll!==false ? !!d.includeLogin : d.targetPage==='lock';
     if(d.applyAll!==false)return true;
     return d.targetPage===page;
   }
+  function transparencyConfig(){
+    const saved=JSON.parse(localStorage.getItem(TRANS_KEY)||'null');
+    if(saved?.pages)return saved;
+    const old=JSON.parse(localStorage.getItem(BG_SCOPE_KEY)||'null');
+    const pages={};
+    if(old&&Number.isFinite(Number(old.panelTransparency))){
+      const v=Math.max(0,Math.min(95,Number(old.panelTransparency)));
+      const appPages=['home','worship','planner','clients','learning','finance','tasks','wellness','quran','achievements','notes','diary','memories','care','cycle','reports','customize'];
+      if(old.applyAll!==false){for(const k of appPages)pages[k]=v;if(old.includeLogin)pages.lock=v}
+      else if(old.targetPage)pages[old.targetPage]=v;
+    }
+    return {pages,lastDestination:'page',lastTarget:'home'};
+  }
   async function paint(){
     for(const u of urls)URL.revokeObjectURL(u);urls.clear();
     for(const box of document.querySelectorAll('[data-v3-media]'))try{const b=await blobFor(box.dataset.v3Media);if(!b||!box.isConnected)continue;const u=URL.createObjectURL(b);urls.add(u);const im=document.createElement('img');im.src=u;im.alt='';box.replaceChildren(im)}catch{}
-    const savedScope=JSON.parse(localStorage.getItem(BG_SCOPE_KEY)||'null'),d=savedScope||data.designSettings||{},applies=designApplies(),trans=Math.max(0,Math.min(80,Number(d.panelTransparency??35)));
-    document.body.dataset.yomiDesign=applies?'1':'0';
+    const lockVisible=!document.getElementById('lock')?.classList.contains('hidden'),currentKey=lockVisible?'lock':page,tCfg=transparencyConfig(),raw=tCfg.pages?.[currentKey],hasTransparency=raw!==undefined&&raw!==null,trans=Math.max(0,Math.min(95,Number(raw??35)));
+    document.body.dataset.yomiDesign=hasTransparency?'1':'0';
     document.documentElement.style.setProperty('--yomi-panel-alpha',String((100-trans)/100));
     const bgData=localStorage.getItem(BG_KEY)||data.designSettings?.background||'';
-    if(applies&&bgData){document.documentElement.style.setProperty('--yomi-user-bg','url("'+bgData+'")');document.body.dataset.userBg='1'}
+    if(backgroundApplies()&&bgData){document.documentElement.style.setProperty('--yomi-user-bg','url("'+bgData+'")');document.body.dataset.userBg='1'}
     else{document.documentElement.style.setProperty('--yomi-user-bg','none');document.body.dataset.userBg='0'}
     syncMedia()
   }
@@ -248,7 +264,9 @@
     document.querySelectorAll('[data-v3-course-toggle]').forEach(b=>b.onclick=()=>{const c=data.learningSpaces.find(x=>x.id===state.course),i=c.items.find(x=>x.id===b.dataset.v3CourseToggle);i.watched=!i.watched;save();render()});
 
     const bg=$('#v3Bg');if(bg){
-      const input=bg.elements.file,prev=bg.querySelector('[data-v3-bg-prev]'),st=bg.querySelector('[data-v3-bg-status]');
+      const input=bg.elements.file,prev=bg.querySelector('[data-v3-bg-prev]'),st=bg.querySelector('[data-v3-bg-status]'),destination=bg.elements.destination,target=bg.elements.target,pagePicker=bg.querySelector('[data-bg-page-picker]');
+      const liveBg=()=>{pagePicker.hidden=destination.value!=='page'};
+      destination.onchange=liveBg;liveBg();
       input.addEventListener('click',()=>{window.yomiFilePickerActive=true});
       input.onchange=()=>{
         window.yomiFilePickerActive=false;
@@ -257,20 +275,9 @@
         if(!file){st.textContent='لم يتم اختيار صورة.';return}
         pendingBackgroundPreviewUrl=URL.createObjectURL(file);
         const im=document.createElement('img');im.src=pendingBackgroundPreviewUrl;im.alt='معاينة الخلفية';prev.appendChild(im);
-        st.textContent='✓ الصورة ظهرت في المعاينة. اختاري مكانها ثم اضغطي «حفظ وتطبيق».';
+        st.textContent='✓ الصورة جاهزة. اختاري مكانها ثم اضغطي «تطبيق الصورة».';
       };
-      bg.onsubmit=e=>e.preventDefault();
-    }
-    document.querySelector('[data-v3-bg-clear]')?.addEventListener('click',()=>{
-      localStorage.removeItem(BG_KEY);localStorage.removeItem(BG_SCOPE_KEY);pendingBackgroundFile=null;
-      if(pendingBackgroundPreviewUrl){URL.revokeObjectURL(pendingBackgroundPreviewUrl);pendingBackgroundPreviewUrl=null}
-      document.documentElement.style.setProperty('--yomi-user-bg','none');document.body.dataset.userBg='0';render()
-    });
-    const ds=$('#v3DesignScope');if(ds){
-      const destination=ds.elements.destination,target=ds.elements.target,pagePicker=ds.querySelector('[data-page-picker]'),slider=ds.elements.transparency,label=ds.querySelector('[data-v3-trans-value]'),preview=ds.querySelector('[data-v3-trans-preview]');
-      const live=()=>{pagePicker.hidden=destination.value!=='page';label.textContent=slider.value+'%';preview.style.background='rgba(255,253,250,'+((100-Number(slider.value))/100)+')'};
-      destination.onchange=live;slider.oninput=live;live();
-      ds.onsubmit=async e=>{
+      bg.onsubmit=async e=>{
         e.preventDefault();
         try{
           if(pendingBackgroundFile){
@@ -278,19 +285,41 @@
             const compact=await new Promise((ok)=>{const im=new Image();im.onload=()=>{try{const max=1000,s=Math.min(1,max/Math.max(im.naturalWidth,im.naturalHeight)),cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(im.naturalWidth*s));cv.height=Math.max(1,Math.round(im.naturalHeight*s));cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);ok(cv.toDataURL('image/jpeg',.62))}catch{ok(raw)}};im.onerror=()=>ok(raw);im.src=raw});
             localStorage.setItem(BG_KEY,compact);pendingBackgroundFile=null;
           }
-          const dest=destination.value;
-          const scope={
-            applyAll:dest==='all'||dest==='all-login',
-            includeLogin:dest==='all-login',
-            targetPage:dest==='login'?'lock':dest==='page'?target.value:'home',
-            panelTransparency:Number(slider.value)
-          };
+          if(!localStorage.getItem(BG_KEY)){st.textContent='اختاري صورة أولًا.';return}
+          const dest=destination.value,scope={applyAll:dest==='all'||dest==='all-login',includeLogin:dest==='all-login',targetPage:dest==='login'?'lock':dest==='page'?target.value:'home'};
           localStorage.setItem(BG_SCOPE_KEY,JSON.stringify(scope));
-          data.designSettings.applyAll=scope.applyAll;data.designSettings.includeLogin=scope.includeLogin;data.designSettings.targetPage=scope.targetPage;data.designSettings.panelTransparency=scope.panelTransparency;
+          data.designSettings.applyAll=scope.applyAll;data.designSettings.includeLogin=scope.includeLogin;data.designSettings.targetPage=scope.targetPage;
           save();render()
         }catch(err){console.error('Background save failed',err);alert('تعذّر حفظ الصورة. جرّبي صورة أصغر أو JPG.')}
       };
-      ds.querySelector('[data-v3-design-reset]').onclick=()=>{localStorage.removeItem(BG_SCOPE_KEY);data.designSettings.applyAll=true;data.designSettings.includeLogin=false;data.designSettings.targetPage='home';data.designSettings.panelTransparency=35;save();render()};
+    }
+    document.querySelector('[data-v3-bg-clear]')?.addEventListener('click',()=>{
+      localStorage.removeItem(BG_KEY);localStorage.removeItem(BG_SCOPE_KEY);pendingBackgroundFile=null;
+      if(pendingBackgroundPreviewUrl){URL.revokeObjectURL(pendingBackgroundPreviewUrl);pendingBackgroundPreviewUrl=null}
+      document.documentElement.style.setProperty('--yomi-user-bg','none');document.body.dataset.userBg='0';render()
+    });
+    const ts=$('#v3Transparency');if(ts){
+      const destination=ts.elements.destination,target=ts.elements.target,pagePicker=ts.querySelector('[data-trans-page-picker]'),slider=ts.elements.transparency,label=ts.querySelector('[data-v3-trans-value]'),preview=ts.querySelector('[data-v3-trans-preview]');
+      const showValue=()=>{const cfg=transparencyConfig(),v=destination.value==='page'?(cfg.pages?.[target.value]??slider.value):slider.value;slider.value=Math.max(0,Math.min(95,Number(v)));label.textContent=slider.value+'%';preview.style.background='rgba(255,253,250,'+((100-Number(slider.value))/100)+')'};
+      const live=()=>{pagePicker.hidden=destination.value!=='page';showValue()};
+      destination.onchange=live;target.onchange=showValue;slider.oninput=()=>{label.textContent=slider.value+'%';preview.style.background='rgba(255,253,250,'+((100-Number(slider.value))/100)+')'};live();
+      ts.onsubmit=e=>{
+        e.preventDefault();
+        const cfg=transparencyConfig(),pages=cfg.pages||{},v=Math.max(0,Math.min(95,Number(slider.value))),dest=destination.value,appPages=['home','worship','planner','clients','learning','finance','tasks','wellness','quran','achievements','notes','diary','memories','care','cycle','reports','customize'];
+        if(dest==='login')pages.lock=v;
+        else if(dest==='page')pages[target.value]=v;
+        else{for(const k of appPages)pages[k]=v;if(dest==='all-login')pages.lock=v}
+        localStorage.setItem(TRANS_KEY,JSON.stringify({pages,lastDestination:dest,lastTarget:target.value}));
+        render()
+      };
+      ts.querySelector('[data-v3-trans-reset]').onclick=()=>{
+        const cfg=transparencyConfig(),pages=cfg.pages||{},dest=destination.value,appPages=['home','worship','planner','clients','learning','finance','tasks','wellness','quran','achievements','notes','diary','memories','care','cycle','reports','customize'];
+        if(dest==='login')delete pages.lock;
+        else if(dest==='page')delete pages[target.value];
+        else{for(const k of appPages)delete pages[k];if(dest==='all-login')delete pages.lock}
+        localStorage.setItem(TRANS_KEY,JSON.stringify({pages,lastDestination:dest,lastTarget:target.value}));
+        render()
+      };
     }
     const sf=$('#v3Sticker');if(sf){const input=sf.elements.file,prev=sf.querySelector('[data-v3-sticker-prev]');input.onchange=()=>{prev.innerHTML='';const f=input.files?.[0];if(f){const im=document.createElement('img');im.src=URL.createObjectURL(f);im.onload=()=>URL.revokeObjectURL(im.src);prev.appendChild(im)}};sf.onsubmit=async e=>{e.preventDefault();const f=new FormData(sf),file=input.files?.[0],text=String(f.get('text')||'').trim();if(!file&&!text){alert('اختاري صورة Sticker أو اكتبي Emoji');return}try{let med={};if(file)med=await saveImage(file,{max:700,q:.9,alpha:true});data.designSettings.stickers.push({id:id(),...med,text,target:f.get('target'),x:Number(f.get('x')),y:Number(f.get('y')),size:Number(f.get('size')),hidden:false});save();render()}catch(err){console.error('Sticker save failed',err);alert('تعذّر حفظ Sticker. جرّبي PNG أو WebP أو JPG أصغر.')}}}
     document.querySelectorAll('[data-v3-sticker-toggle]').forEach(b=>b.onclick=()=>{const s=data.designSettings.stickers.find(x=>x.id===b.dataset.v3StickerToggle);s.hidden=!s.hidden;save();render()});
