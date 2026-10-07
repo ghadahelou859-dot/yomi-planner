@@ -2,7 +2,7 @@
 (() => {
   window.yomiV3DesignActive=true;
   const BG_KEY='yomi-bg-v3', BG_SCOPE_KEY='yomi-bg-scope-v3', TRANS_KEY='yomi-transparency-v1', NAV_KEY='yomi-nav-visibility-v1';
-  const state={client:null,project:null,course:null};
+  const state={client:null,project:null,course:null,prayer:null};
   const bucket='yomi-memories', urls=new Set();
   let pendingBackgroundFile=null,pendingBackgroundPreviewUrl=null,projectClockInterval=null;
   const formatDuration=ms=>{ms=Math.max(0,Number(ms)||0);const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return (h?h+' س ':'')+(m?m+' د ':'')+(!h&&m<10?sec+' ث':'')||'0 ث'};
@@ -16,6 +16,12 @@
     data.designSettings.targetPage ??= 'home';
     data.designSettings.includeLogin ??= false;
     data.designSettings.panelTransparency ??= 35;
+    data.prayerChecks??={};data.adhkarChecks??={};data.prayerWorks??=[];
+    data.quran??={lastPage:0,log:[]};data.quran.log??=[];
+    if(data.designSettings.background===null&&!data.designSettings.backgroundMigrated){
+      const old=localStorage.getItem(BG_KEY);if(old){data.designSettings.background=old;Object.assign(data.designSettings,JSON.parse(localStorage.getItem(BG_SCOPE_KEY)||'{}'))}
+      data.designSettings.backgroundMigrated=true;
+    }
     data.cyclePeriodLength??=7;
     for(const c of data.clients){c.projects??=[];for(const p of c.projects){
       p.projectType??='مشروع';p.assets??=[];p.payments??=[];p.checklist??=[];p.publishDelay??=1;p.workLog??=[];p.timeSessions??=[];p.timerState??={elapsed:0,running:false,startedAt:null};
@@ -64,12 +70,24 @@
   }
   function worship(){
     const prayers=['الفجر','الظهر','العصر','المغرب','العشاء'],p=data.prayerChecks?.[selected]||{},fast=data.fastingLog.find(x=>x.date===selected),tips=fastTips(),dh=(data.dhikrs||[]).filter(x=>activeDhikr(x,selected));
-    return '<div class="panel"><h2>عبادتي</h2><p class="sub">هاي الصفحة الرئيسية لإدارة الأذكار والصلاة والصيام.</p>'+datePicker()+'<div class="prayer-grid">'+prayers.map(n=>'<label class="prayer-card"><input type="checkbox" data-v3-prayer="'+n+'" '+(p[n]?'checked':'')+'><span>🕌 '+n+'</span></label>').join('')+'</div><p class="sub">المسجّل اليوم: '+prayers.filter(n=>p[n]).length+' من 5.</p></div>'+
-    '<div class="panel"><div class="row between"><h3>الصيام</h3>'+(tips.length?'<span class="fast-tip">🌙 تذكير: '+safe(tips.join(' · '))+'</span>':'')+'</div><form id="v3Fast" class="row"><label class="field">نوع الصيام<select name="type">'+['قضاء رمضان','نفل','نذر','كفارة','لوجه الله تعالى'].map(v=>'<option '+(fast?.type===v?'selected':'')+'>'+v+'</option>').join('')+'</select></label><label class="field">التاريخ<input name="date" type="date" value="'+selected+'"></label><label class="field">ملاحظة<input name="note" value="'+safe(fast?.note||'')+'"></label><button class="primary">'+(fast?'تحديث':'تسجيل')+'</button></form>'+(fast?'<div class="notice">مسجّل: '+safe(fast.type)+' <button class="soft" data-v3-fast-del="'+fast.id+'">حذف</button></div>':'')+'<details><summary>تذكيرات صيام النفل</summary><div class="fasting-prefs"><label><input type="checkbox" data-v3-pref="mondayThursday" '+(data.fastingPrefs.mondayThursday?'checked':'')+'> الاثنين والخميس</label><label><input type="checkbox" data-v3-pref="whiteDays" '+(data.fastingPrefs.whiteDays?'checked':'')+'> الأيام البيض</label><label><input type="checkbox" data-v3-pref="arafah" '+(data.fastingPrefs.arafah?'checked':'')+'> عرفة</label><label><input type="checkbox" data-v3-pref="ashura" '+(data.fastingPrefs.ashura?'checked':'')+'> عاشوراء</label></div></details></div>'+
+    return '<div class="panel"><h2>عبادتي</h2><p class="sub">هاي الصفحة الرئيسية لإدارة الأذكار والصلاة والصيام.</p>'+datePicker()+'<div class="prayer-grid">'+prayers.map(n=>'<div class="prayer-card"><input aria-label="تسجيل صلاة '+n+'" type="checkbox" data-v3-prayer="'+n+'" '+(p[n]?'checked':'')+'><button type="button" class="soft" data-prayer-open="'+n+'">🕌 '+n+'</button></div>').join('')+'</div><p class="sub">المسجّل اليوم: '+prayers.filter(n=>p[n]).length+' من 5.</p></div>'+
+    adhkarDaily()+prayerDetails()+quran()+ '<div class="panel"><div class="row between"><h3>الصيام</h3>'+(tips.length?'<span class="fast-tip">🌙 تذكير: '+safe(tips.join(' · '))+'</span>':'')+'</div><form id="v3Fast" class="row"><label class="field">نوع الصيام<select name="type">'+['قضاء رمضان','نفل','نذر','كفارة','لوجه الله تعالى'].map(v=>'<option '+(fast?.type===v?'selected':'')+'>'+v+'</option>').join('')+'</select></label><label class="field">التاريخ<input name="date" type="date" value="'+selected+'"></label><label class="field">ملاحظة<input name="note" value="'+safe(fast?.note||'')+'"></label><button class="primary">'+(fast?'تحديث':'تسجيل')+'</button></form>'+(fast?'<div class="notice">مسجّل: '+safe(fast.type)+' <button class="soft" data-v3-fast-del="'+fast.id+'">حذف</button></div>':'')+'<details><summary>تذكيرات صيام النفل</summary><div class="fasting-prefs"><label><input type="checkbox" data-v3-pref="mondayThursday" '+(data.fastingPrefs.mondayThursday?'checked':'')+'> الاثنين والخميس</label><label><input type="checkbox" data-v3-pref="whiteDays" '+(data.fastingPrefs.whiteDays?'checked':'')+'> الأيام البيض</label><label><input type="checkbox" data-v3-pref="arafah" '+(data.fastingPrefs.arafah?'checked':'')+'> عرفة</label><label><input type="checkbox" data-v3-pref="ashura" '+(data.fastingPrefs.ashura?'checked':'')+'> عاشوراء</label></div></details></div>'+
     '<div class="panel worship-dhikr-panel"><div class="row between"><div><h3>أذكاري</h3><p class="sub">الإضافة والتعديل والحذف من هون فقط.</p></div><strong>مجموع اليوم: '+sum((data.dhikrs||[]).map(x=>dhikrCount(x,selected)))+'</strong></div>'+
       '<form id="v3DhikrNew" class="dhikr-new-form"><label class="field">الذكر<input name="title" required placeholder="مثلاً: سبحان الله"></label><label class="field">الهدف اليومي<input name="target" type="number" inputmode="numeric" min="1" step="1" required value="33"></label><label class="field">يبدأ يوم<input name="start" type="date" required value="'+selected+'"></label><label class="field">ينتهي يوم (اختياري)<input name="end" type="date"></label><button class="primary">إضافة ذكر</button></form>'+
       (dh.map(x=>'<div class="dhikr-manage-card"><div class="dhikr-copy"><b>'+safe(x.title)+'</b><small>'+dhikrCount(x,selected)+' / '+dhikrTargetOn(x,selected)+' اليوم'+(dhikrCount(x,selected)>=dhikrTargetOn(x,selected)?' · ✓ مكتمل':'')+'</small><div class="bar"><i style="width:'+Math.min(100,pct(dhikrCount(x,selected),dhikrTargetOn(x,selected)))+'%"></i></div></div><div class="dhikr-count-row"><button class="dhikr-plus" data-v3-dhikr="'+x.id+'">+1</button><label class="field dhikr-number-field">إضافة عدد<input type="number" inputmode="numeric" min="1" step="1" placeholder="مثلاً 40" data-v3-dhikr-amount="'+x.id+'"></label><button class="primary" data-v3-dhikr-add="'+x.id+'">إضافة</button></div><div class="dhikr-manage-actions"><button class="soft" data-v3-dhikr-edit="'+x.id+'">تصحيح المجموع</button><button class="soft" data-v3-dhikr-target="'+x.id+'">تعديل الهدف</button><button class="soft" data-v3-dhikr-stop="'+x.id+'">إيقاف</button><button class="danger" data-v3-dhikr-del="'+x.id+'">حذف</button></div></div>').join('')||'<div class="empty">أضيفي أول ذكر من هون.</div>')+
     '</div>'
+  }
+  function adhkarDaily(){
+    const checks=data.adhkarChecks[selected]||{};
+    return '<div class="panel"><h3>أذكار الصباح والمساء</h3><div class="prayer-grid">'+['أذكار الصباح','أذكار المساء'].map(n=>'<label class="prayer-card"><input type="checkbox" data-daily-adhkar="'+n+'" '+(checks[n]?'checked':'')+'><span>'+n+(checks[n]?' · ✓ تمت اليوم':'')+'</span></label>').join('')+'</div></div>';
+  }
+  function prayerDetails(){
+    const n=state.prayer;if(!n)return '<div class="notice">اضغطي اسم الصلاة لفتح وردك والأعمال المرتبطة فيها.</div>';
+    const q=data.quran,last=Number(q.lastPage)||0,logs=q.log.filter(x=>x.date===selected&&x.prayer===n),works=data.prayerWorks.filter(x=>x.prayer===n);
+    return '<div class="panel"><h3>أعمال صلاة '+safe(n)+'</h3><div class="notice">وصلتِ لصفحة '+last+' · '+(last<604?'القراءة التالية تبدأ من صفحة '+(last+1):'أتممتِ الختمة ✓')+'</div>'+logs.map(x=>'<p>✓ تمت قراءة '+(x.from===x.to?'صفحة '+x.to:'الصفحات '+x.from+'–'+x.to)+'</p>').join('')+
+      (last<604?'<form id="prayerQuran" class="row"><label class="field">قرأتِ حتى صفحة<input name="page" type="number" inputmode="numeric" min="'+(last+1)+'" max="604" step="1" value="'+(last+1)+'" required></label><button class="primary">تسجيل القراءة</button></form>':'')+
+      '<p class="sub">هذا نفس الورد الموجود في «وردي القرآني»، ويكمل معك بين الصلوات والأيام.</p>'+works.map(x=>'<div class="item"><input type="checkbox" aria-label="إنجاز '+safe(x.title)+'" data-prayer-work="'+x.id+'" '+(x.completed?.[selected]?'checked':'')+'><div class="grow">'+safe(x.title)+'</div><button data-prayer-work-delete="'+x.id+'">حذف</button></div>').join('')+
+      '<form id="prayerWorkNew" class="row"><label class="field">عمل مرتبط بهذه الصلاة<input name="title" placeholder="أذكار بعد الصلاة أو سورة يس" required></label><button class="soft">إضافة عمل</button></form></div>';
   }
   function clients(){
     if(!data.clients.length||!state.client||!data.clients.some(x=>x.id===state.client))return '<div class="panel"><h2>العملاء والمشاريع</h2><form id="v3Client" class="row"><label class="field">اسم العميل<input name="name" required></label><button class="primary">إنشاء ملف</button></form><div class="client-grid">'+(data.clients.map(c=>'<button class="client-card" data-v3-client="'+c.id+'"><b>'+safe(c.name)+'</b><small>'+(c.projects||[]).length+' مشروع</small></button>').join('')||'<div class="empty">ما في عملاء بعد</div>')+'</div></div>';
@@ -89,7 +107,7 @@
     return '<div class="panel"><button class="soft" data-v3-course-back>‹ كل الدورات</button><h2>'+safe(c.title)+'</h2><form id="v3CourseItem"><div class="row"><label class="field">العنوان<input name="title" required></label><label class="field">النوع<select name="type"><option value="note">ملاحظة</option><option value="video">فيديو/رابط</option><option value="image">صورة نوت</option></select></label><label class="field">الرابط<input name="url" type="url"></label><label class="field">الصورة<input name="file" type="file" accept="image/png,image/jpeg,image/webp"></label></div><label class="field">ملاحظاتي<textarea name="note"></textarea></label><label><input name="watched" type="checkbox"> تم</label><p class="sub" data-v3-learning-status></p><button class="primary">حفظ</button></form></div><div class="panel">'+(c.items.map(i=>'<div class="learning-item '+(i.watched?'done-card':'')+'">'+(i.media?'<div class="learning-media media-box" data-v3-media="'+safe(i.media.local||i.media.path||'')+'"></div>':i.src?'<img src="'+i.src+'" alt="">':'')+'<div class="grow"><b>'+safe(i.title)+'</b><small>'+safe(i.type)+'</small><p>'+safe(i.note||'')+'</p>'+(i.url?'<a href="'+safe(i.url)+'" target="_blank">فتح الرابط</a>':'')+'</div><button data-v3-course-toggle="'+i.id+'">'+(i.watched?'إرجاع':'تم')+'</button></div>').join('')||'<div class="empty">ما في مواد.</div>')+'</div>'
   }
   function customize(){
-    const d=data.designSettings,bgSaved=JSON.parse(localStorage.getItem(BG_SCOPE_KEY)||'null')||d,tCfg=transparencyConfig(),tPages=tCfg.pages||{};
+    const d=data.designSettings,bgSaved=d,tCfg=transparencyConfig(),tPages=tCfg.pages||{};
     const pagesOptions=[
       ['home','يومي'],['worship','عبادتي'],['planner','التقويم'],['clients','العملاء'],['learning','تعلّمي'],
       ['finance','مالي'],['tasks','مهامي'],['wellness','عاداتي'],['quran','وردي القرآني'],['achievements','إنجازاتي'],
@@ -100,12 +118,12 @@
     if(bgSaved.applyAll===false)bgDestination=bgSaved.targetPage==='lock'?'login':'page';
     else if(bgSaved.includeLogin)bgDestination='all-login';
     const transDestination=tCfg.lastDestination||'page',transTarget=tCfg.lastTarget||'home',trans=Number(tPages[transTarget]??35);
-    const currentBg=localStorage.getItem(BG_KEY);
+    const currentBg=d.background;
     return '<div class="panel customize-main"><h2>تصميم يومي</h2><p class="sub">الخلفية والشفافية صار لكل واحدة زر تطبيق ومكان مستقل.</p>'+
-      '<form id="v3Bg"><h3>صورة الخلفية</h3><label class="upload-zone" for="v3BgFile"><input id="v3BgFile" name="file" class="upload-zone-input" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"><span class="upload-zone-icon">⬆️</span><b>اضغطي هنا لاختيار صورة</b><small>JPG · PNG · WebP</small></label><div class="upload-preview upload-preview-large" data-v3-bg-prev>'+(currentBg?'<img src="'+currentBg+'" alt="الخلفية الحالية">':'')+'</div><p class="sub upload-status" data-v3-bg-status>'+(currentBg?'✓ في خلفية محفوظة حاليًا':'ما تم اختيار صورة بعد')+'</p>'+
+      '<form id="v3Bg"><h3>صورة عرضية للخلفية</h3><p class="sub">ارفعي الصورة من الهاتف أو اللابتوب. سجّلي الدخول بنفس الحساب حتى تظهر على الجهازين.</p><label class="upload-zone" for="v3BgFile"><input id="v3BgFile" name="file" class="upload-zone-input" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"><span class="upload-zone-icon">⬆️</span><b>اضغطي هنا لاختيار صورة</b><small>JPG · PNG · WebP</small></label><div class="upload-preview upload-preview-large" data-v3-bg-prev>'+(currentBg?'<img src="'+currentBg+'" alt="الخلفية الحالية">':'')+'</div><p class="sub upload-status" data-v3-bg-status>'+(currentBg?'✓ في خلفية محفوظة حاليًا':'ما تم اختيار صورة بعد')+'</p>'+
       '<label class="field">تطبيق الصورة على<select name="destination"><option value="login" '+(bgDestination==='login'?'selected':'')+'>صفحة الدخول فقط</option><option value="all" '+(bgDestination==='all'?'selected':'')+'>كل صفحات التطبيق</option><option value="all-login" '+(bgDestination==='all-login'?'selected':'')+'>كل الصفحات + صفحة الدخول</option><option value="page" '+(bgDestination==='page'?'selected':'')+'>صفحة محددة</option></select></label>'+
       '<label class="field" data-bg-page-picker>اختاري الصفحة<select name="target">'+pagesOptions.map(([k,v])=>'<option value="'+k+'" '+(bgSaved.targetPage===k?'selected':'')+'>'+v+'</option>').join('')+'</select></label>'+
-      '<div class="row"><button class="primary">تطبيق الصورة</button><button type="button" class="soft" data-v3-bg-clear>إزالة الخلفية الحالية</button></div></form></div>'+
+      '<div class="row"><label class="field">مكان الصورة أفقيًا<input name="bgX" type="range" min="0" max="100" value="'+Number(d.bgX??50)+'"></label><label class="field">مكان الصورة عموديًا<input name="bgY" type="range" min="0" max="100" value="'+Number(d.bgY??50)+'"></label><label class="field">تكبير الصورة<input name="bgZoom" type="range" min="100" max="200" value="'+Number(d.bgZoom??100)+'"></label></div><div class="row"><button class="primary">تطبيق الصورة</button><button type="button" class="soft" data-v3-bg-clear>إزالة الخلفية الحالية</button></div></form></div>'+
     '<div class="panel"><h3>شفافية المربعات</h3><p class="sub">اختاري الصفحة والشفافية بشكل مستقل عن الصورة.</p><form id="v3Transparency">'+
       '<label class="field">تطبيق الشفافية على<select name="destination"><option value="login" '+(transDestination==='login'?'selected':'')+'>صفحة الدخول فقط</option><option value="all" '+(transDestination==='all'?'selected':'')+'>كل صفحات التطبيق</option><option value="all-login" '+(transDestination==='all-login'?'selected':'')+'>كل الصفحات + صفحة الدخول</option><option value="page" '+(transDestination==='page'?'selected':'')+'>صفحة محددة</option></select></label>'+
       '<label class="field" data-trans-page-picker>اختاري الصفحة<select name="target">'+pagesOptions.map(([k,v])=>'<option value="'+k+'" '+(transTarget===k?'selected':'')+'>'+v+'</option>').join('')+'</select></label>'+
@@ -143,12 +161,15 @@
   function refreshFullPreview(){
     const wrap=document.querySelector('[data-v3-full-preview]'),screen=wrap?.querySelector('.full-preview-screen'),sel=document.getElementById('v3PreviewPage');if(!wrap||!screen||!sel)return;
     const k=sel.value,bgForm=document.getElementById('v3Bg'),transForm=document.getElementById('v3Transparency'),navForm=document.getElementById('v3NavVisibility');
-    const savedBg=localStorage.getItem(BG_KEY)||'',bgUrl=pendingBackgroundPreviewUrl||savedBg;
+    const savedBg=data.designSettings.background||'',bgUrl=pendingBackgroundPreviewUrl||savedBg;
     const trans=transForm?Math.max(0,Math.min(95,Number(transForm.elements.transparency.value||35))):35,alpha=Math.max(.05,(100-trans)/100);
     const navVisible=navForm?navForm.elements.visible.value!=='hide':(navConfig().pages?.[k]!==false);
     const labels=['يومي','عبادتي','التقويم','العملاء','مهامي'];
     const navHtml=k==='lock'?'':(navVisible?'<aside class="mock-nav">'+labels.map((x,i)=>'<span class="'+((k==='home'&&i===0)||(k==='planner'&&i===2)||(k==='clients'&&i===3)||(k==='tasks'&&i===4)?'active':'')+'">'+x+'</span>').join('')+'</aside>':'');
     screen.dataset.previewPage=k;
+    const ds=data.designSettings;
+    screen.style.backgroundPosition=(bgForm?.elements.bgX.value??ds.bgX??50)+'% '+(bgForm?.elements.bgY.value??ds.bgY??50)+'%';
+    const zoom=Number(bgForm?.elements.bgZoom.value??ds.bgZoom??100);screen.style.backgroundSize=zoom===100?'cover':zoom+'% auto';
     screen.style.setProperty('--mock-alpha',String(alpha));
     screen.style.backgroundImage=bgUrl?'linear-gradient(rgba(24,24,24,.08),rgba(24,24,24,.08)),url("'+bgUrl+'")':'linear-gradient(135deg,#eee2d4,#f7f1e8)';
     screen.innerHTML=k==='lock'?previewBody(k):'<div class="mock-topbar"><b>يومي ✿</b><span>'+safe(previewPageLabel(k))+'</span></div><div class="mock-app-shell">'+navHtml+'<main class="mock-content">'+previewBody(k)+'</main></div>';
@@ -225,7 +246,7 @@
   async function syncMedia(){const s=window.yomiMemoriesSession?.();if(!s||!navigator.onLine)return;for(const r of records()){const old=r.local;try{const b=await get(old);if(!b)continue;const ext=b.type.includes('webp')?'webp':'jpg',path=s.user.id+'/planner-'+id()+'.'+ext,{error}=await s.client.storage.from(bucket).upload(path,b,{contentType:b.type,upsert:false});if(error)throw error;await put(s.user.id+':'+path,b);r.path=path;save()}catch(e){console.error(e)}}}
   async function blobFor(ref){let b=await get(ref);const s=window.yomiMemoriesSession?.();if(!b&&s){b=await get(s.user.id+':'+ref);if(!b&&ref.startsWith(s.user.id+'/')&&navigator.onLine){const {data:x,error}=await s.client.storage.from(bucket).download(ref);if(error)throw error;b=x;await put(s.user.id+':'+ref,b)}}return b}
   function backgroundApplies(){
-    const d=JSON.parse(localStorage.getItem(BG_SCOPE_KEY)||'null')||data.designSettings||{},lockVisible=!document.getElementById('lock')?.classList.contains('hidden');
+    const d=data.designSettings||{},lockVisible=!document.getElementById('lock')?.classList.contains('hidden');
     if(lockVisible)return d.applyAll!==false ? !!d.includeLogin : d.targetPage==='lock';
     if(d.applyAll!==false)return true;
     return d.targetPage===page;
@@ -267,9 +288,11 @@
     document.body.dataset.yomiPage=lockVisible?'lock':page;
     document.body.dataset.yomiDesign=hasTransparency?'1':'0';
     document.documentElement.style.setProperty('--yomi-panel-alpha',String((100-trans)/100));
-    const bgData=localStorage.getItem(BG_KEY)||data.designSettings?.background||'';
+    const bgData=data.designSettings?.background||'';
     if(backgroundApplies()&&bgData){document.documentElement.style.setProperty('--yomi-user-bg','url("'+bgData+'")');document.body.dataset.userBg='1'}
     else{document.documentElement.style.setProperty('--yomi-user-bg','none');document.body.dataset.userBg='0'}
+    document.documentElement.style.setProperty('--yomi-bg-position',(data.designSettings.bgX??50)+'% '+(data.designSettings.bgY??50)+'%');
+    const zoom=Number(data.designSettings.bgZoom??100);document.documentElement.style.setProperty('--yomi-bg-size',zoom===100?'cover':zoom+'% auto');
     applyNavVisibility();syncMedia()
   }
   function stickers(){
@@ -279,6 +302,13 @@
   }
 
   function attach(){
+    document.querySelectorAll('[data-daily-adhkar]').forEach(b=>b.onchange=()=>{data.adhkarChecks[selected]??={};data.adhkarChecks[selected][b.dataset.dailyAdhkar]=b.checked;save();render()});
+    document.querySelectorAll('[data-prayer-open]').forEach(b=>b.onclick=()=>{state.prayer=b.dataset.prayerOpen;render()});
+    const pq=$('#prayerQuran');if(pq)pq.onsubmit=e=>{e.preventDefault();const from=Number(data.quran.lastPage||0)+1,to=parseCount(pq.elements.page.value);if(!Number.isSafeInteger(to)||to<from||to>604){alert('اكتبي صفحة صحيحة من '+from+' إلى 604');return}data.quran.log.push({id:id(),date:selected,prayer:state.prayer,from,to});data.quran.lastPage=to;save();render()};
+    const pw=$('#prayerWorkNew');if(pw)pw.onsubmit=e=>{e.preventDefault();const title=pw.elements.title.value.trim();if(!title)return;data.prayerWorks.push({id:id(),prayer:state.prayer,title,completed:{}});save();render()};
+    document.querySelectorAll('[data-prayer-work]').forEach(b=>b.onchange=()=>{const x=data.prayerWorks.find(x=>x.id===b.dataset.prayerWork);x.completed??={};if(b.checked)x.completed[selected]=true;else delete x.completed[selected];save();render()});
+    document.querySelectorAll('[data-prayer-work-delete]').forEach(b=>b.onclick=()=>{if(confirm('حذف هذا العمل؟')){data.prayerWorks=data.prayerWorks.filter(x=>x.id!==b.dataset.prayerWorkDelete);save();render()}});
+
     document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{page=b.dataset.go;render()});
     document.querySelectorAll('[data-v3-day]').forEach(b=>b.onclick=()=>{selected=b.dataset.v3Day;render()});
     document.querySelectorAll('[data-v3-month]').forEach(b=>b.onclick=()=>{selected=monthOffset(selected,Number(b.dataset.v3Month));render()});
@@ -348,18 +378,18 @@
           if(pendingBackgroundFile){
             const raw=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result||''));r.onerror=no;r.readAsDataURL(pendingBackgroundFile)});
             const compact=await new Promise((ok)=>{const im=new Image();im.onload=()=>{try{const max=1000,s=Math.min(1,max/Math.max(im.naturalWidth,im.naturalHeight)),cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(im.naturalWidth*s));cv.height=Math.max(1,Math.round(im.naturalHeight*s));cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);ok(cv.toDataURL('image/jpeg',.62))}catch{ok(raw)}};im.onerror=()=>ok(raw);im.src=raw});
-            localStorage.setItem(BG_KEY,compact);pendingBackgroundFile=null;
+            data.designSettings.background=compact;localStorage.setItem(BG_KEY,compact);pendingBackgroundFile=null;
           }
-          if(!localStorage.getItem(BG_KEY)){st.textContent='اختاري صورة أولًا.';return}
+          if(!data.designSettings.background){st.textContent='اختاري صورة أولًا.';return}
           const dest=destination.value,scope={applyAll:dest==='all'||dest==='all-login',includeLogin:dest==='all-login',targetPage:dest==='login'?'lock':dest==='page'?target.value:'home'};
           localStorage.setItem(BG_SCOPE_KEY,JSON.stringify(scope));
-          data.designSettings.applyAll=scope.applyAll;data.designSettings.includeLogin=scope.includeLogin;data.designSettings.targetPage=scope.targetPage;
+          data.designSettings.bgX=Number(bg.elements.bgX.value);data.designSettings.bgY=Number(bg.elements.bgY.value);data.designSettings.bgZoom=Number(bg.elements.bgZoom.value);data.designSettings.applyAll=scope.applyAll;data.designSettings.includeLogin=scope.includeLogin;data.designSettings.targetPage=scope.targetPage;
           save();render()
         }catch(err){console.error('Background save failed',err);alert('تعذّر حفظ الصورة. جرّبي صورة أصغر أو JPG.')}
       };
     }
     document.querySelector('[data-v3-bg-clear]')?.addEventListener('click',()=>{
-      localStorage.removeItem(BG_KEY);localStorage.removeItem(BG_SCOPE_KEY);pendingBackgroundFile=null;
+      data.designSettings.background='';data.designSettings.backgroundMedia=null;data.designSettings.backgroundMigrated=true;save();localStorage.removeItem(BG_KEY);localStorage.removeItem(BG_SCOPE_KEY);pendingBackgroundFile=null;
       if(pendingBackgroundPreviewUrl){URL.revokeObjectURL(pendingBackgroundPreviewUrl);pendingBackgroundPreviewUrl=null}
       document.documentElement.style.setProperty('--yomi-user-bg','none');document.body.dataset.userBg='0';render()
     });
@@ -415,9 +445,10 @@
 
   ensure();
   const w=pages.findIndex(x=>x[0]==='worship');if(w>=0)pages.splice(w,1);const h=pages.findIndex(x=>x[0]==='home');pages.splice(h+1,0,['worship','عبادتي']);
+  const qi=pages.findIndex(x=>x[0]==='quran');if(qi>=0)pages.splice(qi,1);
   const oldRender=render;
   render=function(){
-    ensure();const custom={planner,worship,clients,learning,customize};
+    ensure();if(page==='quran')page='worship';const custom={planner,worship,clients,learning,customize};
     if(custom[page]){nav();$('#todayLabel').textContent=dateLabel(today());$('#view').innerHTML=custom[page]();attachCommon();window.yomiTimerRender?.();window.yomiThemeApply?.();attach();stickers();paint();return}
     oldRender();
     if(page==='home'){document.querySelectorAll('.special-date-card').forEach(x=>x.remove());$('#view').insertAdjacentHTML('afterbegin',specialDateHome()+homeExtra());attach()}
