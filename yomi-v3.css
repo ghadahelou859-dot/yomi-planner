@@ -457,3 +457,85 @@ body[data-user-bg="1"],body[data-user-bg="1"]::before,.lock{background-position:
   .bg-current-media{height:150px}
   .yomi-v3-sticker{max-width:34vw;max-height:34vw}
 }
+
+
+/* صفحات الأعمال المرتبطة بكل صلاة */
+.prayer-page-card{
+  display:grid!important;
+  gap:6px;
+  text-align:center;
+  min-height:118px;
+  align-content:center;
+  border:1px solid rgba(126,96,78,.15);
+  background:rgba(255,253,250,.62);
+}
+.prayer-page-card .prayer-card-title{font-weight:800;font-size:1.05rem}
+.prayer-page-card small{color:#806d75}
+.prayer-card-state{font-size:.82rem;font-weight:700}
+.prayer-page-card.prayer-complete{
+  background:rgba(231,241,232,.78);
+  border-color:rgba(82,126,89,.24);
+}
+.prayer-page-card.prayer-complete .prayer-card-state{color:#42644d}
+.prayer-detail-page{padding-top:18px}
+.prayer-detail-head{align-items:flex-start}
+.prayer-detail-head h2{margin:12px 0 2px}
+.prayer-status-badge{
+  padding:9px 13px;
+  border-radius:999px;
+  background:#f4eee6;
+  color:#806d75;
+  font-weight:800;
+  white-space:nowrap;
+}
+.prayer-status-badge.complete{background:#e7efe8;color:#42644d}
+.prayer-progress{
+  margin:16px 0;
+  padding:14px;
+  border-radius:18px;
+  background:rgba(248,242,235,.72);
+}
+.prayer-progress .bar{margin-top:9px}
+.prayer-section{
+  margin-top:16px;
+  padding:16px;
+  border-radius:20px;
+  border:1px solid rgba(126,96,78,.13);
+  background:rgba(255,255,255,.38);
+}
+.prayer-log{
+  padding:9px 11px;
+  margin:7px 0;
+  border-radius:12px;
+  background:rgba(231,239,232,.72);
+  color:#42644d;
+}
+.prayer-work-card{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:13px;
+  margin:9px 0;
+  border-radius:16px;
+  background:rgba(250,246,241,.78);
+  border:1px solid rgba(126,96,78,.11);
+}
+.prayer-work-card.done{background:rgba(231,239,232,.78)}
+.prayer-work-check{display:flex;align-items:center;gap:10px;flex:1;font-weight:700}
+.prayer-work-check input{width:22px;height:22px}
+.prayer-work-card.done .prayer-work-check span{text-decoration:line-through;color:#6f8874}
+.prayer-work-actions{display:flex;gap:7px;flex-wrap:wrap}
+.prayer-work-new{margin-top:14px}
+.prayer-quran-form{align-items:end}
+@media(max-width:720px){
+  .prayer-page-card{min-height:105px}
+  .prayer-detail-head{display:grid;grid-template-columns:1fr}
+  .prayer-status-badge{justify-self:start}
+  .prayer-section{padding:13px}
+  .prayer-work-card{align-items:flex-start;flex-direction:column}
+  .prayer-work-check{width:100%}
+  .prayer-work-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}
+  .prayer-work-actions button{min-height:42px}
+  .prayer-work-new{display:grid;grid-template-columns:1fr}
+  .prayer-work-new button{min-height:48px}
+}
