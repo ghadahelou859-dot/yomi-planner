@@ -1155,3 +1155,20 @@ body[data-user-bg="1"],body[data-user-bg="1"]::before,.lock{background-position:
   #lock .pin-keypad button b{font-size:1.95rem}
   #lock .pin-dots{gap:20px}
 }
+
+/* Task images */
+.task-item{align-items:center}
+.task-image{
+  flex:0 0 110px;
+  width:110px;
+  height:82px;
+  border-radius:14px;
+  overflow:hidden;
+  background:rgba(255,255,255,.45);
+  border:1px solid var(--border);
+}
+.task-image img{width:100%;height:100%;object-fit:cover;display:block}
+@media(max-width:720px){
+  .task-item{align-items:flex-start;flex-wrap:wrap}
+  .task-image{flex-basis:100%;width:100%;height:150px}
+}
