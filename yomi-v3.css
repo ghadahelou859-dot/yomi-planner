@@ -1172,3 +1172,18 @@ body[data-user-bg="1"],body[data-user-bg="1"]::before,.lock{background-position:
   .task-item{align-items:flex-start;flex-wrap:wrap}
   .task-image{flex-basis:100%;width:100%;height:150px}
 }
+
+/* Strong PIN entry feedback */
+#lock .pin-dots i{
+  display:grid;
+  place-items:center;
+  color:#fff;
+  font-style:normal;
+  font-size:.72rem;
+  line-height:1;
+}
+#lock .pin-dots i.filled{
+  background:rgba(255,255,255,.98);
+  color:rgba(88,49,31,.95);
+  transform:scale(1.08);
+}
