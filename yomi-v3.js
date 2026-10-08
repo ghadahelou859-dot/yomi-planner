@@ -356,7 +356,7 @@
   async function syncMedia(){const s=window.yomiMemoriesSession?.();if(!s||!navigator.onLine)return;for(const r of records()){const old=r.local;try{const blob=await get(old);if(!blob)continue;const ext=extForBlob(blob,r.name),path=s.user.id+'/planner-'+id()+'.'+ext,{error}=await s.client.storage.from(bucket).upload(path,blob,{contentType:blob.type||r.mime||'application/octet-stream',upsert:false});if(error)throw error;await put(path,blob);await put(s.user.id+':'+path,blob);r.path=path;save()}catch(e){console.error('Media sync failed',e)}}}
   async function blobFor(ref){let blob=await get(ref);const s=window.yomiMemoriesSession?.();if(!blob&&s){blob=await get(s.user.id+':'+ref);if(!blob&&ref.startsWith(s.user.id+'/')&&navigator.onLine){const {data:x,error}=await s.client.storage.from(bucket).download(ref);if(error)throw error;blob=x;await put(ref,blob);await put(s.user.id+':'+ref,blob)}}return blob}
   async function saveRawFile(file){if(!file?.size)throw Error('no-file');if(file.size>50*1024*1024)throw Error('file-too-large');const local='local:'+id();await put(local,file);return{local,mime:file.type||'application/octet-stream',name:file.name||''}}
-  window.yomiMediaSaveFile=saveRawFile;window.yomiMediaBlobFor=blobFor;window.yomiMediaSyncNow=syncMedia;
+  window.yomiMediaSaveFile=saveRawFile;window.yomiMediaSaveImage=saveImage;window.yomiMediaBlobFor=blobFor;window.yomiMediaSyncNow=syncMedia;
   let backgroundMigrationRunning=false;
   async function migrateBackgroundToMedia(){
     if(backgroundMigrationRunning||data.designSettings?.backgroundMedia||!String(data.designSettings?.background||'').startsWith('data:image/'))return;
