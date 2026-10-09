@@ -1,0 +1,13 @@
+.prayer-times-panel{margin:14px 0 18px;padding:16px;border:1px solid rgba(126,92,72,.16);border-radius:18px;background:rgba(255,255,255,.58);backdrop-filter:blur(5px)}
+.prayer-times-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.prayer-times-head h3{margin:0 0 3px}
+.prayer-times-head small{opacity:.72}
+.prayer-times-grid{display:grid;grid-template-columns:repeat(5,minmax(90px,1fr));gap:10px}
+.prayer-time{padding:12px 8px;border-radius:14px;text-align:center;background:rgba(255,255,255,.64);border:1px solid rgba(126,92,72,.12)}
+.prayer-time span,.prayer-time small{display:block}
+.prayer-time b{display:block;font-size:1.25rem;margin-top:4px}
+.prayer-time.next{outline:2px solid rgba(187,146,92,.45);box-shadow:0 6px 18px rgba(126,92,72,.08)}
+.prayer-time.next small{margin-top:4px;font-size:.72rem}
+.prayer-times-note,.prayer-times-loading,.prayer-times-error{margin-top:10px;font-size:.82rem;opacity:.78}
+.prayer-times-settings{margin-top:12px;padding-top:12px;border-top:1px dashed rgba(126,92,72,.2)}
+@media(max-width:760px){.prayer-times-grid{grid-template-columns:repeat(2,minmax(110px,1fr))}.prayer-time:last-child{grid-column:1/-1}.prayer-times-head{align-items:flex-start}}
