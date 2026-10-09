@@ -23,6 +23,8 @@
     data.boardSettings??={};
     data.boardSettings.defaultSize??='auto';
     data.boardSettings.cardOpacity??=92;
+    data.boardSettings.snap??=true;
+    data.boardSettings.gridSize??=20;
     data.boardSettings.labelDefaults??={title:{color:'#3f2b24',size:20,show:true},type:{color:'#6e5147',size:13,show:true},date:{color:'#6e5147',size:13,show:true},time:{color:'#6e5147',size:13,show:true},progress:{color:'#6e5147',size:13,show:true}};
     data.prayerChecks??={};data.adhkarChecks??={};data.adhkarItemChecks??={};data.adhkarAudio??={};data.prayerWorks??=[];
     data.quran??={lastPage:0,log:[]};data.quran.log??=[];
@@ -77,13 +79,24 @@
     const norm=(key,fallback)=>({color:labels[key]?.color||defaults[key]?.color||fallback,size:Number(labels[key]?.size||defaults[key]?.size||13),show:labels[key]?.show!==false&&defaults[key]?.show!==false});
     return {size:own.size||data.boardSettings?.defaultSize||'auto',cardBg:own.cardBg||'',opacity:Number(own.opacity??data.boardSettings?.cardOpacity??92),title:norm('title','#3f2b24'),type:norm('type','#6e5147'),date:norm('date','#6e5147'),time:norm('time','#6e5147'),progress:norm('progress','#6e5147')}
   }
-  function boardCard(task,day,compact=false){
+  function boardLayout(task,index=0){
+    task.boardLayout??={};
+    const l=task.boardLayout;
+    const defaults={x:20+(index%3)*300,y:20+Math.floor(index/3)*290,w:task.imageMedia?280:250,h:task.imageMedia?255:185,z:index+1,rotation:0,pinned:false};
+    return {x:Number.isFinite(Number(l.x))?Number(l.x):defaults.x,y:Number.isFinite(Number(l.y))?Number(l.y):defaults.y,w:Math.max(180,Math.min(620,Number(l.w)||defaults.w)),h:Math.max(120,Math.min(620,Number(l.h)||defaults.h)),z:Number(l.z)||defaults.z,rotation:Math.max(-3,Math.min(3,Number(l.rotation)||0)),pinned:!!l.pinned}
+  }
+  function boardCard(task,day,compact=false,freeIndex=-1){
     const s=boardStyle(task),done=completedTask(task,day),rem=boardReminder(task,day);
     const size=s.size==='auto'?(task.imageMedia?'large':(task.repeat==='daily'?'small':'medium')):s.size;
-    const op=Math.max(35,Math.min(100,s.opacity));const style='--board-card-opacity:'+(op/100)+';'+(s.cardBg?'background:color-mix(in srgb, '+safe(s.cardBg)+' '+op+'%, transparent);':'');
+    const op=Math.max(35,Math.min(100,s.opacity));let style='--board-card-opacity:'+(op/100)+';'+(s.cardBg?'background:color-mix(in srgb, '+safe(s.cardBg)+' '+op+'%, transparent);':'');
+    let controls='',freeClass='';
+    if(freeIndex>=0){
+      const l=boardLayout(task,freeIndex);freeClass=' board-free-card';style+='left:'+l.x+'px;top:'+l.y+'px;width:'+l.w+'px;height:'+l.h+'px;z-index:'+l.z+';--board-rotation:'+l.rotation+'deg;';
+      controls='<div class="board-card-tools"><button type="button" data-board-edit-task="'+task.id+'" title="تعديل المهمة">✎</button><button type="button" data-board-pin="'+task.id+'" title="تثبيت">'+(l.pinned?'📌':'📍')+'</button><button type="button" data-board-front="'+task.id+'" title="للأمام">⬆</button><button type="button" data-board-back="'+task.id+'" title="للخلف">⬇</button></div><span class="board-resize-handle" data-board-resize="'+task.id+'" aria-label="تغيير الحجم"></span>';
+    }
     const media=task.imageMedia?'<div class="board-card-image" data-v3-media="'+safe(task.imageMedia.path||task.imageMedia.local||'')+'"></div>':'';
     const progress=task.repeat==='daily'?(done?'مكتملة اليوم':'بانتظار الإنجاز'):(done?'مكتملة':'غير مكتملة');
-    return '<article class="board-card board-size-'+safe(size)+(done?' board-done':'')+(compact?' board-compact':'')+'" data-board-task="'+task.id+'" data-board-day="'+day+'" style="'+style+'">'+media+'<div class="board-card-body">'+
+    return '<article class="board-card board-size-'+safe(size)+(done?' board-done':'')+(compact?' board-compact':'')+freeClass+'" data-board-task="'+task.id+'" data-board-day="'+day+'" style="'+style+'">'+controls+media+'<div class="board-card-body">'+
       (s.type.show?'<span class="board-label board-label-type" style="color:'+safe(s.type.color)+';font-size:'+s.type.size+'px">'+boardKindIcon[task.kind]+' '+safe(boardKinds[task.kind]||'شخصي')+'</span>':'')+
       (s.title.show?'<h3 class="board-label board-label-title" style="color:'+safe(s.title.color)+';font-size:'+s.title.size+'px">'+safe(task.title)+'</h3>':'')+
       '<div class="board-card-meta">'+
@@ -111,7 +124,10 @@
     const row=(key,label,val)=>'<div class="board-label-setting"><b>'+label+'</b><label>لون<input type="color" name="'+key+'Color" value="'+safe(val.color)+'"></label><label>الحجم<input type="number" min="10" max="34" name="'+key+'Size" value="'+val.size+'"></label><label class="board-show-label"><input type="checkbox" name="'+key+'Show" '+(val.show?'checked':'')+'> إظهار</label></div>';
     return '<section class="board-customizer"><div class="row between"><div><h3>🎨 تخصيص مظهر البطاقة</h3><p class="sub">الإعدادات تظهر فقط عند الضغط على زر «تخصيص».</p></div><button class="soft" data-board-customize-close>إغلاق</button></div>'+
       '<form id="boardStyleForm"><label class="field">البطاقة<select name="taskId">'+all.map(t=>'<option value="'+t.id+'" '+(t.id===task.id?'selected':'')+'>'+safe(t.title)+'</option>').join('')+'</select></label>'+
-      '<div class="board-style-grid"><label class="field">حجم البطاقة<select name="size"><option value="auto" '+(s.size==='auto'?'selected':'')+'>تلقائي</option><option value="small" '+(s.size==='small'?'selected':'')+'>صغيرة</option><option value="medium" '+(s.size==='medium'?'selected':'')+'>متوسطة</option><option value="large" '+(s.size==='large'?'selected':'')+'>كبيرة</option></select></label>'+
+      '<div class="board-style-grid"><label class="field">حجم جاهز<select name="size"><option value="auto" '+(s.size==='auto'?'selected':'')+'>تلقائي</option><option value="small" '+(s.size==='small'?'selected':'')+'>صغيرة</option><option value="medium" '+(s.size==='medium'?'selected':'')+'>متوسطة</option><option value="large" '+(s.size==='large'?'selected':'')+'>كبيرة</option></select></label>'+
+      '<label class="field">العرض المخصص px<input type="number" min="180" max="620" name="width" value="'+Math.round(boardLayout(task).w)+'"></label>'+
+      '<label class="field">الارتفاع المخصص px<input type="number" min="120" max="620" name="height" value="'+Math.round(boardLayout(task).h)+'"></label>'+
+      '<label class="field">دوران خفيف<input type="range" min="-3" max="3" step="1" name="rotation" value="'+boardLayout(task).rotation+'"></label>'+
       '<label class="field">لون البطاقة<input type="color" name="cardBg" value="'+safe(s.cardBg||'#f7eadb')+'"></label>'+
       '<label class="field">شفافية البطاقة<input type="range" min="35" max="100" name="opacity" value="'+s.opacity+'"></label></div>'+
       '<h4>تخصيص كل Label لوحده</h4><div class="board-label-settings">'+row('title','عنوان المهمة',s.title)+row('type','نوع المهمة',s.type)+row('date','التاريخ',s.date)+row('time','الوقت',s.time)+row('progress','حالة الإنجاز',s.progress)+'</div>'+
@@ -120,21 +136,29 @@
   function boardTaskDialog(){
     const task=(data.tasks||[]).find(t=>t.id===state.boardTaskDetail);if(!task)return '';
     const day=state.boardTaskDetailDay||selected,rem=boardReminder(task,day);
-    return '<dialog class="board-task-dialog" id="boardTaskDialog"><div class="row between"><h3>'+safe(task.title)+'</h3><button class="soft" data-board-detail-close>✕</button></div>'+
+    return '<dialog class="board-task-dialog" id="boardTaskDialog"><div class="row between"><div><h3>تعديل المهمة</h3><p class="sub">'+safe(task.title)+'</p></div><button class="soft" data-board-detail-close>✕</button></div>'+
       (task.imageMedia?'<div class="board-detail-image" data-v3-media="'+safe(task.imageMedia.path||task.imageMedia.local||'')+'"></div>':'')+
-      '<div class="board-detail-lines"><p><b>النوع:</b> '+safe(boardKinds[task.kind]||'شخصي')+'</p><p><b>التاريخ:</b> '+safe(dateLabel(day))+'</p>'+(rem?'<p><b>الوقت:</b> '+safe(rem)+'</p>':'')+'<p><b>الحالة:</b> '+(completedTask(task,day)?'مكتملة ✓':'غير مكتملة')+'</p></div>'+
-      '<div class="row"><button class="primary" data-board-go-task>فتح صفحة مهامي</button><button class="soft" data-board-detail-close>إغلاق</button></div></dialog>'
+      '<form id="boardTaskEditForm"><label class="field">اسم المهمة<input name="title" value="'+safe(task.title)+'" required></label><div class="row">'+
+      '<label class="field">النوع<select name="kind"><option value="personal" '+(task.kind==='personal'?'selected':'')+'>شخصي</option><option value="work" '+(task.kind==='work'?'selected':'')+'>شغل</option><option value="education" '+(task.kind==='education'?'selected':'')+'>تعليمي</option></select></label>'+
+      '<label class="field">التكرار<select name="repeat"><option value="once" '+(task.repeat==='once'?'selected':'')+'>مرة واحدة</option><option value="daily" '+(task.repeat==='daily'?'selected':'')+'>يومي</option></select></label></div>'+
+      '<div class="row"><label class="field">تبدأ يوم<input name="start" type="date" value="'+safe(task.date)+'" required></label><label class="field">تنتهي يوم<input name="end" type="date" value="'+safe(task.end||'')+'"></label><label class="field">وقت التذكير<input name="remindTime" type="time" value="'+safe(rem)+'"></label></div>'+
+      '<label class="field">تغيير الصورة (اختياري)<input name="image" type="file" accept="image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp"></label>'+
+      '<label class="field"><span>مهمة صلاة؟</span><input name="prayer" type="checkbox" '+(task.prayer?'checked':'')+'></label><p class="sub" data-board-edit-status></p>'+
+      '<div class="row"><button class="primary">حفظ التعديل</button><button type="button" class="soft" data-board-detail-close>إلغاء</button></div></form></dialog>'
   }
   function board(){
     const visible=boardVisibleTasks(),tabs=[['daily','يومي'],['weekly','أسبوعي'],['monthly','شهري']];let body='';
-    if(state.boardView==='daily')body='<div class="board-masonry">'+visible.map(x=>boardCard(x.task,x.day)).join('')+'</div>';
+    if(state.boardView==='daily'){
+      const canvasH=Math.max(540,...visible.map((x,i)=>{const l=boardLayout(x.task,i);return l.y+l.h+40}));
+      body='<div class="board-free-layout" style="height:'+canvasH+'px">'+visible.map((x,i)=>boardCard(x.task,x.day,false,i)).join('')+'</div>';
+    }
     else if(state.boardView==='weekly'){
       const first=boardWeekStart(selected),cols=[];for(let i=0;i<7;i++){const day=dayAfter(first,i),items=visible.filter(x=>x.day===day);cols.push('<section class="board-week-day"><header><b>'+new Intl.DateTimeFormat('ar-PS',{weekday:'long'}).format(new Date(day+'T12:00:00Z'))+'</b><small>'+day.slice(8,10)+'</small></header>'+items.map(x=>boardCard(x.task,x.day,true)).join('')+(items.length?'':'<span class="sub">—</span>')+'</section>')}body='<div class="board-week-grid">'+cols.join('')+'</div>'
     }else{
       const month=selected.slice(0,7),first=month+'-01',days=new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate(),pad=(new Date(first+'T12:00:00Z').getUTCDay()+6)%7,cells=[];for(let i=0;i<pad;i++)cells.push('<div class="board-month-cell empty"></div>');
       for(let n=1;n<=days;n++){const day=month+'-'+String(n).padStart(2,'0'),items=visible.filter(x=>x.day===day);cells.push('<section class="board-month-cell '+(day===selected?'selected':'')+'"><b>'+n+'</b><div class="board-month-items">'+items.slice(0,4).map(x=>boardCard(x.task,x.day,true)).join('')+(items.length>4?'<small>+'+(items.length-4)+'</small>':'')+'</div></section>')}body='<div class="board-month-week"><span>الإثنين</span><span>الثلاثاء</span><span>الأربعاء</span><span>الخميس</span><span>الجمعة</span><span>السبت</span><span>الأحد</span></div><div class="board-month-grid">'+cells.join('')+'</div>'
     }
-    return '<div class="board-page"><div class="panel board-toolbar"><div><h2>لوحتي</h2><p class="sub">لوحة حرة من نفس الثيم، وصور مهامك تبقى كما اخترتيها.</p></div><div class="row">'+tabs.map(([k,v])=>'<button class="'+(state.boardView===k?'primary':'soft')+'" data-board-view="'+k+'">'+v+'</button>').join('')+'<button class="'+(state.boardCustomize?'primary':'soft')+'" data-board-customize>🎨 تخصيص</button></div>'+datePicker()+'</div>'+boardCustomizePanel()+'<section class="board-canvas">'+(visible.length?body:'<div class="empty board-empty">ما في مهام لهذا العرض. أضيفي مهمة من صفحة «مهامي» وستظهر هون.</div>')+'</section>'+boardTaskDialog()+'</div>'
+    return '<div class="board-page"><div class="panel board-toolbar"><div><h2>لوحتي</h2><p class="sub">لوحة حرة من نفس الثيم، وصور مهامك تبقى كما اخترتيها.</p></div><div class="row">'+tabs.map(([k,v])=>'<button class="'+(state.boardView===k?'primary':'soft')+'" data-board-view="'+k+'">'+v+'</button>').join('')+'<button class="'+(state.boardCustomize?'primary':'soft')+'" data-board-customize>🎨 تخصيص</button><button class="soft" data-board-snap>🧲 '+(data.boardSettings.snap?'Snap':'حر')+'</button><button class="soft" data-board-arrange>↻ ترتيب تلقائي</button></div>'+datePicker()+'</div>'+boardCustomizePanel()+'<section class="board-canvas">'+(visible.length?body:'<div class="empty board-empty">ما في مهام لهذا العرض. أضيفي مهمة من صفحة «مهامي» وستظهر هون.</div>')+'</section>'+boardTaskDialog()+'</div>'
   }
   function planner(){
     const month=monthKey(selected),first=month+'-01',days=new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate(),pad=(new Date(first+'T12:00:00Z').getUTCDay()+6)%7,rows=plannerRows(month),cells=[];
@@ -505,16 +529,41 @@
   }
 
   function attach(){
+    const snap=n=>{const g=Math.max(5,Number(data.boardSettings.gridSize)||20);return data.boardSettings.snap?Math.round(n/g)*g:n};
     document.querySelectorAll('[data-board-view]').forEach(b=>b.onclick=()=>{state.boardView=b.dataset.boardView;render()});
     document.querySelector('[data-board-customize]')?.addEventListener('click',()=>{state.boardCustomize=!state.boardCustomize;render()});
     document.querySelector('[data-board-customize-close]')?.addEventListener('click',()=>{state.boardCustomize=false;render()});
-    document.querySelectorAll('[data-board-task]').forEach(card=>card.onclick=e=>{if(e.target.closest('button,input,select,label'))return;state.boardTaskDetail=card.dataset.boardTask;state.boardTaskDetailDay=card.dataset.boardDay||selected;render()});
-    const boardDialog=document.getElementById('boardTaskDialog');if(boardDialog&&!boardDialog.open)boardDialog.showModal?.();document.querySelectorAll('[data-board-detail-close]').forEach(b=>b.onclick=()=>{state.boardTaskDetail=null;render()});
-    document.querySelector('[data-board-go-task]')?.addEventListener('click',()=>{state.boardTaskDetail=null;page='tasks';render()});
+    document.querySelector('[data-board-snap]')?.addEventListener('click',()=>{data.boardSettings.snap=!data.boardSettings.snap;save();render()});
+    document.querySelector('[data-board-arrange]')?.addEventListener('click',()=>{const items=boardVisibleTasks();if(state.boardView!=='daily')return;items.forEach((x,i)=>{x.task.boardLayout??={};const col=i%3,row=Math.floor(i/3),w=x.task.imageMedia?280:250,h=x.task.imageMedia?255:185;Object.assign(x.task.boardLayout,{x:20+col*300,y:20+row*290,w,h,z:i+1,rotation:0})});save();render()});
+    document.querySelectorAll('[data-board-edit-task]').forEach(b=>b.onclick=e=>{e.stopPropagation();state.boardTaskDetail=b.dataset.boardEditTask;state.boardTaskDetailDay=b.closest('[data-board-day]')?.dataset.boardDay||selected;render()});
+    document.querySelectorAll('[data-board-pin]').forEach(b=>b.onclick=e=>{e.stopPropagation();const t=data.tasks.find(x=>x.id===b.dataset.boardPin);if(!t)return;t.boardLayout??={};t.boardLayout.pinned=!t.boardLayout.pinned;save();render()});
+    document.querySelectorAll('[data-board-front]').forEach(b=>b.onclick=e=>{e.stopPropagation();const t=data.tasks.find(x=>x.id===b.dataset.boardFront);if(!t)return;t.boardLayout??={};const max=Math.max(1,...data.tasks.map(x=>Number(x.boardLayout?.z)||1));t.boardLayout.z=max+1;save();render()});
+    document.querySelectorAll('[data-board-back]').forEach(b=>b.onclick=e=>{e.stopPropagation();const t=data.tasks.find(x=>x.id===b.dataset.boardBack);if(!t)return;t.boardLayout??={};const min=Math.min(1,...data.tasks.map(x=>Number(x.boardLayout?.z)||1));t.boardLayout.z=min-1;save();render()});
+    document.querySelectorAll('.board-free-card').forEach(card=>{
+      const task=data.tasks.find(x=>x.id===card.dataset.boardTask);if(!task)return;task.boardLayout??={};
+      card.addEventListener('pointerdown',e=>{
+        if(e.target.closest('button,input,select,label,.board-resize-handle')||task.boardLayout.pinned)return;
+        e.preventDefault();const sx=e.clientX,sy=e.clientY,startX=card.offsetLeft,startY=card.offsetTop;let moved=false;card.setPointerCapture?.(e.pointerId);card.classList.add('board-dragging');
+        const move=ev=>{const dx=ev.clientX-sx,dy=ev.clientY-sy;if(Math.abs(dx)+Math.abs(dy)>5)moved=true;let nx=snap(startX+dx),ny=snap(startY+dy);nx=Math.max(0,nx);ny=Math.max(0,ny);card.style.left=nx+'px';card.style.top=ny+'px'};
+        const up=ev=>{card.removeEventListener('pointermove',move);card.removeEventListener('pointerup',up);card.removeEventListener('pointercancel',up);card.classList.remove('board-dragging');if(moved){task.boardLayout.x=parseFloat(card.style.left)||0;task.boardLayout.y=parseFloat(card.style.top)||0;card.dataset.boardMoved='1';save();setTimeout(()=>delete card.dataset.boardMoved,120)}};
+        card.addEventListener('pointermove',move);card.addEventListener('pointerup',up);card.addEventListener('pointercancel',up)
+      });
+      const handle=card.querySelector('[data-board-resize]');handle?.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(task.boardLayout.pinned)return;const sx=e.clientX,sy=e.clientY,sw=card.offsetWidth,sh=card.offsetHeight;handle.setPointerCapture?.(e.pointerId);card.classList.add('board-resizing');
+        const move=ev=>{const w=Math.max(180,Math.min(620,snap(sw+ev.clientX-sx))),h=Math.max(120,Math.min(620,snap(sh+ev.clientY-sy)));card.style.width=w+'px';card.style.height=h+'px'};
+        const up=()=>{handle.removeEventListener('pointermove',move);handle.removeEventListener('pointerup',up);handle.removeEventListener('pointercancel',up);card.classList.remove('board-resizing');task.boardLayout.w=card.offsetWidth;task.boardLayout.h=card.offsetHeight;save()};
+        handle.addEventListener('pointermove',move);handle.addEventListener('pointerup',up);handle.addEventListener('pointercancel',up)
+      });
+      card.onclick=e=>{if(card.dataset.boardMoved||e.target.closest('button,.board-resize-handle'))return;state.boardTaskDetail=card.dataset.boardTask;state.boardTaskDetailDay=card.dataset.boardDay||selected;render()}
+    });
+    document.querySelectorAll('[data-board-task]:not(.board-free-card)').forEach(card=>card.onclick=e=>{if(e.target.closest('button,input,select,label'))return;state.boardTaskDetail=card.dataset.boardTask;state.boardTaskDetailDay=card.dataset.boardDay||selected;render()});
+    const boardDialog=document.getElementById('boardTaskDialog');if(boardDialog&&!boardDialog.open)boardDialog.showModal?.();
+    document.querySelectorAll('[data-board-detail-close]').forEach(b=>b.onclick=()=>{state.boardTaskDetail=null;render()});
+    const editForm=$('#boardTaskEditForm');if(editForm){editForm.onsubmit=async e=>{e.preventDefault();const task=data.tasks.find(x=>x.id===state.boardTaskDetail);if(!task)return;const f=new FormData(editForm),start=String(f.get('start')||''),end=String(f.get('end')||''),status=editForm.querySelector('[data-board-edit-status]');if(end&&end<start){if(status)status.textContent='تاريخ النهاية لازم يكون بعد البداية';return}try{const oldDate=task.date;task.title=String(f.get('title')||'').trim();task.kind=String(f.get('kind')||'personal');task.repeat=String(f.get('repeat')||'once');task.date=start;task.end=end;task.prayer=f.has('prayer');const file=editForm.elements.image.files?.[0];if(file){if(!window.yomiMediaSaveImage)throw Error('media');task.imageMedia=await window.yomiMediaSaveImage(file,{max:1400,q:.8})}const remind=String(f.get('remindTime')||'');let r=(data.reminders||[]).find(x=>x.taskId===task.id);if(remind){if(r){r.title='موعد المهمة: '+task.title;r.date=start;r.time=remind}else data.reminders.push({id:id(),title:'موعد المهمة: '+task.title,date:start,time:remind,done:false,taskId:task.id})}else data.reminders=data.reminders.filter(x=>x.taskId!==task.id);save();if(window.yomiMediaSyncNow)Promise.resolve(window.yomiMediaSyncNow()).catch(console.error);selected=start||oldDate;state.boardTaskDetail=null;render()}catch(err){console.error(err);if(status)status.textContent='تعذّر حفظ التعديل'}}};
+    }
     const bsf=$('#boardStyleForm');if(bsf){
       bsf.elements.taskId.onchange=()=>{state.boardSelectedTask=bsf.elements.taskId.value;render()};
-      bsf.onsubmit=e=>{e.preventDefault();const f=new FormData(bsf),task=(data.tasks||[]).find(t=>t.id===f.get('taskId'));if(!task)return;const labels={};for(const key of ['title','type','date','time','progress'])labels[key]={color:String(f.get(key+'Color')||'#6e5147'),size:Math.max(10,Math.min(34,Number(f.get(key+'Size'))||13)),show:f.has(key+'Show')};task.boardStyle={...(task.boardStyle||{}),size:String(f.get('size')||'auto'),cardBg:String(f.get('cardBg')||''),opacity:Math.max(35,Math.min(100,Number(f.get('opacity'))||92)),labels};save();render()};
-      document.querySelector('[data-board-style-reset]')?.addEventListener('click',()=>{const task=(data.tasks||[]).find(t=>t.id===bsf.elements.taskId.value);if(task){delete task.boardStyle;save();render()}});
+      bsf.onsubmit=e=>{e.preventDefault();const f=new FormData(bsf),task=(data.tasks||[]).find(t=>t.id===f.get('taskId'));if(!task)return;const labels={};for(const key of ['title','type','date','time','progress'])labels[key]={color:String(f.get(key+'Color')||'#6e5147'),size:Math.max(10,Math.min(34,Number(f.get(key+'Size'))||13)),show:f.has(key+'Show')};task.boardStyle={...(task.boardStyle||{}),size:String(f.get('size')||'auto'),cardBg:String(f.get('cardBg')||''),opacity:Math.max(35,Math.min(100,Number(f.get('opacity'))||92)),labels};task.boardLayout??={};task.boardLayout.w=Math.max(180,Math.min(620,Number(f.get('width'))||boardLayout(task).w));task.boardLayout.h=Math.max(120,Math.min(620,Number(f.get('height'))||boardLayout(task).h));task.boardLayout.rotation=Math.max(-3,Math.min(3,Number(f.get('rotation'))||0));save();render()};
+      document.querySelector('[data-board-style-reset]')?.addEventListener('click',()=>{const task=(data.tasks||[]).find(t=>t.id===bsf.elements.taskId.value);if(task){delete task.boardStyle;delete task.boardLayout;save();render()}});
     }
     document.querySelectorAll('[data-daily-adhkar]').forEach(b=>b.onchange=()=>{data.adhkarChecks[selected]??={};const kind=b.dataset.dailyAdhkar;if(b.checked)data.adhkarChecks[selected][kind]='manual';else delete data.adhkarChecks[selected][kind];save();render()});
     document.querySelectorAll('[data-adhkar-item]').forEach(b=>b.onchange=()=>{const kind=b.dataset.adhkarKind,index=b.dataset.adhkarItem;data.adhkarItemChecks[selected]??={};data.adhkarItemChecks[selected][kind]??={};if(b.checked)data.adhkarItemChecks[selected][kind][index]=true;else delete data.adhkarItemChecks[selected][kind][index];const items=dailyAdhkarText[kind]||[],allDone=items.length>0&&items.every((_,i)=>!!data.adhkarItemChecks[selected][kind][i]);data.adhkarChecks[selected]??={};if(allDone&&data.adhkarChecks[selected][kind]!=='manual')data.adhkarChecks[selected][kind]='auto';else if(!allDone&&data.adhkarChecks[selected][kind]==='auto')delete data.adhkarChecks[selected][kind];save();render()});
