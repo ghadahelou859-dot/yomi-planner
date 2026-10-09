@@ -2,7 +2,7 @@
 (() => {
   window.yomiV3DesignActive=true;
   const BG_KEY='yomi-bg-v3', BG_SCOPE_KEY='yomi-bg-scope-v3', TRANS_KEY='yomi-transparency-v1', NAV_KEY='yomi-nav-visibility-v1';
-  const state={client:null,project:null,course:null,learningPage:null,prayer:null,adhkarOpen:null,reopenPrayerManage:false,worshipJump:null,stickerStatus:'',stickerDraft:null,albumStatus:''};
+  const state={client:null,project:null,course:null,learningPage:null,prayer:null,adhkarOpen:null,reopenPrayerManage:false,worshipJump:null,stickerStatus:'',stickerDraft:null,albumStatus:'',boardView:'daily',boardCustomize:false,boardSelectedTask:null,boardTaskDetail:null,boardTaskDetailDay:null};
   const bucket='yomi-memories', urls=new Set();
   let pendingBackgroundFile=null,pendingBackgroundPreviewUrl=null,pendingPortraitFile=null,pendingPortraitPreviewUrl=null,projectClockInterval=null;
   const formatDuration=ms=>{ms=Math.max(0,Number(ms)||0);const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return String(h).padStart(2,'0')+' س : '+String(m).padStart(2,'0')+' د : '+String(sec).padStart(2,'0')+' ث'};
@@ -20,6 +20,10 @@
     data.designSettings.navVisibility ??= null;
     data.designSettings.audioMode ??= null;
     data.designSettings.portraitBackgroundMedia ??= null;
+    data.boardSettings??={};
+    data.boardSettings.defaultSize??='auto';
+    data.boardSettings.cardOpacity??=92;
+    data.boardSettings.labelDefaults??={title:{color:'#3f2b24',size:20,show:true},type:{color:'#6e5147',size:13,show:true},date:{color:'#6e5147',size:13,show:true},time:{color:'#6e5147',size:13,show:true},progress:{color:'#6e5147',size:13,show:true}};
     data.prayerChecks??={};data.adhkarChecks??={};data.adhkarItemChecks??={};data.adhkarAudio??={};data.prayerWorks??=[];
     data.quran??={lastPage:0,log:[]};data.quran.log??=[];
     if(data.designSettings.background===null&&!data.designSettings.backgroundMigrated){
@@ -59,6 +63,78 @@
     for(const x of data.projects||[])if(x.due?.startsWith(month))a.push({kind:'project',date:x.due,title:x.title,icon:'💼',color:'#bb925c',time:x.time||''});
     for(const x of data.importantDates||[]){const d=x.yearly?month.slice(0,4)+'-'+String(x.date||'').slice(5):x.date;if(d?.startsWith(month))a.push({kind:'important',date:d,title:x.title,icon:x.sticker||'⭐',color:x.color||'#a8738b'})}
     a.push(...clientItems(month));return a.sort((x,y)=>(x.date+(x.time||'')).localeCompare(y.date+(y.time||'')))
+  }
+
+  const boardKinds={personal:'شخصي',work:'شغل',education:'تعليمي'};
+  const boardKindIcon={personal:'♥',work:'💼',education:'🎓'};
+  function boardWeekStart(day=selected){
+    const d=new Date(day+'T12:00:00Z'),dow=d.getUTCDay(),back=(dow+6)%7;
+    d.setUTCDate(d.getUTCDate()-back);return d.toISOString().slice(0,10)
+  }
+  function boardReminder(task,day){return (data.reminders||[]).find(r=>r.taskId===task.id&&(!r.date||r.date===day))?.time||''}
+  function boardStyle(task){
+    const defaults=data.boardSettings?.labelDefaults||{},own=task.boardStyle||{},labels=own.labels||{};
+    const norm=(key,fallback)=>({color:labels[key]?.color||defaults[key]?.color||fallback,size:Number(labels[key]?.size||defaults[key]?.size||13),show:labels[key]?.show!==false&&defaults[key]?.show!==false});
+    return {size:own.size||data.boardSettings?.defaultSize||'auto',cardBg:own.cardBg||'',opacity:Number(own.opacity??data.boardSettings?.cardOpacity??92),title:norm('title','#3f2b24'),type:norm('type','#6e5147'),date:norm('date','#6e5147'),time:norm('time','#6e5147'),progress:norm('progress','#6e5147')}
+  }
+  function boardCard(task,day,compact=false){
+    const s=boardStyle(task),done=completedTask(task,day),rem=boardReminder(task,day);
+    const size=s.size==='auto'?(task.imageMedia?'large':(task.repeat==='daily'?'small':'medium')):s.size;
+    const style='--board-card-opacity:'+(Math.max(35,Math.min(100,s.opacity))/100)+';'+(s.cardBg?'background:'+safe(s.cardBg)+';':'');
+    const media=task.imageMedia?'<div class="board-card-image" data-v3-media="'+safe(task.imageMedia.path||task.imageMedia.local||'')+'"></div>':'';
+    const progress=task.repeat==='daily'?(done?'مكتملة اليوم':'بانتظار الإنجاز'):(done?'مكتملة':'غير مكتملة');
+    return '<article class="board-card board-size-'+safe(size)+(done?' board-done':'')+(compact?' board-compact':'')+'" data-board-task="'+task.id+'" data-board-day="'+day+'" style="'+style+'">'+media+'<div class="board-card-body">'+
+      (s.type.show?'<span class="board-label board-label-type" style="color:'+safe(s.type.color)+';font-size:'+s.type.size+'px">'+boardKindIcon[task.kind]+' '+safe(boardKinds[task.kind]||'شخصي')+'</span>':'')+
+      (s.title.show?'<h3 class="board-label board-label-title" style="color:'+safe(s.title.color)+';font-size:'+s.title.size+'px">'+safe(task.title)+'</h3>':'')+
+      '<div class="board-card-meta">'+
+      (s.date.show?'<span class="board-label board-label-date" style="color:'+safe(s.date.color)+';font-size:'+s.date.size+'px">📅 '+safe(dateLabel(day))+'</span>':'')+
+      (s.time.show&&rem?'<span class="board-label board-label-time" style="color:'+safe(s.time.color)+';font-size:'+s.time.size+'px">🕒 '+safe(rem)+'</span>':'')+
+      '</div>'+
+      (s.progress.show?'<span class="board-label board-label-progress" style="color:'+safe(s.progress.color)+';font-size:'+s.progress.size+'px">'+(done?'✓ ':'○ ')+safe(progress)+'</span>':'')+
+      '</div></article>'
+  }
+  function boardVisibleTasks(){
+    if(state.boardView==='daily')return dailyTasks(selected).map(t=>({task:t,day:selected}));
+    if(state.boardView==='weekly'){
+      const first=boardWeekStart(selected),out=[];for(let i=0;i<7;i++){const day=dayAfter(first,i);for(const task of dailyTasks(day))out.push({task,day})}return out
+    }
+    const month=selected.slice(0,7),first=month+'-01',days=new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate(),out=[];
+    for(let i=0;i<days;i++){const day=dayAfter(first,i);for(const task of dailyTasks(day))out.push({task,day})}return out
+  }
+  function boardCustomizePanel(){
+    if(!state.boardCustomize)return '';
+    const visible=boardVisibleTasks(),ids=[...new Set(visible.map(x=>x.task.id))],all=(data.tasks||[]).filter(t=>ids.includes(t.id));
+    if(!state.boardSelectedTask||!all.some(t=>t.id===state.boardSelectedTask))state.boardSelectedTask=all[0]?.id||null;
+    const task=(data.tasks||[]).find(t=>t.id===state.boardSelectedTask);
+    if(!task)return '<section class="board-customizer"><div class="row between"><b>تخصيص البطاقات</b><button class="soft" data-board-customize-close>إغلاق</button></div><div class="empty">ما في مهام ظاهرة لتخصيصها.</div></section>';
+    const s=boardStyle(task);
+    const row=(key,label,val)=>'<div class="board-label-setting"><b>'+label+'</b><label>لون<input type="color" name="'+key+'Color" value="'+safe(val.color)+'"></label><label>الحجم<input type="number" min="10" max="34" name="'+key+'Size" value="'+val.size+'"></label><label class="board-show-label"><input type="checkbox" name="'+key+'Show" '+(val.show?'checked':'')+'> إظهار</label></div>';
+    return '<section class="board-customizer"><div class="row between"><div><h3>🎨 تخصيص مظهر البطاقة</h3><p class="sub">الإعدادات تظهر فقط عند الضغط على زر «تخصيص».</p></div><button class="soft" data-board-customize-close>إغلاق</button></div>'+
+      '<form id="boardStyleForm"><label class="field">البطاقة<select name="taskId">'+all.map(t=>'<option value="'+t.id+'" '+(t.id===task.id?'selected':'')+'>'+safe(t.title)+'</option>').join('')+'</select></label>'+
+      '<div class="board-style-grid"><label class="field">حجم البطاقة<select name="size"><option value="auto" '+(s.size==='auto'?'selected':'')+'>تلقائي</option><option value="small" '+(s.size==='small'?'selected':'')+'>صغيرة</option><option value="medium" '+(s.size==='medium'?'selected':'')+'>متوسطة</option><option value="large" '+(s.size==='large'?'selected':'')+'>كبيرة</option></select></label>'+
+      '<label class="field">لون البطاقة<input type="color" name="cardBg" value="'+safe(s.cardBg||'#f7eadb')+'"></label>'+
+      '<label class="field">شفافية البطاقة<input type="range" min="35" max="100" name="opacity" value="'+s.opacity+'"></label></div>'+
+      '<h4>تخصيص كل Label لوحده</h4><div class="board-label-settings">'+row('title','عنوان المهمة',s.title)+row('type','نوع المهمة',s.type)+row('date','التاريخ',s.date)+row('time','الوقت',s.time)+row('progress','حالة الإنجاز',s.progress)+'</div>'+
+      '<div class="row"><button class="primary">حفظ مظهر البطاقة</button><button type="button" class="soft" data-board-style-reset>إعادة ضبط البطاقة</button></div></form></section>'
+  }
+  function boardTaskDialog(){
+    const task=(data.tasks||[]).find(t=>t.id===state.boardTaskDetail);if(!task)return '';
+    const day=state.boardTaskDetailDay||selected,rem=boardReminder(task,day);
+    return '<dialog class="board-task-dialog" id="boardTaskDialog" open><div class="row between"><h3>'+safe(task.title)+'</h3><button class="soft" data-board-detail-close>✕</button></div>'+
+      (task.imageMedia?'<div class="board-detail-image" data-v3-media="'+safe(task.imageMedia.path||task.imageMedia.local||'')+'"></div>':'')+
+      '<div class="board-detail-lines"><p><b>النوع:</b> '+safe(boardKinds[task.kind]||'شخصي')+'</p><p><b>التاريخ:</b> '+safe(dateLabel(day))+'</p>'+(rem?'<p><b>الوقت:</b> '+safe(rem)+'</p>':'')+'<p><b>الحالة:</b> '+(completedTask(task,day)?'مكتملة ✓':'غير مكتملة')+'</p></div>'+
+      '<div class="row"><button class="primary" data-board-go-task>فتح صفحة مهامي</button><button class="soft" data-board-detail-close>إغلاق</button></div></dialog>'
+  }
+  function board(){
+    const visible=boardVisibleTasks(),tabs=[['daily','يومي'],['weekly','أسبوعي'],['monthly','شهري']];let body='';
+    if(state.boardView==='daily')body='<div class="board-masonry">'+visible.map(x=>boardCard(x.task,x.day)).join('')+'</div>';
+    else if(state.boardView==='weekly'){
+      const first=boardWeekStart(selected),cols=[];for(let i=0;i<7;i++){const day=dayAfter(first,i),items=visible.filter(x=>x.day===day);cols.push('<section class="board-week-day"><header><b>'+new Intl.DateTimeFormat('ar-PS',{weekday:'long'}).format(new Date(day+'T12:00:00Z'))+'</b><small>'+day.slice(8,10)+'</small></header>'+items.map(x=>boardCard(x.task,x.day,true)).join('')+(items.length?'':'<span class="sub">—</span>')+'</section>')}body='<div class="board-week-grid">'+cols.join('')+'</div>'
+    }else{
+      const month=selected.slice(0,7),first=month+'-01',days=new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate(),pad=(new Date(first+'T12:00:00Z').getUTCDay()+6)%7,cells=[];for(let i=0;i<pad;i++)cells.push('<div class="board-month-cell empty"></div>');
+      for(let n=1;n<=days;n++){const day=month+'-'+String(n).padStart(2,'0'),items=visible.filter(x=>x.day===day);cells.push('<section class="board-month-cell '+(day===selected?'selected':'')+'"><b>'+n+'</b><div class="board-month-items">'+items.slice(0,4).map(x=>boardCard(x.task,x.day,true)).join('')+(items.length>4?'<small>+'+(items.length-4)+'</small>':'')+'</div></section>')}body='<div class="board-month-week"><span>الإثنين</span><span>الثلاثاء</span><span>الأربعاء</span><span>الخميس</span><span>الجمعة</span><span>السبت</span><span>الأحد</span></div><div class="board-month-grid">'+cells.join('')+'</div>'
+    }
+    return '<div class="board-page"><div class="panel board-toolbar"><div><h2>لوحتي</h2><p class="sub">لوحة حرة من نفس الثيم، وصور مهامك تبقى كما اخترتيها.</p></div><div class="row">'+tabs.map(([k,v])=>'<button class="'+(state.boardView===k?'primary':'soft')+'" data-board-view="'+k+'">'+v+'</button>').join('')+'<button class="'+(state.boardCustomize?'primary':'soft')+'" data-board-customize>🎨 تخصيص</button></div>'+datePicker()+'</div>'+boardCustomizePanel()+'<section class="board-canvas">'+(visible.length?body:'<div class="empty board-empty">ما في مهام لهذا العرض. أضيفي مهمة من صفحة «مهامي» وستظهر هون.</div>')+'</section>'+boardTaskDialog()+'</div>'
   }
   function planner(){
     const month=monthKey(selected),first=month+'-01',days=new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate(),pad=(new Date(first+'T12:00:00Z').getUTCDay()+6)%7,rows=plannerRows(month),cells=[];
@@ -429,6 +505,17 @@
   }
 
   function attach(){
+    document.querySelectorAll('[data-board-view]').forEach(b=>b.onclick=()=>{state.boardView=b.dataset.boardView;render()});
+    document.querySelector('[data-board-customize]')?.addEventListener('click',()=>{state.boardCustomize=!state.boardCustomize;render()});
+    document.querySelector('[data-board-customize-close]')?.addEventListener('click',()=>{state.boardCustomize=false;render()});
+    document.querySelectorAll('[data-board-task]').forEach(card=>card.onclick=e=>{if(e.target.closest('button,input,select,label'))return;state.boardTaskDetail=card.dataset.boardTask;state.boardTaskDetailDay=card.dataset.boardDay||selected;render()});
+    document.querySelectorAll('[data-board-detail-close]').forEach(b=>b.onclick=()=>{state.boardTaskDetail=null;render()});
+    document.querySelector('[data-board-go-task]')?.addEventListener('click',()=>{state.boardTaskDetail=null;page='tasks';render()});
+    const bsf=$('#boardStyleForm');if(bsf){
+      bsf.elements.taskId.onchange=()=>{state.boardSelectedTask=bsf.elements.taskId.value;render()};
+      bsf.onsubmit=e=>{e.preventDefault();const f=new FormData(bsf),task=(data.tasks||[]).find(t=>t.id===f.get('taskId'));if(!task)return;const labels={};for(const key of ['title','type','date','time','progress'])labels[key]={color:String(f.get(key+'Color')||'#6e5147'),size:Math.max(10,Math.min(34,Number(f.get(key+'Size'))||13)),show:f.has(key+'Show')};task.boardStyle={...(task.boardStyle||{}),size:String(f.get('size')||'auto'),cardBg:String(f.get('cardBg')||''),opacity:Math.max(35,Math.min(100,Number(f.get('opacity'))||92)),labels};save();render()};
+      document.querySelector('[data-board-style-reset]')?.addEventListener('click',()=>{const task=(data.tasks||[]).find(t=>t.id===bsf.elements.taskId.value);if(task){delete task.boardStyle;save();render()}});
+    }
     document.querySelectorAll('[data-daily-adhkar]').forEach(b=>b.onchange=()=>{data.adhkarChecks[selected]??={};const kind=b.dataset.dailyAdhkar;if(b.checked)data.adhkarChecks[selected][kind]='manual';else delete data.adhkarChecks[selected][kind];save();render()});
     document.querySelectorAll('[data-adhkar-item]').forEach(b=>b.onchange=()=>{const kind=b.dataset.adhkarKind,index=b.dataset.adhkarItem;data.adhkarItemChecks[selected]??={};data.adhkarItemChecks[selected][kind]??={};if(b.checked)data.adhkarItemChecks[selected][kind][index]=true;else delete data.adhkarItemChecks[selected][kind][index];const items=dailyAdhkarText[kind]||[],allDone=items.length>0&&items.every((_,i)=>!!data.adhkarItemChecks[selected][kind][i]);data.adhkarChecks[selected]??={};if(allDone&&data.adhkarChecks[selected][kind]!=='manual')data.adhkarChecks[selected][kind]='auto';else if(!allDone&&data.adhkarChecks[selected][kind]==='auto')delete data.adhkarChecks[selected][kind];save();render()});
     document.querySelectorAll('[data-adhkar-open]').forEach(b=>b.onclick=()=>{state.adhkarOpen=b.dataset.adhkarOpen;render()});
@@ -836,11 +923,11 @@
   }
 
   ensure();
-  const w=pages.findIndex(x=>x[0]==='worship');if(w>=0)pages.splice(w,1);const h=pages.findIndex(x=>x[0]==='home');pages.splice(h+1,0,['worship','عبادتي']);
+  const w=pages.findIndex(x=>x[0]==='worship');if(w>=0)pages.splice(w,1);const oldBoard=pages.findIndex(x=>x[0]==='board');if(oldBoard>=0)pages.splice(oldBoard,1);const h=pages.findIndex(x=>x[0]==='home');pages.splice(h+1,0,['board','لوحتي'],['worship','عبادتي']);
   const qi=pages.findIndex(x=>x[0]==='quran');if(qi>=0)pages.splice(qi,1);
   const oldRender=render;
   render=function(){
-    ensure();if(page==='quran')page='worship';const custom={planner,worship,clients,learning,customize};
+    ensure();if(page==='quran')page='worship';const custom={board,planner,worship,clients,learning,customize};
     if(custom[page]){nav();$('#todayLabel').textContent=dateLabel(today());$('#view').innerHTML=custom[page]();attachCommon();window.yomiTimerRender?.();window.yomiThemeApply?.();attach();stickers();paint();if(state.reopenPrayerManage&&page==='worship'&&state.prayer){state.reopenPrayerManage=false;setTimeout(()=>document.getElementById('prayerManageDialog')?.showModal?.(),0)}if(page==='worship'&&!state.prayer&&state.worshipJump){const target=state.worshipJump;state.worshipJump=null;setTimeout(()=>{document.getElementById(target==='dhikr'?'worshipDhikrSection':'worshipPrayerSection')?.scrollIntoView({behavior:'smooth',block:'start'});document.querySelectorAll('[data-worship-jump]').forEach(x=>x.classList.toggle('active',x.dataset.worshipJump===target))},0)}return}
     oldRender();
     if(page==='home'){document.querySelectorAll('.special-date-card').forEach(x=>x.remove());$('#view').insertAdjacentHTML('afterbegin',specialDateHome()+homeExtra());attach()}
