@@ -1187,3 +1187,17 @@ body[data-user-bg="1"],body[data-user-bg="1"]::before,.lock{background-position:
   color:rgba(88,49,31,.95);
   transform:scale(1.08);
 }
+
+/* PIN digits visible while entering */
+#lock .pin-dots i{
+  color:#fff;
+  font-weight:800;
+  font-size:.78rem;
+  text-shadow:0 1px 4px rgba(0,0,0,.24);
+}
+#lock .pin-dots i.filled{
+  background:rgba(255,255,255,.18);
+  color:#fff;
+  border-color:rgba(255,255,255,.98);
+  transform:scale(1.08);
+}
