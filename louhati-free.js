@@ -3,7 +3,7 @@
   const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
   const taskById=id=>(data.tasks||[]).find(x=>x.id===id);
   const reminderFor=id=>(data.reminders||[]).find(x=>x.taskId===id);
-  const ensureBoard=()=>{data.boardSettings??={};data.boardSettings.snap??=true;data.boardSettings.gridSize??=20};
+  const ensureBoard=()=>{data.boardSettings??={};data.boardSettings.snap??=true;data.boardSettings.gridSize??=20;data.boardSettings.previousLayout??=null};
   const snap=n=>{ensureBoard();const g=Math.max(5,Number(data.boardSettings.gridSize)||20);return data.boardSettings.snap?Math.round(n/g)*g:n};
   const defaultLayout=(task,index=0)=>({x:20+(index%3)*300,y:20+Math.floor(index/3)*290,w:task?.imageMedia?280:250,h:task?.imageMedia?260:185,z:index+1,rotation:0,pinned:false});
   const layoutFor=(task,index=0)=>{
@@ -16,7 +16,8 @@
       h:clamp(Number(l.h)||d.h,120,620),
       z:Number(l.z)||d.z,
       rotation:clamp(Number(l.rotation)||0,-3,3),
-      pinned:!!l.pinned
+      pinned:!!l.pinned,
+      shape:['rounded','square','soft','pill'].includes(l.shape)?l.shape:'rounded'
     };
   };
   const persistLayout=(task,patch)=>{task.boardLayout={...task.boardLayout,...patch};save()};
@@ -36,11 +37,15 @@
     snapBtn.onclick=()=>{data.boardSettings.snap=!data.boardSettings.snap;save();decorateBoard()};
     const arrange=document.createElement('button');arrange.type='button';arrange.className='soft';arrange.dataset.freeBoardArrange='1';arrange.textContent='↻ ترتيب تلقائي';
     arrange.onclick=()=>autoArrange();
-    row.append(snapBtn,arrange);
+    const undo=document.createElement('button');undo.type='button';undo.className='soft';undo.dataset.freeBoardUndo='1';undo.textContent='↶ رجوع';undo.disabled=!data.boardSettings.previousLayout;
+    undo.onclick=()=>undoArrange();
+    row.append(snapBtn,arrange,undo);
   }
 
   function autoArrange(){
     const board=document.querySelector('.board-masonry.board-free-layout');if(!board)return;
+    ensureBoard();
+    data.boardSettings.previousLayout=Object.fromEntries((data.tasks||[]).map(t=>[t.id,{...(t.boardLayout||{})}]));
     const cards=[...board.querySelectorAll('.board-free-card')];
     cards.forEach((card,i)=>{
       const task=taskById(card.dataset.boardTask);if(!task)return;
@@ -49,6 +54,21 @@
     });
     save();decorateBoard(true);
   }
+
+  function undoArrange(){
+    ensureBoard();
+    const prev=data.boardSettings.previousLayout;if(!prev)return;
+    (data.tasks||[]).forEach(t=>{if(prev[t.id])t.boardLayout={...prev[t.id]}});
+    data.boardSettings.previousLayout=null;
+    save();decorateBoard(true);
+  }
+
+  const shapeLabel=s=>({rounded:'▢',square:'□',soft:'▣',pill:'⬭'})[s]||'▢';
+  const nextShape=s=>({rounded:'square',square:'soft',soft:'pill',pill:'rounded'})[s]||'rounded';
+  const applyShape=(card,shape)=>{
+    card.dataset.boardShape=shape;
+    card.style.borderRadius=shape==='square'?'0':shape==='soft'?'10px':shape==='pill'?'32px':'20px';
+  };
 
   function addCardTools(card,task){
     if(card.querySelector('.board-card-tools'))return;
@@ -59,7 +79,8 @@
       mk('✎','تعديل المهمة','data-free-board-edit'),
       mk(l.pinned?'📌':'📍','تثبيت البطاقة','data-free-board-pin'),
       mk('⬆','إحضار للأمام','data-free-board-front'),
-      mk('⬇','إرسال للخلف','data-free-board-back')
+      mk('⬇','إرسال للخلف','data-free-board-back'),
+      mk(shapeLabel(l.shape),'تغيير شكل البطاقة','data-free-board-shape')
     );
     const resize=document.createElement('span');resize.className='board-resize-handle';resize.setAttribute('data-free-board-resize',task.id);resize.setAttribute('aria-label','تغيير حجم البطاقة');
     card.append(tools,resize);
@@ -79,6 +100,11 @@
     tools.querySelector('[data-free-board-back]').onclick=e=>{
       e.preventDefault();e.stopPropagation();const min=Math.min(1,...(data.tasks||[]).map(x=>Number(x.boardLayout?.z)||1));persistLayout(task,{z:min-1});decorateBoard(true);
     };
+    tools.querySelector('[data-free-board-shape]').onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      const shape=nextShape(layoutFor(task).shape);
+      persistLayout(task,{shape});applyShape(card,shape);e.currentTarget.textContent=shapeLabel(shape);
+    };
 
     resize.addEventListener('pointerdown',e=>{
       e.preventDefault();e.stopPropagation();if(task.boardLayout?.pinned)return;
@@ -97,6 +123,7 @@
     Object.assign(card.style,{left:l.x+'px',top:l.y+'px',width:l.w+'px',height:l.h+'px',zIndex:String(l.z)});
     card.style.setProperty('--board-rotation',l.rotation+'deg');
     card.dataset.boardPinned=l.pinned?'1':'0';
+    applyShape(card,l.shape);
     if(!card.dataset.freeBoardCapture){
       card.dataset.freeBoardCapture='1';
       card.addEventListener('click',e=>{
@@ -122,12 +149,13 @@
     let box=form.querySelector('.board-free-dimensions');
     if(!box){
       box=document.createElement('div');box.className='board-free-dimensions board-style-grid';
-      box.innerHTML='<label class="field">العرض المخصص px<input name="freeWidth" type="number" min="180" max="620"></label><label class="field">الارتفاع المخصص px<input name="freeHeight" type="number" min="120" max="620"></label><label class="field">الدوران الخفيف<input name="freeRotation" type="range" min="-3" max="3" step="1"></label><label class="field"><span>تثبيت مكان البطاقة</span><input name="freePinned" type="checkbox"></label>';
+      box.innerHTML='<label class="field">العرض المخصص px<input name="freeWidth" type="number" min="180" max="620"></label><label class="field">الارتفاع المخصص px<input name="freeHeight" type="number" min="120" max="620"></label><label class="field">شكل البطاقة<select name="freeShape"><option value="rounded">دائري ناعم</option><option value="soft">زوايا خفيفة</option><option value="square">مربع</option><option value="pill">كبسولة</option></select></label><label class="field">الدوران الخفيف<input name="freeRotation" type="range" min="-3" max="3" step="1"></label><label class="field"><span>تثبيت مكان البطاقة</span><input name="freePinned" type="checkbox"></label>';
       const styleGrid=form.querySelector('.board-style-grid');styleGrid?.insertAdjacentElement('afterend',box);
     }
     box.querySelector('[name="freeWidth"]').value=Math.round(l.w);
     box.querySelector('[name="freeHeight"]').value=Math.round(l.h);
     box.querySelector('[name="freeRotation"]').value=l.rotation;
+    box.querySelector('[name="freeShape"]').value=l.shape;
     box.querySelector('[name="freePinned"]').checked=l.pinned;
     if(!form.dataset.freeBoardBound){
       form.dataset.freeBoardBound='1';
@@ -186,6 +214,7 @@
     [...masonry.querySelectorAll(':scope > .board-card')].forEach((card,i)=>makeFreeCard(card,i));
     updateCanvasHeight(masonry);
     const snapBtn=document.querySelector('[data-free-board-snap]');if(snapBtn)snapBtn.textContent='🧲 '+(data.boardSettings.snap?'Snap':'حر');
+    const undoBtn=document.querySelector('[data-free-board-undo]');if(undoBtn)undoBtn.disabled=!data.boardSettings.previousLayout;
   }
 
   let queued=false;
