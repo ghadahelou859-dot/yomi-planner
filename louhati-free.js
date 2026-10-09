@@ -218,8 +218,17 @@
   }
 
   let queued=false;
-  const queue=()=>{if(queued)return;queued=true;queueMicrotask(()=>{queued=false;decorateBoard()})};
-  new MutationObserver(queue).observe(document.getElementById('view'),{childList:true,subtree:true});
+  const view=document.getElementById('view');
+  const observer=new MutationObserver(queue);
+  function queue(){
+    if(queued)return;
+    queued=true;
+    setTimeout(()=>{
+      observer.disconnect();
+      try{decorateBoard()}finally{queued=false;observer.observe(view,{childList:true,subtree:true})}
+    },40);
+  }
+  observer.observe(view,{childList:true,subtree:true});
   window.addEventListener('yomi-pin-unlocked',queue);
   queue();
 })();
