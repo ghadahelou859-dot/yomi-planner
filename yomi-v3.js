@@ -80,7 +80,7 @@
   function boardCard(task,day,compact=false){
     const s=boardStyle(task),done=completedTask(task,day),rem=boardReminder(task,day);
     const size=s.size==='auto'?(task.imageMedia?'large':(task.repeat==='daily'?'small':'medium')):s.size;
-    const style='--board-card-opacity:'+(Math.max(35,Math.min(100,s.opacity))/100)+';'+(s.cardBg?'background:'+safe(s.cardBg)+';':'');
+    const op=Math.max(35,Math.min(100,s.opacity));const style='--board-card-opacity:'+(op/100)+';'+(s.cardBg?'background:color-mix(in srgb, '+safe(s.cardBg)+' '+op+'%, transparent);':'');
     const media=task.imageMedia?'<div class="board-card-image" data-v3-media="'+safe(task.imageMedia.path||task.imageMedia.local||'')+'"></div>':'';
     const progress=task.repeat==='daily'?(done?'مكتملة اليوم':'بانتظار الإنجاز'):(done?'مكتملة':'غير مكتملة');
     return '<article class="board-card board-size-'+safe(size)+(done?' board-done':'')+(compact?' board-compact':'')+'" data-board-task="'+task.id+'" data-board-day="'+day+'" style="'+style+'">'+media+'<div class="board-card-body">'+
@@ -120,7 +120,7 @@
   function boardTaskDialog(){
     const task=(data.tasks||[]).find(t=>t.id===state.boardTaskDetail);if(!task)return '';
     const day=state.boardTaskDetailDay||selected,rem=boardReminder(task,day);
-    return '<dialog class="board-task-dialog" id="boardTaskDialog" open><div class="row between"><h3>'+safe(task.title)+'</h3><button class="soft" data-board-detail-close>✕</button></div>'+
+    return '<dialog class="board-task-dialog" id="boardTaskDialog"><div class="row between"><h3>'+safe(task.title)+'</h3><button class="soft" data-board-detail-close>✕</button></div>'+
       (task.imageMedia?'<div class="board-detail-image" data-v3-media="'+safe(task.imageMedia.path||task.imageMedia.local||'')+'"></div>':'')+
       '<div class="board-detail-lines"><p><b>النوع:</b> '+safe(boardKinds[task.kind]||'شخصي')+'</p><p><b>التاريخ:</b> '+safe(dateLabel(day))+'</p>'+(rem?'<p><b>الوقت:</b> '+safe(rem)+'</p>':'')+'<p><b>الحالة:</b> '+(completedTask(task,day)?'مكتملة ✓':'غير مكتملة')+'</p></div>'+
       '<div class="row"><button class="primary" data-board-go-task>فتح صفحة مهامي</button><button class="soft" data-board-detail-close>إغلاق</button></div></dialog>'
@@ -457,7 +457,7 @@
     const pages={};
     if(old&&Number.isFinite(Number(old.panelTransparency))){
       const v=Math.max(0,Math.min(95,Number(old.panelTransparency)));
-      const appPages=['home','worship','planner','clients','learning','finance','tasks','wellness','quran','achievements','notes','diary','memories','care','cycle','reports','customize'];
+      const appPages=['home','board','worship','planner','clients','learning','finance','tasks','wellness','quran','achievements','notes','diary','memories','care','cycle','reports','customize'];
       if(old.applyAll!==false){for(const k of appPages)pages[k]=v;if(old.includeLogin)pages.lock=v}
       else if(old.targetPage)pages[old.targetPage]=v;
     }
@@ -509,7 +509,7 @@
     document.querySelector('[data-board-customize]')?.addEventListener('click',()=>{state.boardCustomize=!state.boardCustomize;render()});
     document.querySelector('[data-board-customize-close]')?.addEventListener('click',()=>{state.boardCustomize=false;render()});
     document.querySelectorAll('[data-board-task]').forEach(card=>card.onclick=e=>{if(e.target.closest('button,input,select,label'))return;state.boardTaskDetail=card.dataset.boardTask;state.boardTaskDetailDay=card.dataset.boardDay||selected;render()});
-    document.querySelectorAll('[data-board-detail-close]').forEach(b=>b.onclick=()=>{state.boardTaskDetail=null;render()});
+    const boardDialog=document.getElementById('boardTaskDialog');if(boardDialog&&!boardDialog.open)boardDialog.showModal?.();document.querySelectorAll('[data-board-detail-close]').forEach(b=>b.onclick=()=>{state.boardTaskDetail=null;render()});
     document.querySelector('[data-board-go-task]')?.addEventListener('click',()=>{state.boardTaskDetail=null;page='tasks';render()});
     const bsf=$('#boardStyleForm');if(bsf){
       bsf.elements.taskId.onchange=()=>{state.boardSelectedTask=bsf.elements.taskId.value;render()};
