@@ -66,10 +66,12 @@
 
     tools.querySelector('[data-free-board-edit]').onclick=e=>{
       e.preventDefault();e.stopPropagation();window.YOMI_BOARD_EDIT_TASK_ID=task.id;
-      card.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window}));
+      if(typeof card.onclick==='function')card.onclick({target:card,currentTarget:card,preventDefault(){},stopPropagation(){}});
+      else card.click();
     };
     tools.querySelector('[data-free-board-pin]').onclick=e=>{
-      e.preventDefault();e.stopPropagation();task.boardLayout??={};task.boardLayout.pinned=!task.boardLayout.pinned;save();decorateBoard(true);
+      e.preventDefault();e.stopPropagation();task.boardLayout??={};task.boardLayout.pinned=!task.boardLayout.pinned;
+      e.currentTarget.textContent=task.boardLayout.pinned?'📌':'📍';card.dataset.boardPinned=task.boardLayout.pinned?'1':'0';save();
     };
     tools.querySelector('[data-free-board-front]').onclick=e=>{
       e.preventDefault();e.stopPropagation();const max=Math.max(1,...(data.tasks||[]).map(x=>Number(x.boardLayout?.z)||1));persistLayout(task,{z:max+1});decorateBoard(true);
