@@ -1295,3 +1295,69 @@ body[data-user-bg="1"],body[data-user-bg="1"]::before,.lock{background-position:
   .board-label-setting{grid-template-columns:1fr 1fr}
   .board-task-dialog{width:min(94vw,520px);padding:16px}
 }
+
+/* Louhati free board interactions */
+.board-free-layout{position:relative;min-width:920px}
+.board-free-card{
+  position:absolute!important;
+  margin:0!important;
+  min-width:180px;
+  min-height:120px;
+  max-width:none;
+  overflow:visible;
+  transform:rotate(var(--board-rotation,0deg));
+  touch-action:none;
+  user-select:none;
+}
+.board-free-card:hover{transform:rotate(var(--board-rotation,0deg)) translateY(-2px)}
+.board-free-card.board-dragging,
+.board-free-card.board-resizing{transition:none!important;box-shadow:0 20px 44px rgba(67,44,31,.24)}
+.board-free-card .board-card-image{height:42%;min-height:80px}
+.board-free-card .board-card-body{height:58%;overflow:auto}
+.board-card-tools{
+  position:absolute;
+  top:8px;
+  left:8px;
+  z-index:5;
+  display:flex;
+  gap:5px;
+  opacity:0;
+  transition:opacity .15s ease;
+}
+.board-free-card:hover .board-card-tools,
+.board-free-card:focus-within .board-card-tools{opacity:1}
+.board-card-tools button{
+  width:31px;
+  height:31px;
+  min-width:31px;
+  padding:0;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.62);
+  background:rgba(45,35,30,.52);
+  color:#fff;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.board-resize-handle{
+  position:absolute;
+  right:4px;
+  bottom:4px;
+  width:22px;
+  height:22px;
+  border-right:3px solid rgba(78,53,40,.7);
+  border-bottom:3px solid rgba(78,53,40,.7);
+  border-radius:0 0 9px 0;
+  cursor:nwse-resize;
+  z-index:6;
+}
+.board-free-card[style*="z-index"]{will-change:left,top,width,height,transform}
+.board-customizer input[type="range"]{width:100%}
+.board-task-dialog form{display:grid;gap:12px}
+.board-task-dialog .row{align-items:end}
+@media(max-width:900px){
+  .board-free-layout{min-width:760px}
+}
+@media(max-width:650px){
+  .board-free-layout{min-width:680px}
+  .board-card-tools{opacity:1}
+}
