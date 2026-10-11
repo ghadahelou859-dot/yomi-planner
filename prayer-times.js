@@ -32,13 +32,13 @@
   }
 
   function showLoading(box,s,day){
-    box.innerHTML='<div class="prayer-times-head"><div><h3>🕰️ مواقيت الصلاة</h3><small>'+esc(s.city)+' · '+esc(day)+'</small></div><button type="button" class="soft" data-prayer-times-settings>⚙ المكان</button></div><div class="prayer-times-loading">جارٍ تحديث المواقيت…</div>';
+    box.innerHTML='<div class="prayer-times-head"><div><h3>🕰️ مواقيت الصلاة</h3><small>'+esc(s.latitude!=null?'موقع الآيفون':s.city)+' · '+esc(day)+'</small></div><button type="button" class="soft" data-prayer-times-location>📍 موقع الآيفون</button><button type="button" class="soft" data-prayer-times-settings>⚙ المكان</button></div><div class="prayer-times-loading">جارٍ تحديث المواقيت…</div>';
     bindSettings(box,s);
   }
 
   function showTimes(box,s,day,timings,fromCache=false){
     const next=nextPrayer(timings,day);
-    box.innerHTML='<div class="prayer-times-head"><div><h3>🕰️ مواقيت الصلاة</h3><small>'+esc(s.city)+' · '+esc(day)+(fromCache?' · آخر تحديث محفوظ':'')+'</small></div><button type="button" class="soft" data-prayer-times-settings>⚙ المكان</button></div>'+
+    box.innerHTML='<div class="prayer-times-head"><div><h3>🕰️ مواقيت الصلاة</h3><small>'+esc(s.latitude!=null?'موقع الآيفون':s.city)+' · '+esc(day)+(fromCache?' · آخر تحديث محفوظ':'')+'</small></div><button type="button" class="soft" data-prayer-times-location>📍 موقع الآيفون</button><button type="button" class="soft" data-prayer-times-settings>⚙ المكان</button></div>'+
       '<div class="prayer-times-grid">'+order.map(k=>'<div class="prayer-time '+(next===k?'next':'')+'"><span>'+labels[k]+'</span><b>'+cleanTime(timings[k])+'</b>'+(next===k?'<small>الصلاة القادمة</small>':'')+'</div>').join('')+'</div>'+
       '<div class="prayer-times-note">المواقيت حسب المدينة المختارة، وقد تختلف دقائق قليلة عن تقويم المسجد المحلي.</div>';
     bindSettings(box,s);
@@ -46,11 +46,19 @@
 
   function showError(box,s,day,cached){
     if(cached?.timings){showTimes(box,s,day,cached.timings,true);return}
-    box.innerHTML='<div class="prayer-times-head"><div><h3>🕰️ مواقيت الصلاة</h3><small>'+esc(s.city)+' · '+esc(day)+'</small></div><button type="button" class="soft" data-prayer-times-settings>⚙ المكان</button></div><div class="prayer-times-error">تعذّر جلب المواقيت الآن. تأكدي من الإنترنت أو غيّري المدينة.</div>';
+    box.innerHTML='<div class="prayer-times-head"><div><h3>🕰️ مواقيت الصلاة</h3><small>'+esc(s.latitude!=null?'موقع الآيفون':s.city)+' · '+esc(day)+'</small></div><button type="button" class="soft" data-prayer-times-location>📍 موقع الآيفون</button><button type="button" class="soft" data-prayer-times-settings>⚙ المكان</button></div><div class="prayer-times-error">تعذّر جلب المواقيت الآن. تأكدي من الإنترنت أو غيّري المدينة.</div>';
     bindSettings(box,s);
   }
 
   function bindSettings(box,s){
+    box.querySelector('[data-prayer-times-location]')?.addEventListener('click',()=>{
+      if(!navigator.geolocation){alert('موقع الآيفون غير متاح في هذا المتصفح');return}
+      navigator.geolocation.getCurrentPosition(position=>{
+        const lat=Number(position.coords.latitude.toFixed(5)),lon=Number(position.coords.longitude.toFixed(5));
+        saveSettings({...s,latitude:lat,longitude:lon});
+        lastSignature='';refresh(true);
+      },()=>alert('تعذّر تحديد الموقع. فعّلي إذن الموقع للتطبيق أو اختاري المدينة يدويًا.'),{enableHighAccuracy:false,timeout:12000,maximumAge:600000});
+    });
     box.querySelector('[data-prayer-times-settings]')?.addEventListener('click',()=>{
       if(box.querySelector('.prayer-times-settings')){box.querySelector('.prayer-times-settings').remove();return}
       const form=document.createElement('form');form.className='prayer-times-settings row';
@@ -62,13 +70,13 @@
 
   async function refresh(force=false){
     const section=document.getElementById('worshipPrayerSection');if(!section||busy)return;
-    const day=selectedDay(),s=settings(),sig=[day,s.city,s.country,s.method].join('|');
+    const day=selectedDay(),s=settings(),sig=[day,s.city,s.country,s.method,s.latitude??'',s.longitude??''].join('|');
     if(!force&&sig===lastSignature&&section.querySelector('[data-prayer-times]'))return;
     lastSignature=sig;busy=true;
     const box=renderBox(section),all=cache(),cached=all[sig];
     showLoading(box,s,day);
     try{
-      const url='https://api.aladhan.com/v1/timingsByCity/'+apiDate(day)+'?city='+encodeURIComponent(s.city)+'&country='+encodeURIComponent(s.country)+'&method='+encodeURIComponent(s.method);
+      const url=s.latitude!=null&&s.longitude!=null?'https://api.aladhan.com/v1/timings/'+apiDate(day)+'?latitude='+encodeURIComponent(s.latitude)+'&longitude='+encodeURIComponent(s.longitude)+'&method='+encodeURIComponent(s.method):'https://api.aladhan.com/v1/timingsByCity/'+apiDate(day)+'?city='+encodeURIComponent(s.city)+'&country='+encodeURIComponent(s.country)+'&method='+encodeURIComponent(s.method);
       const res=await fetch(url,{cache:'no-store'});if(!res.ok)throw Error('network');
       const json=await res.json(),timings=json?.data?.timings;if(!timings)throw Error('data');
       all[sig]={timings,at:Date.now()};saveCache(all);showTimes(box,s,day,timings,false);
