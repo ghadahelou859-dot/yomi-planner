@@ -673,6 +673,28 @@
     document.querySelectorAll('[data-worship-adhkar-undo]').forEach(b=>b.onclick=()=>updateAdhkarCount(Number(b.dataset.worshipAdhkarUndo),-1));
     document.querySelector('[data-worship-bonus-tap]')?.addEventListener('click',e=>{const n=(Number(data.worshipDailyDhikr[selected])||0)+1;data.worshipDailyDhikr[selected]=n;save();const card=e.currentTarget.closest('.worship-reader-card');const strong=e.currentTarget.querySelector('strong');if(strong)strong.textContent=n;const totals=card?.querySelector('[data-bonus-totals]');if(totals)totals.textContent='ذكرتِه اليوم: '+n+' · إجماليه: '+((Number(totals.dataset.other)||0)+n);const undo=card?.querySelector('[data-worship-bonus-undo]');if(undo)undo.disabled=false;const total=document.querySelector('[data-worship-total-count]');if(total)total.textContent=String((Number(total.dataset.base)||0)+n)});
     document.querySelector('[data-worship-bonus-undo]')?.addEventListener('click',e=>{const n=Math.max(0,(Number(data.worshipDailyDhikr[selected])||0)-1);data.worshipDailyDhikr[selected]=n;save();const card=e.currentTarget.closest('.worship-reader-card');const strong=card?.querySelector('[data-worship-bonus-tap] strong');if(strong)strong.textContent=n;const totals=card?.querySelector('[data-bonus-totals]');if(totals)totals.textContent='ذكرتِه اليوم: '+n+' · إجماليه: '+((Number(totals.dataset.other)||0)+n);e.currentTarget.disabled=n===0;const total=document.querySelector('[data-worship-total-count]');if(total)total.textContent=String((Number(total.dataset.base)||0)+n)});
+    // Quran forms are inside the custom worship renderer: handle them here to avoid native form reloads.
+    const saveQuranAndStay=()=>{state.worshipTab='quran';save();const scrollY=window.scrollY;render();requestAnimationFrame(()=>window.scrollTo(0,scrollY))};
+    const setup=document.getElementById('quranSetup');
+    if(setup)setup.onsubmit=e=>{e.preventDefault();const p=Number(setup.elements.page.value);if(!Number.isInteger(p)||p<0||p>603){alert('رقم الصفحة غير صحيح');return}data.quran.lastPage=p;saveQuranAndStay()};
+    const quranForm=document.getElementById('quranForm');
+    if(quranForm)quranForm.onsubmit=e=>{e.preventDefault();const from=Number(data.quran.lastPage||0)+1,to=Number(quranForm.elements.page.value);if(!Number.isInteger(to)||to<from||to>604){alert('اكتبي صفحة صحيحة');return}data.quran.log??=[];data.quran.log.push({id:id(),date:selected,from,to});data.quran.lastPage=to;saveQuranAndStay()};
+    const trackForm=document.getElementById('quranTrackForm');
+    if(trackForm)trackForm.onsubmit=e=>{
+      e.preventDefault();const form=new FormData(trackForm),title=String(form.get('title')||'').trim(),last=Number(form.get('page')),mode=form.get('mode'),start=Number(form.get('startPage')),end=Number(form.get('endPage'));
+      if(!title||!Number.isInteger(last)||last<0||last>603){alert('اكتبي اسمًا وآخر صفحة صحيحة');return}
+      if(mode==='range'&&(!Number.isInteger(start)||start<1||!Number.isInteger(end)||end>604||end<start||last>=end||(last>0&&last<start-1))){alert('اختاري نطاقًا صحيحًا من صفحة إلى صفحة');return}
+      data.quran.tracks??=[];data.quran.tracks.push({id:id(),title,lastPage:mode==='range'&&last===0?start-1:last,...(mode==='range'?{startPage:start,endPage:end}:{})});
+      saveQuranAndStay();
+    };
+    document.querySelectorAll('[data-quran-track]').forEach(form=>form.onsubmit=e=>{
+      e.preventDefault();const track=data.quran.tracks?.find(x=>x.id===form.dataset.quranTrack);if(!track)return;
+      const from=Math.max(Number(track.startPage)||1,Number(track.lastPage||0)+1),to=Number(new FormData(form).get('page')),max=Number(track.endPage)||604;
+      if(!Number.isInteger(to)||to<from||to>max){alert('اكتبي صفحة صحيحة ضمن نطاق الورد');return}
+      data.quran.extraLogs??=[];data.quran.extraLogs.push({id:id(),trackId:track.id,title:track.title,date:selected,from,to});track.lastPage=to;saveQuranAndStay();
+    });
+    document.querySelectorAll('[data-quran-track-stop]').forEach(b=>b.onclick=()=>{const track=data.quran.tracks?.find(x=>x.id===b.dataset.quranTrackStop);if(track&&confirm('إيقاف الورد مع الاحتفاظ بسجل القراءة؟')){track.stopped=selected;saveQuranAndStay()}});
+    document.querySelectorAll('[data-quran-track-reset]').forEach(b=>b.onclick=()=>{const track=data.quran.tracks?.find(x=>x.id===b.dataset.quranTrackReset);if(track&&confirm('بدء الورد من جديد مع الحفاظ على سجل القراءة؟')){track.lastPage=track.startPage?Number(track.startPage)-1:0;saveQuranAndStay()}});
     const reminderForm=document.getElementById('worshipRemindersForm');
     if(reminderForm)reminderForm.onsubmit=e=>{
       e.preventDefault();const fd=new FormData(reminderForm);data.worshipReminders??={};
