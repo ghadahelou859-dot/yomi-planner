@@ -660,7 +660,14 @@
       data.adhkarChecks[selected]??={};
       if(all&&data.adhkarChecks[selected][kind]!=='manual')data.adhkarChecks[selected][kind]='auto';
       else if(!all&&data.adhkarChecks[selected][kind]==='auto')delete data.adhkarChecks[selected][kind];
-      save();render();
+      save();
+      const card=document.querySelector('.worship-adhkar-launch .worship-reader-card');
+      const counter=card?.querySelector('[data-worship-adhkar-tap]'),value=counter?.querySelector('strong');
+      if(value)value.textContent=next+' / '+goal;
+      if(counter){counter.disabled=next>=goal;const hint=counter.querySelector('small');if(hint)hint.textContent=next>=goal?'اكتمل الذكر':'اضغطي بعد كل قراءة';const sign=counter.querySelector('span');if(sign)sign.textContent=next>=goal?'✓':'◉'}
+      const undo=card?.querySelector('[data-worship-adhkar-undo]');if(undo)undo.disabled=next===0;
+      const allBadge=document.querySelector('.adhkar-reader .badge');
+      if(allBadge)allBadge.textContent=(dailyAdhkarText[kind]||[]).filter((x,j)=>!!data.adhkarItemChecks[selected][kind][j]).length+' / '+(dailyAdhkarText[kind]||[]).length;
     }
     document.querySelectorAll('[data-worship-adhkar-tap]').forEach(b=>b.onclick=()=>updateAdhkarCount(Number(b.dataset.worshipAdhkarTap),1));
     document.querySelectorAll('[data-worship-adhkar-undo]').forEach(b=>b.onclick=()=>updateAdhkarCount(Number(b.dataset.worshipAdhkarUndo),-1));
