@@ -576,6 +576,19 @@
       sections[current].appendChild(el);
     }
     labels.forEach(k=>root.appendChild(sections[k]));
+    const quranSection=sections.quran;
+    if(quranSection&&!quranSection.querySelector('[data-worship-continue-reading]')){
+      const quick=document.createElement('div');quick.className='panel worship-reading-shortcut';
+      const pageNo=Math.max(0,Number(data.quran?.lastPage)||0);
+      quick.innerHTML='<div class="row between"><div><h3>📖 أكمل القراءة</h3><p class="sub">الورد بعد الصلاة: آخر صفحة '+pageNo+' · الصفحة التالية '+(pageNo>=604?'ختمة جديدة':pageNo+1)+'</p></div><button class="primary" type="button" data-worship-continue-reading>أكمل القراءة</button></div>';
+      quranSection.insertBefore(quick,quranSection.firstChild);
+      quick.querySelector('[data-worship-continue-reading]').onclick=()=>{
+        const input=quranSection.querySelector('#quranForm input[name="page"],#quranSetup input[name="page"],input[name="page"]');
+        if(input){input.scrollIntoView({behavior:'smooth',block:'center'});input.focus()}
+        else quranSection.querySelector('.quran-track')?.scrollIntoView({behavior:'smooth',block:'center'});
+      };
+    }
+
     const custom=root.querySelector('#worshipDhikrSection');
     if(custom&&!custom.querySelector('details.worship-custom-details')){
       const details=document.createElement('details');details.className='worship-custom-details';
