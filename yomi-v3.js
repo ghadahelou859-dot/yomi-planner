@@ -2,7 +2,7 @@
 (() => {
   window.yomiV3DesignActive=true;
   const BG_KEY='yomi-bg-v3', BG_SCOPE_KEY='yomi-bg-scope-v3', TRANS_KEY='yomi-transparency-v1', NAV_KEY='yomi-nav-visibility-v1';
-  const state={client:null,project:null,course:null,learningPage:null,prayer:null,adhkarOpen:null,reopenPrayerManage:false,worshipJump:null,stickerStatus:'',stickerDraft:null,albumStatus:'',boardView:'daily',boardCustomize:false,boardSelectedTask:null,boardTaskDetail:null,boardTaskDetailDay:null};
+  const state={client:null,project:null,course:null,learningPage:null,prayer:null,adhkarOpen:null,reopenPrayerManage:false,worshipJump:null,worshipTab:'prayer',adhkarIndex:0,stickerStatus:'',stickerDraft:null,albumStatus:'',boardView:'daily',boardCustomize:false,boardSelectedTask:null,boardTaskDetail:null,boardTaskDetailDay:null};
   const bucket='yomi-memories', urls=new Set();
   let pendingBackgroundFile=null,pendingBackgroundPreviewUrl=null,pendingPortraitFile=null,pendingPortraitPreviewUrl=null,projectClockInterval=null;
   const formatDuration=ms=>{ms=Math.max(0,Number(ms)||0);const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return String(h).padStart(2,'0')+' س : '+String(m).padStart(2,'0')+' د : '+String(sec).padStart(2,'0')+' ث'};
@@ -24,7 +24,7 @@
     data.boardSettings.defaultSize??='auto';
     data.boardSettings.cardOpacity??=92;
     data.boardSettings.labelDefaults??={title:{color:'#3f2b24',size:20,show:true},type:{color:'#6e5147',size:13,show:true},date:{color:'#6e5147',size:13,show:true},time:{color:'#6e5147',size:13,show:true},progress:{color:'#6e5147',size:13,show:true}};
-    data.prayerChecks??={};data.adhkarChecks??={};data.adhkarItemChecks??={};data.adhkarAudio??={};data.prayerWorks??=[];
+    data.prayerChecks??={};data.adhkarChecks??={};data.adhkarItemChecks??={};data.adhkarAudio??={};data.prayerWorks??=[];data.adhkarCounts??={};data.worshipDuas??=[];
     data.quran??={lastPage:0,log:[]};data.quran.log??=[];
     if(data.designSettings.background===null&&!data.designSettings.backgroundMigrated){
       const old=localStorage.getItem(BG_KEY);if(old){data.designSettings.background=old;Object.assign(data.designSettings,JSON.parse(localStorage.getItem(BG_SCOPE_KEY)||'{}'))}
@@ -154,12 +154,12 @@
     if(state.prayer)return prayerDetails();
     const prayers=['الفجر','الظهر','العصر','المغرب','العشاء'],p=data.prayerChecks?.[selected]||{},fast=data.fastingLog.find(x=>x.date===selected),tips=fastTips(),dh=(data.dhikrs||[]).filter(x=>activeDhikr(x,selected));
     const prayerCard=n=>{const works=(data.prayerWorks||[]).filter(x=>x.prayer===n),done=works.filter(x=>x.completed?.[selected]).length,autoDone=works.length>0&&done===works.length,doneNow=!!p[n]||autoDone;return '<button type="button" class="prayer-card prayer-page-card '+(doneNow?'prayer-complete':'')+'" data-prayer-open="'+n+'"><span class="prayer-card-title">🕌 '+n+'</span><small>'+(works.length?done+' / '+works.length+' أعمال':doneNow?'✓ منجزة':'اضغطي لفتح الصفحة')+'</small><span class="prayer-card-state">'+(doneNow?'✓ منجزة':'فتح الصفحة')+'</span></button>'};
-    return '<div class="worship-quick-nav"><button type="button" class="primary active" data-worship-jump="prayer">🕌 الصلاة</button><button type="button" class="soft" data-worship-jump="dhikr">📿 الأذكار</button></div><div class="panel" id="worshipPrayerSection"><h2>عبادتي</h2><p class="sub">اضغطي على أي صلاة لفتح صفحتها وإدارة الأعمال والورد المرتبط فيها.</p>'+datePicker()+'<div class="prayer-grid">'+prayers.map(prayerCard).join('')+'</div><p class="sub">المسجّل اليوم: '+prayers.filter(n=>p[n]||((data.prayerWorks||[]).filter(x=>x.prayer===n).length>0&&(data.prayerWorks||[]).filter(x=>x.prayer===n).every(x=>x.completed?.[selected]))).length+' من 5.</p></div>'+
+    return '<div class="worship-tabs" role="navigation" aria-label="أقسام عبادتي">'+[['prayer','🕌 الصلاة'],['adhkar','📿 الأذكار'],['quran','📖 القرآن'],['works','✨ أعمالي'],['dua','🤲 أدعيتي']].map(t=>'<button type="button" data-worship-tab="'+t[0]+'" class="worship-tab">'+t[1]+'</button>').join('')+'</div>'<div class="panel" id="worshipPrayerSection"><h2>عبادتي</h2><p class="sub">اضغطي على أي صلاة لفتح صفحتها وإدارة الأعمال والورد المرتبط فيها.</p>'+datePicker()+'<div class="prayer-grid">'+prayers.map(prayerCard).join('')+'</div><p class="sub">المسجّل اليوم: '+prayers.filter(n=>p[n]||((data.prayerWorks||[]).filter(x=>x.prayer===n).length>0&&(data.prayerWorks||[]).filter(x=>x.prayer===n).every(x=>x.completed?.[selected]))).length+' من 5.</p></div>'+
     adhkarDaily()+quran()+ '<div class="panel"><div class="row between"><h3>الصيام</h3>'+(tips.length?'<span class="fast-tip">🌙 تذكير: '+safe(tips.join(' · '))+'</span>':'')+'</div><form id="v3Fast" class="row"><label class="field">نوع الصيام<select name="type">'+['قضاء رمضان','نفل','نذر','كفارة','لوجه الله تعالى'].map(v=>'<option '+(fast?.type===v?'selected':'')+'>'+v+'</option>').join('')+'</select></label><label class="field">التاريخ<input name="date" type="date" value="'+selected+'"></label><label class="field">ملاحظة<input name="note" value="'+safe(fast?.note||'')+'"></label><button class="primary">'+(fast?'تحديث':'تسجيل')+'</button></form>'+(fast?'<div class="notice">مسجّل: '+safe(fast.type)+' <button class="soft" data-v3-fast-del="'+fast.id+'">حذف</button></div>':'')+'<details><summary>تذكيرات صيام النفل</summary><div class="fasting-prefs"><label><input type="checkbox" data-v3-pref="mondayThursday" '+(data.fastingPrefs.mondayThursday?'checked':'')+'> الاثنين والخميس</label><label><input type="checkbox" data-v3-pref="whiteDays" '+(data.fastingPrefs.whiteDays?'checked':'')+'> الأيام البيض</label><label><input type="checkbox" data-v3-pref="arafah" '+(data.fastingPrefs.arafah?'checked':'')+'> عرفة</label><label><input type="checkbox" data-v3-pref="ashura" '+(data.fastingPrefs.ashura?'checked':'')+'> عاشوراء</label></div></details></div>'+
     '<div class="panel worship-dhikr-panel" id="worshipDhikrSection"><div class="row between"><div><h3>أذكاري</h3><p class="sub">الإضافة والتعديل والحذف من هون فقط.</p></div><strong>مجموع اليوم: '+sum((data.dhikrs||[]).map(x=>dhikrCount(x,selected)))+'</strong></div>'+
       '<form id="v3DhikrNew" class="dhikr-new-form"><label class="field">الذكر<input name="title" required placeholder="مثلاً: سبحان الله"></label><label class="field">الهدف اليومي<input name="target" type="number" inputmode="numeric" min="1" step="1" required value="33"></label><label class="field">يبدأ يوم<input name="start" type="date" required value="'+selected+'"></label><label class="field">ينتهي يوم (اختياري)<input name="end" type="date"></label><button class="primary">إضافة ذكر</button></form>'+
       (dh.map(x=>'<div class="dhikr-manage-card"><div class="dhikr-copy"><b>'+safe(x.title)+'</b><small>'+dhikrCount(x,selected)+' / '+dhikrTargetOn(x,selected)+' اليوم'+(dhikrCount(x,selected)>=dhikrTargetOn(x,selected)?' · ✓ مكتمل':'')+'</small><div class="bar"><i style="width:'+Math.min(100,pct(dhikrCount(x,selected),dhikrTargetOn(x,selected)))+'%"></i></div></div><div class="dhikr-count-row"><button class="dhikr-plus" data-v3-dhikr="'+x.id+'">+1</button><label class="field dhikr-number-field">إضافة عدد<input type="number" inputmode="numeric" min="1" step="1" placeholder="مثلاً 40" data-v3-dhikr-amount="'+x.id+'"></label><button class="primary" data-v3-dhikr-add="'+x.id+'">إضافة</button></div><div class="dhikr-manage-actions"><button class="soft" data-v3-dhikr-edit="'+x.id+'">تصحيح المجموع</button><button class="soft" data-v3-dhikr-target="'+x.id+'">تعديل الهدف</button><button class="soft" data-v3-dhikr-stop="'+x.id+'">إيقاف</button><button class="danger" data-v3-dhikr-del="'+x.id+'">حذف</button></div></div>').join('')||'<div class="empty">أضيفي أول ذكر من هون.</div>')+
-    '</div>'
+    '</div>'+ '<div class="panel worship-dua-panel"><h3>أدعيتي</h3><form id="worshipDuaNew" class="row"><label class="field grow">أضيفي دعاءً خاصًا<input name="text" required></label><button class="primary">إضافة</button></form>'+data.worshipDuas.map((d,i)=>'<div class="item"><span class="grow">'+safe(d.text)+'</span><button type="button" class="soft" data-worship-dua-del="'+i+'">حذف</button></div>').join('')+'</div>'
   }
   const dailyAdhkarText={
     'أذكار الصباح':[
@@ -201,16 +201,23 @@
     ]
   };
   function adhkarDaily(){
-    const checks=data.adhkarChecks[selected]||{},names=['أذكار الصباح','أذكار المساء','أذكار النوم'],open=state.adhkarOpen&&names.includes(state.adhkarOpen)?state.adhkarOpen:null;
-    if(open){
-      const audio=data.adhkarAudio?.[open]||'',items=dailyAdhkarText[open]||[],itemChecks=data.adhkarItemChecks?.[selected]?.[open]||{},doneCount=items.filter((_,i)=>!!itemChecks[i]).length;
-      return '<div class="panel adhkar-reader"><div class="row between"><div><button type="button" class="soft" data-adhkar-back>‹ رجوع</button><h3>'+safe(open)+'</h3><small>'+doneCount+' / '+items.length+'</small></div><label class="adhkar-done-check" title="تعليم كمكتمل"><input type="checkbox" data-daily-adhkar="'+open+'" '+(checks[open]?'checked':'')+'><span>✓</span></label></div>'+
-        '<div class="adhkar-audio-box"><div class="row">'+(audio?'<a class="primary adhkar-youtube" href="'+safe(audio)+'" target="_blank" rel="noopener">▶️ تشغيل من YouTube</a>':'<span class="sub">ما في رابط صوتي مضاف بعد.</span>')+'</div><form id="adhkarAudioForm" class="row"><label class="field grow">رابط YouTube<input name="url" type="url" inputmode="url" placeholder="https://youtube.com/..." value="'+safe(audio)+'"></label><button class="soft">'+(audio?'تحديث الرابط':'إضافة الصوت')+'</button>'+(audio?'<button type="button" class="danger" data-adhkar-audio-clear>حذف الرابط</button>':'')+'</form></div>'+
-        '<div class="adhkar-text-list">'+items.map((x,i)=>'<article class="adhkar-text-card"><div class="row between"><b>'+(i+1)+'. '+safe(x[0])+'</b><div class="row"><span class="badge">'+safe(x[2])+'</span><label title="تم قراءة هذا الذكر"><input type="checkbox" data-adhkar-item="'+i+'" data-adhkar-kind="'+open+'" '+(itemChecks[i]?'checked':'')+'> ✓</label></div></div><p>'+safe(x[1])+'</p></article>').join('')+'</div></div>';
-    }
-    return '<div class="panel"><h3>أذكار الصباح والمساء والنوم</h3><div class="prayer-grid">'+names.map(n=>{const items=dailyAdhkarText[n]||[],ic=data.adhkarItemChecks?.[selected]?.[n]||{},done=items.filter((_,i)=>!!ic[i]).length;return '<div class="prayer-card adhkar-launch-card"><button type="button" class="adhkar-open-btn" data-adhkar-open="'+n+'"><span>'+n+'</span><small>'+done+' / '+items.length+'</small></button><label class="adhkar-done-check" title="تعليم كمكتمل"><input type="checkbox" data-daily-adhkar="'+n+'" '+(checks[n]?'checked':'')+'><span>✓</span></label></div>'}).join('')+'</div></div>';
+    const names=['أذكار الصباح','أذكار المساء','أذكار النوم'],open=state.adhkarOpen&&names.includes(state.adhkarOpen)?state.adhkarOpen:null;
+    const checks=data.adhkarChecks[selected]||{};
+    if(!open)return '<div class="panel worship-adhkar-launch"><h3>أذكار الصباح والمساء والنوم</h3><div class="prayer-grid">'+names.map(n=>{const items=dailyAdhkarText[n]||[],ic=data.adhkarItemChecks?.[selected]?.[n]||{},done=items.filter((_,i)=>!!ic[i]).length;return '<div class="prayer-card adhkar-launch-card"><button type="button" class="adhkar-open-btn" data-adhkar-open="'+n+'"><span>'+n+'</span><small>'+done+' / '+items.length+'</small></button><label class="adhkar-done-check"><input type="checkbox" data-daily-adhkar="'+n+'" '+(checks[n]?'checked':'')+'><span>✓</span></label></div>'}).join('')+'</div></div>';
+    const items=dailyAdhkarText[open]||[],itemChecks=data.adhkarItemChecks?.[selected]?.[open]||{},counts=data.adhkarCounts?.[selected]?.[open]||{};
+    const i=Math.min(Math.max(0,state.adhkarIndex||0),Math.max(0,items.length-1)),item=items[i]||['','','مرة واحدة'];
+    const goal=Math.max(1,Number((String(item[2]).match(/\d+/)||[])[0])||1);
+    const count=Math.min(goal,Math.max(0,Number(counts[i]??(itemChecks[i]?goal:0))||0));
+    const complete=items.filter((x,j)=>{const target=Math.max(1,Number((String(x[2]).match(/\d+/)||[])[0])||1);return (Number(counts[j]??(itemChecks[j]?target:0))||0)>=target}).length;
+    const audio=data.adhkarAudio?.[open]||'';
+    return '<div class="panel adhkar-reader worship-adhkar-launch"><div class="row between"><button class="soft" type="button" data-adhkar-back>‹ المجموعات</button><strong>'+safe(open)+'</strong><span class="badge">'+complete+' / '+items.length+'</span></div>'+
+      '<article class="worship-reader-card"><small>الذكر '+(i+1)+' من '+items.length+'</small><h2>'+safe(item[0])+'</h2><p class="worship-adhkar-text">'+safe(item[1])+'</p>'+
+      '<button type="button" class="worship-big-counter" data-worship-adhkar-tap="'+i+'" '+(count>=goal?'disabled':'')+'><span>'+(count>=goal?'✓':'◉')+'</span><strong>'+count+' / '+goal+'</strong><small>'+(count>=goal?'اكتمل الذكر':'اضغطي بعد كل قراءة')+'</small></button>'+
+      '<div class="row worship-counter-actions"><button type="button" class="soft" data-worship-adhkar-undo="'+i+'" '+(count===0?'disabled':'')+'>↶ تراجع</button><button type="button" class="primary" data-worship-adhkar-next>التالي ←</button></div></article>'+
+      '<details class="worship-adhkar-all"><summary>جميع الأذكار والنصوص الأصلية ('+items.length+')</summary><div class="adhkar-text-list">'+items.map((x,j)=>'<article class="adhkar-text-card"><b>'+safe(x[0])+'</b><small> · '+safe(x[2])+'</small><p>'+safe(x[1])+'</p><button type="button" class="soft" data-worship-adhkar-goto="'+j+'">عرض في العداد</button></article>').join('')+'</div></details>'+
+      '<details><summary>رابط الصوت</summary><form id="adhkarAudioForm" class="row"><label class="field grow">رابط YouTube<input name="url" type="url" value="'+safe(audio)+'"></label><button class="soft">حفظ</button>'+(audio?'<button type="button" class="danger" data-adhkar-audio-clear>حذف</button>':'')+'</form>'+(audio?'<a href="'+safe(audio)+'" target="_blank" rel="noopener">تشغيل الصوت</a>':'')+'</details></div>';
   }
-  function adhkarReportPanel(){
+    function adhkarReportPanel(){
     const names=['أذكار الصباح','أذكار المساء','أذكار النوم'];
     const days=Object.keys(data.adhkarChecks||{}).filter(d=>belongs(d)).sort();
     const rows=names.map(name=>({name,count:days.filter(d=>!!data.adhkarChecks?.[d]?.[name]).length}));
@@ -504,6 +511,22 @@
     for(const s of data.designSettings.stickers||[]){if(s.hidden)continue;const t=s.target||'all';if(t!=='all'&&t!==page&&!(t==='lock'&&lock))continue;const e=document.createElement('div');e.className='yomi-v3-sticker';e.dataset.stickerMode=s.positionMode||'screen';e.style.left=Math.max(3,Math.min(97,Number(s.x)||50))+'%';e.style.top=Math.max(3,Math.min(97,Number(s.y)||50))+'%';e.style.width=e.style.height=Math.max(24,Math.min(180,Number(s.size)||54))+'px';e.style.fontSize=Math.max(24,Math.min(180,Number(s.size)||54))+'px';if(s.text)e.textContent=s.text;if(s.local||s.path)e.dataset.v3Media=s.path||s.local;const host=s.positionMode==='page'&&!lock?document.getElementById('view'):document.body;host?.appendChild(e)}
   }
 
+  function applyWorshipTabs(){
+    const root=document.getElementById('view');if(!root)return;
+    const parts=[...root.children];let section='prayer';
+    for(const el of parts){
+      if(el.classList.contains('worship-tabs')){el.querySelectorAll('[data-worship-tab]').forEach(b=>{const active=b.dataset.worshipTab===state.worshipTab;b.classList.toggle('active',active);b.setAttribute('aria-pressed',active?'true':'false')});continue}
+      if(el.classList.contains('worship-adhkar-launch')||el.querySelector('.worship-adhkar-launch'))section='adhkar';
+      else if(el.id==='worshipDhikrSection')section='adhkar';
+      else if(el.classList.contains('worship-dua-panel'))section='dua';
+      else if(el.id==='worshipPrayerSection')section='prayer';
+      else if(el.querySelector('form#v3Fast'))section='works';
+      else if(el.querySelector('#quranTrackerNew,#quranForm,#quranTrackForm')||/^الورد|^وردي|^أوراد|^القرآن/.test(el.querySelector('h2,h3')?.textContent||''))section='quran';
+      if(el.classList.contains('worship-tabs'))continue;
+      el.hidden=section!==state.worshipTab;
+    }
+    // Quran may include multiple adjacent panels; preserve their grouping.
+  }
   function attach(){
     document.querySelectorAll('[data-board-view]').forEach(b=>b.onclick=()=>{state.boardView=b.dataset.boardView;render()});
     document.querySelector('[data-board-customize]')?.addEventListener('click',()=>{state.boardCustomize=!state.boardCustomize;render()});
@@ -516,9 +539,31 @@
       bsf.onsubmit=e=>{e.preventDefault();const f=new FormData(bsf),task=(data.tasks||[]).find(t=>t.id===f.get('taskId'));if(!task)return;const labels={};for(const key of ['title','type','date','time','progress'])labels[key]={color:String(f.get(key+'Color')||'#6e5147'),size:Math.max(10,Math.min(34,Number(f.get(key+'Size'))||13)),show:f.has(key+'Show')};task.boardStyle={...(task.boardStyle||{}),size:String(f.get('size')||'auto'),cardBg:String(f.get('cardBg')||''),opacity:Math.max(35,Math.min(100,Number(f.get('opacity'))||92)),labels};save();render()};
       document.querySelector('[data-board-style-reset]')?.addEventListener('click',()=>{const task=(data.tasks||[]).find(t=>t.id===bsf.elements.taskId.value);if(task){delete task.boardStyle;save();render()}});
     }
+    document.querySelectorAll('[data-worship-tab]').forEach(b=>b.onclick=()=>{state.worshipTab=b.dataset.worshipTab;applyWorshipTabs()});
+    document.querySelectorAll('[data-worship-adhkar-goto]').forEach(b=>b.onclick=()=>{state.adhkarIndex=Number(b.dataset.worshipAdhkarGoto);render()});
+    document.querySelector('[data-worship-adhkar-next]')?.addEventListener('click',()=>{state.adhkarIndex=(state.adhkarIndex+1)%(dailyAdhkarText[state.adhkarOpen]?.length||1);render()});
+    function updateAdhkarCount(i,delta){
+      const kind=state.adhkarOpen,item=dailyAdhkarText[kind]?.[i];if(!item)return;
+      const goal=Math.max(1,Number((String(item[2]).match(/\\d+/)||[])[0])||1);
+      data.adhkarCounts[selected]??={};data.adhkarCounts[selected][kind]??={};
+      data.adhkarItemChecks[selected]??={};data.adhkarItemChecks[selected][kind]??={};
+      const prev=Number(data.adhkarCounts[selected][kind][i]??(data.adhkarItemChecks[selected][kind][i]?goal:0))||0;
+      const next=Math.min(goal,Math.max(0,prev+delta));data.adhkarCounts[selected][kind][i]=next;
+      if(next===goal)data.adhkarItemChecks[selected][kind][i]=true;
+      else delete data.adhkarItemChecks[selected][kind][i];
+      const all=(dailyAdhkarText[kind]||[]).every((x,j)=>!!data.adhkarItemChecks[selected][kind][j]);
+      data.adhkarChecks[selected]??={};
+      if(all&&data.adhkarChecks[selected][kind]!=='manual')data.adhkarChecks[selected][kind]='auto';
+      else if(!all&&data.adhkarChecks[selected][kind]==='auto')delete data.adhkarChecks[selected][kind];
+      save();render();
+    }
+    document.querySelectorAll('[data-worship-adhkar-tap]').forEach(b=>b.onclick=()=>updateAdhkarCount(Number(b.dataset.worshipAdhkarTap),1));
+    document.querySelectorAll('[data-worship-adhkar-undo]').forEach(b=>b.onclick=()=>updateAdhkarCount(Number(b.dataset.worshipAdhkarUndo),-1));
+    const duaForm=document.getElementById('worshipDuaNew');if(duaForm)duaForm.onsubmit=e=>{e.preventDefault();const t=duaForm.elements.text.value.trim();if(!t)return;data.worshipDuas.push({text:t});save();render()};
+    document.querySelectorAll('[data-worship-dua-del]').forEach(b=>b.onclick=()=>{if(!confirm('حذف هذا الدعاء؟'))return;data.worshipDuas.splice(Number(b.dataset.worshipDuaDel),1);save();render()});
     document.querySelectorAll('[data-daily-adhkar]').forEach(b=>b.onchange=()=>{data.adhkarChecks[selected]??={};const kind=b.dataset.dailyAdhkar;if(b.checked)data.adhkarChecks[selected][kind]='manual';else delete data.adhkarChecks[selected][kind];save();render()});
     document.querySelectorAll('[data-adhkar-item]').forEach(b=>b.onchange=()=>{const kind=b.dataset.adhkarKind,index=b.dataset.adhkarItem;data.adhkarItemChecks[selected]??={};data.adhkarItemChecks[selected][kind]??={};if(b.checked)data.adhkarItemChecks[selected][kind][index]=true;else delete data.adhkarItemChecks[selected][kind][index];const items=dailyAdhkarText[kind]||[],allDone=items.length>0&&items.every((_,i)=>!!data.adhkarItemChecks[selected][kind][i]);data.adhkarChecks[selected]??={};if(allDone&&data.adhkarChecks[selected][kind]!=='manual')data.adhkarChecks[selected][kind]='auto';else if(!allDone&&data.adhkarChecks[selected][kind]==='auto')delete data.adhkarChecks[selected][kind];save();render()});
-    document.querySelectorAll('[data-adhkar-open]').forEach(b=>b.onclick=()=>{state.adhkarOpen=b.dataset.adhkarOpen;render()});
+    document.querySelectorAll('[data-adhkar-open]').forEach(b=>b.onclick=()=>{state.adhkarOpen=b.dataset.adhkarOpen;state.adhkarIndex=0;state.worshipTab='adhkar';render()});
     document.querySelector('[data-adhkar-back]')?.addEventListener('click',()=>{state.adhkarOpen=null;render()});
     const adhkarAudioForm=$('#adhkarAudioForm');if(adhkarAudioForm)adhkarAudioForm.onsubmit=e=>{e.preventDefault();const value=String(adhkarAudioForm.elements.url.value||'').trim();if(value){try{const u=new URL(value);const host=u.hostname.replace(/^www\./,'');if(!['youtube.com','m.youtube.com','youtu.be'].includes(host)){alert('حطي رابط YouTube صحيح');return}}catch{alert('حطي رابط YouTube صحيح');return}}data.adhkarAudio??={};data.adhkarAudio[state.adhkarOpen]=value;save();render()};
     document.querySelector('[data-adhkar-audio-clear]')?.addEventListener('click',()=>{if(!state.adhkarOpen)return;data.adhkarAudio??={};delete data.adhkarAudio[state.adhkarOpen];save();render()});
@@ -928,7 +973,7 @@
   const oldRender=render;
   render=function(){
     ensure();if(page==='quran')page='worship';const custom={board,planner,worship,clients,learning,customize};
-    if(custom[page]){nav();$('#todayLabel').textContent=dateLabel(today());$('#view').innerHTML=custom[page]();attachCommon();window.yomiTimerRender?.();window.yomiThemeApply?.();attach();stickers();paint();if(state.reopenPrayerManage&&page==='worship'&&state.prayer){state.reopenPrayerManage=false;setTimeout(()=>document.getElementById('prayerManageDialog')?.showModal?.(),0)}if(page==='worship'&&!state.prayer&&state.worshipJump){const target=state.worshipJump;state.worshipJump=null;setTimeout(()=>{document.getElementById(target==='dhikr'?'worshipDhikrSection':'worshipPrayerSection')?.scrollIntoView({behavior:'smooth',block:'start'});document.querySelectorAll('[data-worship-jump]').forEach(x=>x.classList.toggle('active',x.dataset.worshipJump===target))},0)}return}
+    if(custom[page]){nav();$('#todayLabel').textContent=dateLabel(today());$('#view').innerHTML=custom[page]();if(page==='worship'&&!state.prayer)applyWorshipTabs();attachCommon();window.yomiTimerRender?.();window.yomiThemeApply?.();attach();stickers();paint();if(state.reopenPrayerManage&&page==='worship'&&state.prayer){state.reopenPrayerManage=false;setTimeout(()=>document.getElementById('prayerManageDialog')?.showModal?.(),0)}if(page==='worship'&&!state.prayer&&state.worshipJump){const target=state.worshipJump;state.worshipJump=null;setTimeout(()=>{document.getElementById(target==='dhikr'?'worshipDhikrSection':'worshipPrayerSection')?.scrollIntoView({behavior:'smooth',block:'start'});document.querySelectorAll('[data-worship-jump]').forEach(x=>x.classList.toggle('active',x.dataset.worshipJump===target))},0)}return}
     oldRender();
     if(page==='home'){document.querySelectorAll('.special-date-card').forEach(x=>x.remove());$('#view').insertAdjacentHTML('afterbegin',specialDateHome()+homeExtra());attach()}
     if(page==='cycle'){$('#view').insertAdjacentHTML('beforeend',cycleExtra());attach()}
