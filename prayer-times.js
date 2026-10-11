@@ -26,7 +26,7 @@
     let box=section.querySelector('[data-prayer-times]');
     if(!box){
       box=document.createElement('div');box.className='prayer-times-panel';box.dataset.prayerTimes='1';
-      const grid=section.querySelector('.prayer-grid');grid?.insertAdjacentElement('beforebegin',box);
+      const grid=section.querySelector('.prayer-grid');grid?.insertAdjacentElement('afterend',box);
     }
     return box;
   }
