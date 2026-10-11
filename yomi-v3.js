@@ -251,6 +251,21 @@
       rows.map(x=>'<div class="stat">'+safe(x.name)+'<b>'+x.count+' يوم</b></div>').join('')+
       '<div class="stat">الثلاثة مكتملة<b>'+all+' يوم</b></div><div class="stat">أيام فيها أذكار مسجّلة<b>'+any+' يوم</b></div></div></div>';
   }
+  function worshipWorkStreak(work){
+    const allowed=Math.max(0,Math.min(30,Number(work.graceDays)||0));
+    const dateStr=selected;
+    let day=Date.parse(dateStr+'T00:00:00Z');
+    const done=work.completed||{};
+    // Today's unfinished work isn't counted as a missed day until tomorrow.
+    if(!done[dateStr])day-=86400000;
+    let hits=0,misses=0;
+    for(let i=0;i<3660;i++){
+      const d=new Date(day-i*86400000).toISOString().slice(0,10);
+      if(done[d]){hits++;misses=0}
+      else {misses++;if(misses>allowed)break}
+    }
+    return hits;
+  }
   function prayerDetails(){
     const n=state.prayer;if(!n)return '';
     const q=data.quran,last=Number(q.lastPage)||0,logs=q.log.filter(x=>x.date===selected&&x.prayer===n),works=(data.prayerWorks||[]).filter(x=>x.prayer===n),done=works.filter(x=>x.completed?.[selected]).length,allDone=works.length>0&&done===works.length,manual=!!data.prayerChecks?.[selected]?.[n],complete=allDone||manual,pctDone=works.length?Math.round(done/works.length*100):(complete?100:0);
@@ -268,7 +283,7 @@
       '</div>'+
       '</div>'+
       '<dialog id="prayerManageDialog" class="prayer-manage-dialog"><div class="row between prayer-manage-head"><div><h2>إدارة أعمال صلاة '+safe(n)+'</h2><p class="sub">أضيفي أو عدلي الأعمال، وبعدها سكّري الشباك وكمّلي التنفيذ من صفحة الصلاة.</p></div><button type="button" class="soft" data-prayer-manage-close>إغلاق</button></div>'+
-      '<div class="prayer-manage-list">'+(works.map(x=>'<div class="prayer-manage-item"><div class="grow"><b>'+safe(x.title)+'</b><small>'+(x.completed?.[selected]?'✓ منجز اليوم':'غير منجز اليوم')+'</small></div><button type="button" class="soft" data-prayer-work-edit="'+x.id+'">تعديل</button><button type="button" class="danger" data-prayer-work-delete="'+x.id+'">حذف</button></div>').join('')||'<div class="empty">ما في أعمال مضافة بعد.</div>')+'</div>'+
+      '<div class="prayer-manage-list">'+(works.map(x=>'<div class="prayer-manage-item"><div class="grow"><b>'+safe(x.title)+'</b><small>'+(x.completed?.[selected]?'✓ منجز اليوم':'غير منجز اليوم')+' · 🔥 '+worshipWorkStreak(x)+' أيام استمرارية</small></div><button type="button" class="soft" data-prayer-work-grace="'+x.id+'">سماح: '+(Number(x.graceDays)||0)+' أيام</button><button type="button" class="soft" data-prayer-work-edit="'+x.id+'"تعديل</button><button type="button" class="danger" data-prayer-work-delete="'+x.id+'">حذف</button></div>').join('')||'<div class="empty">ما في أعمال مضافة بعد.</div>')+'</div>'+
       '<form id="prayerWorkNew" class="prayer-work-new"><label class="field">عمل مرتبط بهذه الصلاة<input name="title" placeholder="مثلاً: أذكار بعد الصلاة أو سورة يس" required></label><label class="field">عدد المرات<input type="number" name="target" min="1" max="1000" value="1" inputmode="numeric"></label><button class="primary">إضافة العمل</button></form>'+
       '</dialog>'+
     '</div>';
@@ -629,6 +644,13 @@
     }
     document.querySelectorAll('[data-prayer-work-count]').forEach(b=>b.onclick=()=>adjustPrayerWorkCount(b.dataset.prayerWorkCount,1));
     document.querySelectorAll('[data-prayer-work-undo]').forEach(b=>b.onclick=()=>adjustPrayerWorkCount(b.dataset.prayerWorkUndo,-1));
+    document.querySelectorAll('[data-prayer-work-grace]').forEach(b=>b.onclick=()=>{
+      const x=data.prayerWorks.find(w=>w.id===b.dataset.prayerWorkGrace);if(!x)return;
+      const input=prompt('كم يوم انقطاع متتالٍ مسموح قبل تصفير الاستمرارية؟ اكتبي 0 للتصفير من أول يوم.',String(Number(x.graceDays)||0));
+      if(input===null)return;
+      if(!/^\\d+$/.test(input.trim())||Number(input)>30){alert('اختاري عددًا من 0 إلى 30');return}
+      x.graceDays=Number(input);state.reopenPrayerManage=true;save();render();
+    });
     document.querySelectorAll('[data-prayer-work-edit]').forEach(b=>b.onclick=()=>{const x=data.prayerWorks.find(x=>x.id===b.dataset.prayerWorkEdit);if(!x)return;const v=prompt('عدّلي اسم العمل',x.title);if(v===null)return;const title=v.trim();if(!title)return;x.title=title;state.reopenPrayerManage=true;save();render()});
     document.querySelectorAll('[data-prayer-work-delete]').forEach(b=>b.onclick=()=>{if(confirm('حذف هذا العمل؟')){const x=data.prayerWorks.find(x=>x.id===b.dataset.prayerWorkDelete),prayer=x?.prayer;data.prayerWorks=data.prayerWorks.filter(x=>x.id!==b.dataset.prayerWorkDelete);if(prayer){const works=data.prayerWorks.filter(w=>w.prayer===prayer);data.prayerChecks[selected]??={};if(works.length&&works.every(w=>w.completed?.[selected]))data.prayerChecks[selected][prayer]=true;else delete data.prayerChecks[selected][prayer]}state.reopenPrayerManage=true;save();render()}});
     document.querySelectorAll('[data-prayer-mark-manual]').forEach(b=>b.onclick=()=>{data.prayerChecks[selected]??={};const n=b.dataset.prayerMarkManual;if(data.prayerChecks[selected][n])delete data.prayerChecks[selected][n];else data.prayerChecks[selected][n]=true;save();render()});
