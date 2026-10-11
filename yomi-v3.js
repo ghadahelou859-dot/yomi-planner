@@ -551,20 +551,37 @@
   }
 
   function applyWorshipTabs(){
-    const root=document.getElementById('view');if(!root)return;
-    const parts=[...root.children];let section='prayer';
-    for(const el of parts){
-      if(el.classList.contains('worship-tabs')){el.querySelectorAll('[data-worship-tab]').forEach(b=>{const active=b.dataset.worshipTab===state.worshipTab;b.classList.toggle('active',active);b.setAttribute('aria-pressed',active?'true':'false')});continue}
-      if(el.classList.contains('worship-adhkar-launch')||el.querySelector('.worship-adhkar-launch'))section='adhkar';
-      else if(el.id==='worshipDhikrSection'||el.classList.contains('worship-bonus-adhkar'))section='adhkar';
-      else if(el.classList.contains('worship-dua-panel'))section='dua';
-      else if(el.id==='worshipPrayerSection')section='prayer';
-      else if(el.querySelector('form#v3Fast'))section='works';
-      else if(el.querySelector('#quranTrackerNew,#quranForm,#quranTrackForm,#quranSetup')||/الورد|وردي|أوراد|القرآن|سجل القراءة/.test(el.querySelector('h2,h3')?.textContent||''))section='quran';
+    const root=document.getElementById('view');
+    if(!root||!root.querySelector('.worship-tabs'))return;
+    const labels=['prayer','adhkar','quran','works','dua'];
+    const sections={};
+    labels.forEach(k=>{const section=document.createElement('section');section.className='worship-tab-section';section.dataset.worshipSection=k;sections[k]=section});
+    let current='prayer';
+    const children=[...root.children];
+    for(const el of children){
       if(el.classList.contains('worship-tabs'))continue;
-      el.hidden=section!==state.worshipTab;
+      if(el.id==='worshipPrayerSection')current='prayer';
+      else if(el.classList.contains('worship-adhkar-launch'))current='adhkar';
+      else if(el.querySelector('#quranTrackForm,#quranForm,#quranSetup')||/الورد الأساسي|أوراد إضافية|سجل القراءة|وردي القرآني/.test(el.querySelector('h2,h3')?.textContent||''))current='quran';
+      else if(el.querySelector('#v3Fast'))current='works';
+      else if(el.id==='worshipDhikrSection'||el.classList.contains('worship-bonus-adhkar'))current='adhkar';
+      else if(el.classList.contains('worship-dua-panel'))current='dua';
+      sections[current].appendChild(el);
     }
-    // Quran may include multiple adjacent panels; preserve their grouping.
+    labels.forEach(k=>root.appendChild(sections[k]));
+    const custom=root.querySelector('#worshipDhikrSection');
+    if(custom&&!custom.querySelector('details.worship-custom-details')){
+      const details=document.createElement('details');details.className='worship-custom-details';
+      const summary=document.createElement('summary');summary.textContent='أذكاري المضافة يدويًا · فتح الإدارة';
+      details.appendChild(summary);
+      while(custom.firstChild)details.appendChild(custom.firstChild);
+      custom.appendChild(details);
+    }
+    const active=labels.includes(state.worshipTab)?state.worshipTab:'prayer';
+    root.querySelectorAll('[data-worship-tab]').forEach(btn=>{
+      const on=btn.dataset.worshipTab===active;btn.classList.toggle('active',on);btn.setAttribute('aria-pressed',String(on));
+    });
+    labels.forEach(k=>{sections[k].hidden=k!==active});
   }
   function attach(){
     document.querySelectorAll('[data-board-view]').forEach(b=>b.onclick=()=>{state.boardView=b.dataset.boardView;render()});
