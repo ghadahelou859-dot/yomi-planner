@@ -263,13 +263,13 @@
       (last<604?'<form id="prayerQuran" class="row prayer-quran-form"><label class="field">قرأتِ حتى صفحة<input name="page" type="number" inputmode="numeric" min="'+(last+1)+'" max="604" step="1" value="'+(last+1)+'" required></label><button class="primary">تسجيل القراءة</button></form>':'')+
       '<p class="sub">هذا نفس الورد الموجود في «وردي القرآني»، ويكمل معك بين الصلوات والأيام.</p></div>'+
       '<div class="prayer-section"><div class="row between"><div><h3>الأعمال بعد الصلاة</h3><p class="sub">هون التنفيذ اليومي فقط. للإضافة والتعديل والحذف افتحي شباك إدارة الأعمال.</p></div><button type="button" class="soft" data-prayer-manage>⚙ إدارة أعمال الصلاة</button></div>'+
-      (works.map(x=>'<label class="prayer-work-card '+(x.completed?.[selected]?'done':'')+' prayer-work-execute"><span class="prayer-work-check"><input type="checkbox" data-prayer-work="'+x.id+'" '+(x.completed?.[selected]?'checked':'')+'><span>'+safe(x.title)+'</span></span><b>'+(x.completed?.[selected]?'✓ تم الإنجاز':'بانتظار الإنجاز')+'</b></label>').join('')||'<div class="empty">ما أضفتِ أعمالًا لهذه الصلاة. افتحي «إدارة أعمال الصلاة» لإضافتها.</div>')+
+      (works.map(x=>{const goal=Math.max(1,Number(x.target)||1),count=Math.max(0,Math.min(goal,Number(x.counts?.[selected])||(x.completed?.[selected]?goal:0)));return goal>1?'<div class="prayer-work-card prayer-work-execute"><b>'+safe(x.title)+'</b><span class="badge">'+count+' / '+goal+'</span><div class="row"><button type="button" class="primary" data-prayer-work-count="'+x.id+'" '+(count>=goal?'disabled':'')+'>+1 مرة</button><button type="button" class="soft" data-prayer-work-undo="'+x.id+'" '+(count===0?'disabled':'')+'>↶ تراجع</button></div></div>':'<label class="prayer-work-card '+(x.completed?.[selected]?'done':'')+' prayer-work-execute'><span class="prayer-work-check"><input type="checkbox" data-prayer-work="'+x.id+'" '+(x.completed?.[selected]?'checked':'')+'><span>'+safe(x.title)+'</span></span><b>'+(x.completed?.[selected]?'✓ تم الإنجاز':'بانتظار الإنجاز')+'</b></label>'}).join('')||'<div class="empty">ما أضفتِ أعمالًا لهذه الصلاة. افتحي «إدارة أعمال الصلاة» لإضافتها.</div>')+
       '<div class="row prayer-manual-row"><button type="button" class="soft" data-prayer-mark-manual="'+n+'">'+(manual?'إلغاء الإنجاز اليدوي':'تحديد الصلاة منجزة يدويًا')+'</button></div>'+
       '</div>'+
       '</div>'+
       '<dialog id="prayerManageDialog" class="prayer-manage-dialog"><div class="row between prayer-manage-head"><div><h2>إدارة أعمال صلاة '+safe(n)+'</h2><p class="sub">أضيفي أو عدلي الأعمال، وبعدها سكّري الشباك وكمّلي التنفيذ من صفحة الصلاة.</p></div><button type="button" class="soft" data-prayer-manage-close>إغلاق</button></div>'+
       '<div class="prayer-manage-list">'+(works.map(x=>'<div class="prayer-manage-item"><div class="grow"><b>'+safe(x.title)+'</b><small>'+(x.completed?.[selected]?'✓ منجز اليوم':'غير منجز اليوم')+'</small></div><button type="button" class="soft" data-prayer-work-edit="'+x.id+'">تعديل</button><button type="button" class="danger" data-prayer-work-delete="'+x.id+'">حذف</button></div>').join('')||'<div class="empty">ما في أعمال مضافة بعد.</div>')+'</div>'+
-      '<form id="prayerWorkNew" class="prayer-work-new"><label class="field">عمل مرتبط بهذه الصلاة<input name="title" placeholder="مثلاً: أذكار بعد الصلاة أو سورة يس" required></label><button class="primary">إضافة العمل</button></form>'+
+      '<form id="prayerWorkNew" class="prayer-work-new"><label class="field">عمل مرتبط بهذه الصلاة<input name="title" placeholder="مثلاً: أذكار بعد الصلاة أو سورة يس" required></label><label class="field">عدد المرات<input type="number" name="target" min="1" max="1000" value="1" inputmode="numeric"></label><button class="primary">إضافة العمل</button></form>'+
       '</dialog>'+
     '</div>';
   }
@@ -613,8 +613,22 @@
     prayerManageDialog?.addEventListener('click',e=>{if(e.target===prayerManageDialog)prayerManageDialog.close()});
     document.querySelector('[data-prayer-back]')?.addEventListener('click',()=>{state.prayer=null;render()});
     const pq=$('#prayerQuran');if(pq)pq.onsubmit=e=>{e.preventDefault();const from=Number(data.quran.lastPage||0)+1,to=parseCount(pq.elements.page.value);if(!Number.isSafeInteger(to)||to<from||to>604){alert('اكتبي صفحة صحيحة من '+from+' إلى 604');return}data.quran.log.push({id:id(),date:selected,prayer:state.prayer,from,to});data.quran.lastPage=to;save();render()};
-    const pw=$('#prayerWorkNew');if(pw)pw.onsubmit=e=>{e.preventDefault();const title=pw.elements.title.value.trim();if(!title)return;data.prayerWorks.push({id:id(),prayer:state.prayer,title,completed:{}});state.reopenPrayerManage=true;save();render()};
+    const pw=$('#prayerWorkNew');if(pw)pw.onsubmit=e=>{e.preventDefault();const title=pw.elements.title.value.trim();if(!title)return;data.prayerWorks.push({id:id(),prayer:state.prayer,title,target:Math.min(1000,Math.max(1,Number(pw.elements.target.value)||1)),completed:{},counts:{}});state.reopenPrayerManage=true;save();render()};
     document.querySelectorAll('[data-prayer-work]').forEach(b=>b.onchange=()=>{const x=data.prayerWorks.find(x=>x.id===b.dataset.prayerWork);x.completed??={};if(b.checked)x.completed[selected]=true;else delete x.completed[selected];data.prayerChecks[selected]??={};const works=data.prayerWorks.filter(w=>w.prayer===state.prayer);if(works.length&&works.every(w=>w.completed?.[selected]))data.prayerChecks[selected][state.prayer]=true;else if(data.prayerChecks[selected][state.prayer]===true)delete data.prayerChecks[selected][state.prayer];save();render()});
+    function adjustPrayerWorkCount(workId,step){
+      const x=data.prayerWorks.find(w=>w.id===workId);if(!x)return;
+      const goal=Math.max(1,Number(x.target)||1);x.counts??={};x.completed??={};
+      const before=Math.max(0,Math.min(goal,Number(x.counts[selected])||(x.completed[selected]?goal:0)));
+      const now=Math.max(0,Math.min(goal,before+step));x.counts[selected]=now;
+      if(now>=goal)x.completed[selected]=true;else delete x.completed[selected];
+      data.prayerChecks[selected]??={};
+      const all=(data.prayerWorks||[]).filter(w=>w.prayer===state.prayer);
+      if(all.length&&all.every(w=>w.completed?.[selected]))data.prayerChecks[selected][state.prayer]=true;
+      else if(data.prayerChecks[selected][state.prayer]===true)delete data.prayerChecks[selected][state.prayer];
+      save();render();
+    }
+    document.querySelectorAll('[data-prayer-work-count]').forEach(b=>b.onclick=()=>adjustPrayerWorkCount(b.dataset.prayerWorkCount,1));
+    document.querySelectorAll('[data-prayer-work-undo]').forEach(b=>b.onclick=()=>adjustPrayerWorkCount(b.dataset.prayerWorkUndo,-1));
     document.querySelectorAll('[data-prayer-work-edit]').forEach(b=>b.onclick=()=>{const x=data.prayerWorks.find(x=>x.id===b.dataset.prayerWorkEdit);if(!x)return;const v=prompt('عدّلي اسم العمل',x.title);if(v===null)return;const title=v.trim();if(!title)return;x.title=title;state.reopenPrayerManage=true;save();render()});
     document.querySelectorAll('[data-prayer-work-delete]').forEach(b=>b.onclick=()=>{if(confirm('حذف هذا العمل؟')){const x=data.prayerWorks.find(x=>x.id===b.dataset.prayerWorkDelete),prayer=x?.prayer;data.prayerWorks=data.prayerWorks.filter(x=>x.id!==b.dataset.prayerWorkDelete);if(prayer){const works=data.prayerWorks.filter(w=>w.prayer===prayer);data.prayerChecks[selected]??={};if(works.length&&works.every(w=>w.completed?.[selected]))data.prayerChecks[selected][prayer]=true;else delete data.prayerChecks[selected][prayer]}state.reopenPrayerManage=true;save();render()}});
     document.querySelectorAll('[data-prayer-mark-manual]').forEach(b=>b.onclick=()=>{data.prayerChecks[selected]??={};const n=b.dataset.prayerMarkManual;if(data.prayerChecks[selected][n])delete data.prayerChecks[selected][n];else data.prayerChecks[selected][n]=true;save();render()});
