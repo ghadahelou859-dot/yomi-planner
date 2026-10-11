@@ -579,12 +579,23 @@
       existing.forEach(el=>{el.hidden=el.dataset.worshipSection!==active});
       return;
     }
+    const prayerPanel=root.querySelector('#worshipPrayerSection');
+    if(prayerPanel&&!root.querySelector('.worship-home-head')){
+      const head=document.createElement('header');head.className='worship-home-head panel';
+      head.innerHTML='<h2>عبادتي</h2><p class="sub">صلاتي، أذكاري، وأورادي في مكان واحد</p>';
+      const date=prayerPanel.querySelector('#dateSelect')?.closest('label');
+      if(date)head.appendChild(date);
+      const summary=prayerPanel.querySelector('.worship-summary');
+      if(summary)head.appendChild(summary);
+      const oldTitle=prayerPanel.querySelector('h2');if(oldTitle)oldTitle.textContent='صلواتي';
+      root.insertBefore(head,root.firstChild);
+    }
     const sections={};
     labels.forEach(k=>{const section=document.createElement('section');section.className='worship-tab-section';section.dataset.worshipSection=k;sections[k]=section});
     let current='prayer';
     const children=[...root.children];
     for(const el of children){
-      if(el.classList.contains('worship-tabs'))continue;
+      if(el.classList.contains('worship-tabs')||el.classList.contains('worship-home-head'))continue;
       if(el.id==='worshipPrayerSection')current='prayer';
       else if(el.classList.contains('worship-adhkar-launch'))current='adhkar';
       else if(el.querySelector('#quranTrackForm,#quranForm,#quranSetup')||/الورد الأساسي|أوراد إضافية|سجل القراءة|وردي القرآني/.test(el.querySelector('h2,h3')?.textContent||''))current='quran';
