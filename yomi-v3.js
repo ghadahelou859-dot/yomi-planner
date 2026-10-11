@@ -176,21 +176,21 @@
       '<form id="worshipRemindersForm" class="worship-reminder-form">'+types.map(([key,title])=>'<label class="field">'+title+'<input type="time" name="'+key+'" value="'+safe(r[key]||'')+'"></label>').join('')+'<button type="submit" class="primary">حفظ المواعيد</button></form></div>';
   }
   function bonusDhikrPanel(){
-    const completed=['أذكار الصباح','أذكار المساء','أذكار النوم'].every(k=>!!data.adhkarChecks?.[selected]?.[k]);
+    const own=(data.dhikrs||[]).filter(x=>activeDhikr(x,selected)),completed=own.length>0&&own.every(x=>dhikrCount(x,selected)>=dhikrTargetOn(x,selected));
     const dayNo=Math.floor(Date.parse(selected+'T00:00:00Z')/86400000);
     const name=bonusDhikrList[((dayNo%bonusDhikrList.length)+bonusDhikrList.length)%bonusDhikrList.length];
     const count=Math.max(0,Number(data.worshipDailyDhikr?.[selected])||0);
     const total=Object.keys(data.worshipDailyDhikr||{}).reduce((s,d)=>s+(Math.floor(Date.parse(d+'T00:00:00Z')/86400000)%bonusDhikrList.length===dayNo%bonusDhikrList.length?Number(data.worshipDailyDhikr[d])||0:0),0);
     return '<div class="panel worship-bonus-adhkar"><h3>✨ ذكر اليوم</h3>'+
-      (completed?'<p class="sub">ذكر إضافي مختلف كل يوم، لا يتكرر قبل مرور جميع الأذكار.</p><div class="worship-reader-card"><h2>'+safe(name)+'</h2><p class="sub">ذكرتِه اليوم: '+count+' · إجماليه: '+total+'</p><button type="button" class="worship-big-counter" data-worship-bonus-tap><strong>'+count+'</strong><small>اضغطي للذكر</small></button><button class="soft" type="button" data-worship-bonus-undo '+(count===0?'disabled':'')+'>↶ تراجع</button></div>':
-      '<p class="sub">يظهر الذكر الإضافي بعد إكمال أذكار الصباح والمساء والنوم.</p>')+'</div>';
+      (completed?'<p class="sub">ذكر إضافي مختلف كل يوم، لا يتكرر قبل مرور جميع الأذكار.</p><div class="worship-reader-card"><h2>'+safe(name)+'</h2><p class="sub" data-bonus-totals data-other="'+(total-count)+'">ذكرتِه اليوم: '+count+' · إجماليه: '+total+'</p><button type="button" class="worship-big-counter" data-worship-bonus-tap><strong>'+count+'</strong><small>اضغطي للذكر</small></button><button class="soft" type="button" data-worship-bonus-undo '+(count===0?'disabled':'')+'>↶ تراجع</button></div>':
+      '<p class="sub">يظهر ذكر اليوم بعد إكمال الأذكار المضافة من قبلك فقط.</p>')+'</div>';
   }
   function worshipSummary(){
     const prayers=['الفجر','الظهر','العصر','المغرب','العشاء'],p=data.prayerChecks?.[selected]||{};
     const prayerCount=prayers.filter(n=>!!p[n]||(data.prayerWorks||[]).filter(w=>w.prayer===n).length>0&&(data.prayerWorks||[]).filter(w=>w.prayer===n).every(w=>w.completed?.[selected])).length;
     const adhkarCount=['أذكار الصباح','أذكار المساء','أذكار النوم'].filter(k=>!!data.adhkarChecks?.[selected]?.[k]).length;
-    const pages=(data.quran?.log||[]).filter(x=>x.date===selected).reduce((s,x)=>s+Math.max(0,Number(x.to)-Number(x.from)+1),0);
-    return '<div class="worship-summary"><strong>ملخص عبادتي اليوم</strong><span>🕌 '+prayerCount+'/5 صلاة</span><span>📿 '+adhkarCount+'/3 أذكار</span><span>📖 '+pages+' صفحة</span></div>';
+    const pages=(data.quran?.log||[]).filter(x=>x.date===selected).reduce((s,x)=>s+Math.max(0,Number(x.to)-Number(x.from)+1),0);const ownTotal=(data.dhikrs||[]).reduce((s,x)=>s+dhikrCount(x,selected),0),bonus=Math.max(0,Number(data.worshipDailyDhikr?.[selected])||0);
+    return '<div class="worship-summary"><strong>ملخص عبادتي اليوم</strong><span>🕌 '+prayerCount+'/5 صلاة</span><span>📿 '+adhkarCount+'/3 مجموعات · مجموع الذكر <b data-worship-total-count data-base="'+ownTotal+'">'+(ownTotal+bonus)+'</b></span><span>📖 '+pages+' صفحة</span></div>';
   }
   function worship(){
     if(state.prayer)return prayerDetails();
@@ -201,7 +201,7 @@
     '<div class="panel worship-dhikr-panel" id="worshipDhikrSection"><div class="row between"><div><h3>أذكاري</h3><p class="sub">الإضافة والتعديل والحذف من هون فقط.</p></div><strong>مجموع اليوم: '+sum((data.dhikrs||[]).map(x=>dhikrCount(x,selected)))+'</strong></div>'+
       '<form id="v3DhikrNew" class="dhikr-new-form"><label class="field">الذكر<input name="title" required placeholder="مثلاً: سبحان الله"></label><label class="field">الهدف اليومي<input name="target" type="number" inputmode="numeric" min="1" step="1" required value="33"></label><label class="field">يبدأ يوم<input name="start" type="date" required value="'+selected+'"></label><label class="field">ينتهي يوم (اختياري)<input name="end" type="date"></label><button class="primary">إضافة ذكر</button></form>'+
       (dh.map(x=>'<div class="dhikr-manage-card"><div class="dhikr-copy"><b>'+safe(x.title)+'</b><small>'+dhikrCount(x,selected)+' / '+dhikrTargetOn(x,selected)+' اليوم'+(dhikrCount(x,selected)>=dhikrTargetOn(x,selected)?' · ✓ مكتمل':'')+'</small><div class="bar"><i style="width:'+Math.min(100,pct(dhikrCount(x,selected),dhikrTargetOn(x,selected)))+'%"></i></div></div><div class="dhikr-count-row"><button class="dhikr-plus" data-v3-dhikr="'+x.id+'">+1</button><label class="field dhikr-number-field">إضافة عدد<input type="number" inputmode="numeric" min="1" step="1" placeholder="مثلاً 40" data-v3-dhikr-amount="'+x.id+'"></label><button class="primary" data-v3-dhikr-add="'+x.id+'">إضافة</button></div><div class="dhikr-manage-actions"><button class="soft" data-v3-dhikr-edit="'+x.id+'">تصحيح المجموع</button><button class="soft" data-v3-dhikr-target="'+x.id+'">تعديل الهدف</button><button class="soft" data-v3-dhikr-stop="'+x.id+'">إيقاف</button><button class="danger" data-v3-dhikr-del="'+x.id+'">حذف</button></div></div>').join('')||'<div class="empty">أضيفي أول ذكر من هون.</div>')+
-    '</div>'+bonusDhikrPanel()+ '<div class="panel worship-dua-panel"><h3>أدعيتي</h3><form id="worshipDuaNew" class="row"><label class="field grow">أضيفي دعاءً خاصًا<input name="text" required></label><button class="primary">إضافة</button></form>'+data.worshipDuas.map((d,i)=>'<div class="item"><span class="grow">'+safe(d.text)+'</span><button type="button" class="soft" data-worship-dua-del="'+i+'">حذف</button></div>').join('')+'</div>'+worshipReminderPanel()
+    '</div>'+bonusDhikrPanel()+ '<div class="panel worship-dua-panel"><h3>أدعيتي</h3><form id="worshipDuaNew" class="row"><label class="field grow">أضيفي دعاءً خاصًا<input name="text" required></label><button class="primary">إضافة</button></form>'+data.worshipDuas.map((d,i)=>'<div class="item"><span class="grow">'+safe(d.text)+'</span><button type="button" class="soft" data-worship-dua-check="'+i+'">'+(d.read?.[selected]?'✓ تمت القراءة':'○ قرأت الدعاء')+'</button><button type="button" class="soft" data-worship-dua-del="'+i+'">حذف</button></div>').join('')+'</div>'+worshipReminderPanel()
   }
   const dailyAdhkarText={
     'أذكار الصباح':[
@@ -664,8 +664,8 @@
     }
     document.querySelectorAll('[data-worship-adhkar-tap]').forEach(b=>b.onclick=()=>updateAdhkarCount(Number(b.dataset.worshipAdhkarTap),1));
     document.querySelectorAll('[data-worship-adhkar-undo]').forEach(b=>b.onclick=()=>updateAdhkarCount(Number(b.dataset.worshipAdhkarUndo),-1));
-    document.querySelector('[data-worship-bonus-tap]')?.addEventListener('click',()=>{data.worshipDailyDhikr[selected]=(Number(data.worshipDailyDhikr[selected])||0)+1;save();render()});
-    document.querySelector('[data-worship-bonus-undo]')?.addEventListener('click',()=>{data.worshipDailyDhikr[selected]=Math.max(0,(Number(data.worshipDailyDhikr[selected])||0)-1);save();render()});
+    document.querySelector('[data-worship-bonus-tap]')?.addEventListener('click',e=>{const n=(Number(data.worshipDailyDhikr[selected])||0)+1;data.worshipDailyDhikr[selected]=n;save();const card=e.currentTarget.closest('.worship-reader-card');const strong=e.currentTarget.querySelector('strong');if(strong)strong.textContent=n;const totals=card?.querySelector('[data-bonus-totals]');if(totals)totals.textContent='ذكرتِه اليوم: '+n+' · إجماليه: '+((Number(totals.dataset.other)||0)+n);const undo=card?.querySelector('[data-worship-bonus-undo]');if(undo)undo.disabled=false;const total=document.querySelector('[data-worship-total-count]');if(total)total.textContent=String((Number(total.dataset.base)||0)+n)});
+    document.querySelector('[data-worship-bonus-undo]')?.addEventListener('click',e=>{const n=Math.max(0,(Number(data.worshipDailyDhikr[selected])||0)-1);data.worshipDailyDhikr[selected]=n;save();const card=e.currentTarget.closest('.worship-reader-card');const strong=card?.querySelector('[data-worship-bonus-tap] strong');if(strong)strong.textContent=n;const totals=card?.querySelector('[data-bonus-totals]');if(totals)totals.textContent='ذكرتِه اليوم: '+n+' · إجماليه: '+((Number(totals.dataset.other)||0)+n);e.currentTarget.disabled=n===0;const total=document.querySelector('[data-worship-total-count]');if(total)total.textContent=String((Number(total.dataset.base)||0)+n)});
     const reminderForm=document.getElementById('worshipRemindersForm');
     if(reminderForm)reminderForm.onsubmit=e=>{
       e.preventDefault();const fd=new FormData(reminderForm);data.worshipReminders??={};
@@ -673,6 +673,7 @@
       save();render();
     };
     const duaForm=document.getElementById('worshipDuaNew');if(duaForm)duaForm.onsubmit=e=>{e.preventDefault();const t=duaForm.elements.text.value.trim();if(!t)return;data.worshipDuas.push({text:t});save();render()};
+    document.querySelectorAll('[data-worship-dua-check]').forEach(b=>b.onclick=()=>{const d=data.worshipDuas[Number(b.dataset.worshipDuaCheck)];if(!d)return;d.read??={};if(d.read[selected])delete d.read[selected];else d.read[selected]=true;save();b.textContent=d.read[selected]?'✓ تمت القراءة':'○ قرأت الدعاء'});
     document.querySelectorAll('[data-worship-dua-del]').forEach(b=>b.onclick=()=>{if(!confirm('حذف هذا الدعاء؟'))return;data.worshipDuas.splice(Number(b.dataset.worshipDuaDel),1);save();render()});
     document.querySelectorAll('[data-daily-adhkar]').forEach(b=>b.onchange=()=>{data.adhkarChecks[selected]??={};const kind=b.dataset.dailyAdhkar;if(b.checked)data.adhkarChecks[selected][kind]='manual';else delete data.adhkarChecks[selected][kind];save();render()});
     document.querySelectorAll('[data-adhkar-item]').forEach(b=>b.onchange=()=>{const kind=b.dataset.adhkarKind,index=b.dataset.adhkarItem;data.adhkarItemChecks[selected]??={};data.adhkarItemChecks[selected][kind]??={};if(b.checked)data.adhkarItemChecks[selected][kind][index]=true;else delete data.adhkarItemChecks[selected][kind][index];const items=dailyAdhkarText[kind]||[],allDone=items.length>0&&items.every((_,i)=>!!data.adhkarItemChecks[selected][kind][i]);data.adhkarChecks[selected]??={};if(allDone&&data.adhkarChecks[selected][kind]!=='manual')data.adhkarChecks[selected][kind]='auto';else if(!allDone&&data.adhkarChecks[selected][kind]==='auto')delete data.adhkarChecks[selected][kind];save();render()});
