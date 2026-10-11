@@ -554,6 +554,13 @@
     const root=document.getElementById('view');
     if(!root||!root.querySelector('.worship-tabs'))return;
     const labels=['prayer','adhkar','quran','works','dua'];
+    const existing=[...root.querySelectorAll(':scope > .worship-tab-section')];
+    if(existing.length){
+      const active=labels.includes(state.worshipTab)?state.worshipTab:'prayer';
+      root.querySelectorAll('[data-worship-tab]').forEach(btn=>{const on=btn.dataset.worshipTab===active;btn.classList.toggle('active',on);btn.setAttribute('aria-pressed',String(on))});
+      existing.forEach(el=>{el.hidden=el.dataset.worshipSection!==active});
+      return;
+    }
     const sections={};
     labels.forEach(k=>{const section=document.createElement('section');section.className='worship-tab-section';section.dataset.worshipSection=k;sections[k]=section});
     let current='prayer';
