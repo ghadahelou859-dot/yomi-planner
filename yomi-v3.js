@@ -648,7 +648,7 @@
       const x=data.prayerWorks.find(w=>w.id===b.dataset.prayerWorkGrace);if(!x)return;
       const input=prompt('كم يوم انقطاع متتالٍ مسموح قبل تصفير الاستمرارية؟ اكتبي 0 للتصفير من أول يوم.',String(Number(x.graceDays)||0));
       if(input===null)return;
-      if(!/^\\d+$/.test(input.trim())||Number(input)>30){alert('اختاري عددًا من 0 إلى 30');return}
+      if(!/^\d+$/.test(input.trim())||Number(input)>30){alert('اختاري عددًا من 0 إلى 30');return}
       x.graceDays=Number(input);state.reopenPrayerManage=true;save();render();
     });
     document.querySelectorAll('[data-prayer-work-edit]').forEach(b=>b.onclick=()=>{const x=data.prayerWorks.find(x=>x.id===b.dataset.prayerWorkEdit);if(!x)return;const v=prompt('عدّلي اسم العمل',x.title);if(v===null)return;const title=v.trim();if(!title)return;x.title=title;state.reopenPrayerManage=true;save();render()});
