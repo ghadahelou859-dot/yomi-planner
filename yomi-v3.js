@@ -521,7 +521,7 @@
       else if(el.classList.contains('worship-dua-panel'))section='dua';
       else if(el.id==='worshipPrayerSection')section='prayer';
       else if(el.querySelector('form#v3Fast'))section='works';
-      else if(el.querySelector('#quranTrackerNew,#quranForm,#quranTrackForm')||/^الورد|^وردي|^أوراد|^القرآن/.test(el.querySelector('h2,h3')?.textContent||''))section='quran';
+      else if(el.querySelector('#quranTrackerNew,#quranForm,#quranTrackForm,#quranSetup')||/الورد|وردي|أوراد|القرآن|سجل القراءة/.test(el.querySelector('h2,h3')?.textContent||''))section='quran';
       if(el.classList.contains('worship-tabs'))continue;
       el.hidden=section!==state.worshipTab;
     }
@@ -544,7 +544,7 @@
     document.querySelector('[data-worship-adhkar-next]')?.addEventListener('click',()=>{state.adhkarIndex=(state.adhkarIndex+1)%(dailyAdhkarText[state.adhkarOpen]?.length||1);render()});
     function updateAdhkarCount(i,delta){
       const kind=state.adhkarOpen,item=dailyAdhkarText[kind]?.[i];if(!item)return;
-      const goal=Math.max(1,Number((String(item[2]).match(/\\d+/)||[])[0])||1);
+      const goal=Math.max(1,Number((String(item[2]).match(/\d+/)||[])[0])||1);
       data.adhkarCounts[selected]??={};data.adhkarCounts[selected][kind]??={};
       data.adhkarItemChecks[selected]??={};data.adhkarItemChecks[selected][kind]??={};
       const prev=Number(data.adhkarCounts[selected][kind][i]??(data.adhkarItemChecks[selected][kind][i]?goal:0))||0;
