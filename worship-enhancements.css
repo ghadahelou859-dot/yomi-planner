@@ -1,0 +1,28 @@
+.worship-home-head-clean{display:grid!important;grid-template-columns:minmax(220px,1fr) auto;gap:14px 22px;align-items:center}
+.worship-home-head-clean>h2,.worship-home-head-clean>p{grid-column:1;margin-block:0}
+.worship-home-head-clean .field{grid-column:2;grid-row:1/3;min-width:190px}
+.worship-home-head-clean .worship-summary{grid-column:1/-1;display:grid!important;grid-template-columns:auto repeat(4,minmax(125px,1fr));gap:10px;align-items:center;width:100%}
+.worship-summary button{border:1px solid rgba(126,92,72,.13);background:rgba(255,255,255,.5);border-radius:14px;padding:11px 12px;font:inherit;cursor:pointer;text-align:center}
+.worship-summary button:hover{transform:translateY(-1px)}
+.worship-custom-details[open]>summary{cursor:default;pointer-events:none;font-weight:700;margin-bottom:12px}
+.featured-bonus-dhikr{order:-1;border:1px solid rgba(187,146,92,.3)!important}
+.worship-works-panel{display:grid;gap:14px}
+.worship-work-form{padding:14px;border-radius:16px;background:rgba(255,255,255,.38);border:1px solid rgba(126,92,72,.14)}
+.worship-weekdays{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.worship-weekdays label{padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.5)}
+.worship-work-summary{display:flex;gap:10px;flex-wrap:wrap}
+.worship-work-summary span{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.48)}
+.worship-work-card{padding:14px;border-radius:18px;background:rgba(255,255,255,.48);border:1px solid rgba(126,92,72,.13);display:grid;gap:10px}
+.worship-work-card.done{opacity:.82}
+.worship-work-main{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.worship-work-main h4{margin:5px 0 3px}
+.worship-work-controls{gap:7px;flex-wrap:wrap}
+.worship-completed-works>summary,.worship-manage-all>summary{cursor:pointer;font-weight:700;padding:10px 0}
+.worship-moved-note{margin-top:-6px}
+@media(max-width:760px){
+ .worship-home-head-clean{grid-template-columns:1fr!important}
+ .worship-home-head-clean>h2,.worship-home-head-clean>p,.worship-home-head-clean .field,.worship-home-head-clean .worship-summary{grid-column:1!important;grid-row:auto!important}
+ .worship-home-head-clean .worship-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .worship-home-head-clean .worship-summary>strong{grid-column:1/-1}
+ .worship-work-main{align-items:flex-start;flex-direction:column}
+}
