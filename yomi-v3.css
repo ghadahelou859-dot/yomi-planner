@@ -1387,3 +1387,9 @@ body[data-user-bg="1"],body[data-user-bg="1"]::before,.lock{background-position:
 .prayer-saved-library{margin:14px 0;padding:12px;border-radius:16px;background:rgba(255,255,255,.38)}
 @media(max-width:640px){.prayer-surah-reader{padding:14px;border-radius:20px}.prayer-surah-page{padding:26px 18px 22px}.prayer-surah-basmala{font-size:1.18rem}.prayer-surah-verses{font-size:1.12rem;line-height:2.25}.prayer-surah-counter{align-items:stretch}.prayer-surah-counter-controls{width:100%;justify-content:center}}
 @media(max-width:640px){.prayer-surah-reader{padding:14px;border-radius:20px}.prayer-surah-text{font-size:1.12rem;line-height:2.15;padding:14px 12px}.prayer-surah-head .row{align-items:flex-start}.prayer-surah-done{padding:12px}}
+
+.worship-bonus-actions{display:flex;align-items:end;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:12px}
+.worship-bonus-manual{display:flex;align-items:end;gap:8px;flex-wrap:wrap}
+.worship-bonus-manual label{display:flex;flex-direction:column;gap:5px;font-size:.82rem;color:var(--muted,#75675e)}
+.worship-bonus-manual input{width:110px;min-height:40px;border-radius:12px;border:1px solid rgba(126,90,61,.22);background:rgba(255,255,255,.72);padding:8px 10px;text-align:center;font:inherit}
+@media(max-width:640px){.worship-bonus-actions,.worship-bonus-manual{width:100%}.worship-bonus-manual label{flex:1}.worship-bonus-manual input{width:100%}.worship-bonus-manual button{min-height:40px}}
