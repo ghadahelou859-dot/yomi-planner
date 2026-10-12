@@ -188,7 +188,7 @@
     const count=Math.max(0,Number(data.worshipDailyDhikr?.[selected])||0);
     const total=Object.keys(data.worshipDailyDhikr||{}).reduce((s,d)=>s+(Math.floor(Date.parse(d+'T00:00:00Z')/86400000)%bonusDhikrList.length===dayNo%bonusDhikrList.length?Number(data.worshipDailyDhikr[d])||0:0),0);
     return '<div class="panel worship-bonus-adhkar"><h3>🌷 ذكر النية</h3>'+
-      (completed?'<p class="sub">يظهر بعد إكمال ورد الأذكار، والعدد يُحسب بشكل تراكمي.</p><div class="worship-reader-card"><h2>'+safe(name)+'</h2><p class="sub" data-bonus-totals data-other="'+(total-count)+'">ذكرتِه اليوم: '+count+' · إجماليه: '+total+'</p><button type="button" class="worship-big-counter" data-worship-bonus-tap><strong>'+count+'</strong><small>اضغطي للذكر</small></button><div class="worship-bonus-actions"><button class="soft" type="button" data-worship-bonus-undo '+(count===0?'disabled':'')+'>↶ تراجع</button><form class="worship-bonus-manual" data-worship-bonus-manual><label>إضافة عدد يدويًا<input name="count" type="number" min="0" step="1" inputmode="numeric" value="'+count+'" aria-label="عدد ذكر اليوم"></label><button type="submit" class="primary">+ إضافة للعدد</button></form></div></div>':
+      (completed?'<p class="sub">يظهر بعد إكمال ورد الأذكار، والعدد يُحسب بشكل تراكمي.</p><div class="worship-reader-card"><h2>'+safe(name)+'</h2><p class="sub" data-bonus-totals data-other="'+(total-count)+'">ذكرتِه اليوم: '+count+' · إجماليه: '+total+'</p><button type="button" class="worship-big-counter" data-worship-bonus-tap><strong>'+count+'</strong><small>اضغطي للذكر</small></button><div class="worship-bonus-actions"><button class="soft" type="button" data-worship-bonus-undo '+(count===0?'disabled':'')+'>↶ تراجع</button><form class="worship-bonus-manual" data-worship-bonus-manual><label>إضافة عدد يدويًا<input name="count" type="number" min="1" step="1" inputmode="numeric" value="" placeholder="مثلاً 15" aria-label="عدد إضافي لذكر النية"></label><button type="submit" class="primary">+ إضافة</button></form></div></div>':
       '<p class="sub">يظهر «ذكر النية» بعد إكمال الأذكار المضافة من قبلك فقط.</p>')+'</div>';
   }
   function worshipSummary(){
@@ -682,10 +682,16 @@
     document.querySelector('[data-worship-bonus-tap]')?.addEventListener('click',e=>{const n=(Number(data.worshipDailyDhikr[selected])||0)+1;data.worshipDailyDhikr[selected]=n;save();const card=e.currentTarget.closest('.worship-reader-card');const strong=e.currentTarget.querySelector('strong');if(strong)strong.textContent=n;const totals=card?.querySelector('[data-bonus-totals]');if(totals)totals.textContent='ذكرتِه اليوم: '+n+' · إجماليه: '+((Number(totals.dataset.other)||0)+n);const undo=card?.querySelector('[data-worship-bonus-undo]');if(undo)undo.disabled=false;const total=document.querySelector('[data-worship-total-count]');if(total)total.textContent=String((Number(total.dataset.base)||0)+n)});
     document.querySelector('[data-worship-bonus-manual]')?.addEventListener('submit',e=>{
       e.preventDefault();
-      const raw=String(new FormData(e.currentTarget).get('count')||'').trim(),n=Number(raw);
-      if(!Number.isSafeInteger(n)||n<=0){alert('اكتبي عددًا صحيحًا أكبر من صفر');return}
-      const current=Math.max(0,Number(data.worshipDailyDhikr?.[selected])||0);
-      data.worshipDailyDhikr[selected]=current+n;save();render();
+      const input=e.currentTarget.elements.count,raw=String(input?.value||'').trim(),add=Number(raw);
+      if(!Number.isSafeInteger(add)||add<=0){alert('اكتبي عددًا صحيحًا أكبر من صفر');return}
+      const current=Math.max(0,Number(data.worshipDailyDhikr?.[selected])||0),next=current+add;
+      data.worshipDailyDhikr[selected]=next;save();
+      const card=e.currentTarget.closest('.worship-reader-card');
+      const strong=card?.querySelector('[data-worship-bonus-tap] strong');if(strong)strong.textContent=next;
+      const totals=card?.querySelector('[data-bonus-totals]');if(totals)totals.textContent='ذكرتِه اليوم: '+next+' · إجماليه: '+((Number(totals.dataset.other)||0)+next);
+      const undo=card?.querySelector('[data-worship-bonus-undo]');if(undo)undo.disabled=false;
+      const total=document.querySelector('[data-worship-total-count]');if(total)total.textContent=String((Number(total.dataset.base)||0)+next);
+      if(input){input.value='';input.blur()}
     });
     document.querySelector('[data-worship-bonus-undo]')?.addEventListener('click',e=>{const n=Math.max(0,(Number(data.worshipDailyDhikr[selected])||0)-1);data.worshipDailyDhikr[selected]=n;save();const card=e.currentTarget.closest('.worship-reader-card');const strong=card?.querySelector('[data-worship-bonus-tap] strong');if(strong)strong.textContent=n;const totals=card?.querySelector('[data-bonus-totals]');if(totals)totals.textContent='ذكرتِه اليوم: '+n+' · إجماليه: '+((Number(totals.dataset.other)||0)+n);e.currentTarget.disabled=n===0;const total=document.querySelector('[data-worship-total-count]');if(total)total.textContent=String((Number(total.dataset.base)||0)+n)});
     // Quran forms are inside the custom worship renderer: handle them here to avoid native form reloads.
