@@ -4,7 +4,7 @@
   const defaults={city:'Ramallah',country:'Palestine',method:3};
   const labels={Fajr:'الفجر',Dhuhr:'الظهر',Asr:'العصر',Maghrib:'المغرب',Isha:'العشاء'};
   const order=['Fajr','Dhuhr','Asr','Maghrib','Isha'];
-  let busy=false,lastSignature='';
+  let busy=false,lastSignature='',countdownTimer=null;
 
   const settings=()=>{try{return {...defaults,...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch{return {...defaults}}};
   const saveSettings=s=>localStorage.setItem(KEY,JSON.stringify(s));
@@ -15,11 +15,32 @@
   const cleanTime=v=>String(v||'').match(/\d{1,2}:\d{2}/)?.[0]||'--:--';
   const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-  function nextPrayer(timings,day){
-    const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Hebron',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-    if(day!==today)return null;
-    const now=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Hebron',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date());
-    return order.find(k=>cleanTime(timings[k])>now)||null;
+  function palestineNow(){
+    const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Hebron',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).formatToParts(new Date());
+    const get=t=>parts.find(x=>x.type===t)?.value||'00';
+    return {date:get('year')+'-'+get('month')+'-'+get('day'),h:Number(get('hour')),m:Number(get('minute')),s:Number(get('second'))};
+  }
+  function nextPrayerInfo(timings,day){
+    const now=palestineNow();if(day!==now.date)return null;
+    const nowSec=now.h*3600+now.m*60+now.s;
+    for(const k of order){const [h,m]=cleanTime(timings[k]).split(':').map(Number),sec=h*3600+m*60;if(sec>nowSec)return {key:k,seconds:sec-nowSec,tomorrow:false}}
+    const [fh,fm]=cleanTime(timings.Fajr).split(':').map(Number);
+    return {key:'Fajr',seconds:(86400-nowSec)+(fh*3600+fm*60),tomorrow:true};
+  }
+  function fmtRemaining(sec){
+    sec=Math.max(0,Math.floor(sec));const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;
+    return (h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  }
+  function startCountdown(box,timings,day){
+    clearInterval(countdownTimer);
+    const paint=()=>{
+      const info=nextPrayerInfo(timings,day),el=box.querySelector('[data-prayer-countdown]');
+      if(!el)return;
+      if(!info){el.hidden=true;return}
+      el.hidden=false;el.innerHTML='<span>الصلاة القادمة</span><b>'+labels[info.key]+(info.tomorrow?' غدًا':'')+'</b><strong>متبقي '+fmtRemaining(info.seconds)+'</strong>';
+      box.querySelectorAll('.prayer-time').forEach(x=>x.classList.toggle('next',x.dataset.prayerKey===info.key&&!info.tomorrow));
+    };
+    paint();countdownTimer=setInterval(paint,1000);
   }
 
   function renderBox(section){
@@ -37,11 +58,12 @@
   }
 
   function showTimes(box,s,day,timings,fromCache=false){
-    const next=nextPrayer(timings,day);
+    const info=nextPrayerInfo(timings,day);
     box.innerHTML='<div class="prayer-times-head"><div><h3>🕰️ مواقيت الصلاة</h3><small>'+esc(s.latitude!=null?'موقع الآيفون':s.city)+' · '+esc(day)+(fromCache?' · آخر تحديث محفوظ':'')+'</small></div><button type="button" class="soft" data-prayer-times-location>📍 موقع الآيفون</button><button type="button" class="soft" data-prayer-times-settings>⚙ المكان</button></div>'+
-      '<div class="prayer-times-grid">'+order.map(k=>'<div class="prayer-time '+(next===k?'next':'')+'"><span>'+labels[k]+'</span><b>'+cleanTime(timings[k])+'</b>'+(next===k?'<small>الصلاة القادمة</small>':'')+'</div>').join('')+'</div>'+
+      '<div class="prayer-next-countdown" data-prayer-countdown '+(info?'':'hidden')+'></div>'+
+      '<div class="prayer-times-grid">'+order.map(k=>'<div class="prayer-time '+(info?.key===k&&!info.tomorrow?'next':'')+'" data-prayer-key="'+k+'"><span>'+labels[k]+'</span><b>'+cleanTime(timings[k])+'</b>'+(info?.key===k&&!info.tomorrow?'<small>الصلاة القادمة</small>':'')+'</div>').join('')+'</div>'+
       '<div class="prayer-times-note">المواقيت حسب المدينة المختارة، وقد تختلف دقائق قليلة عن تقويم المسجد المحلي.</div>';
-    bindSettings(box,s);
+    bindSettings(box,s);startCountdown(box,timings,day);
   }
 
   function showError(box,s,day,cached){
@@ -64,7 +86,7 @@
       const form=document.createElement('form');form.className='prayer-times-settings row';
       form.innerHTML='<label class="field">المدينة<input name="city" value="'+esc(s.city)+'" required></label><label class="field">الدولة<input name="country" value="'+esc(s.country)+'" required></label><button class="primary">حفظ وتحديث</button>';
       box.append(form);
-      form.onsubmit=e=>{e.preventDefault();const fd=new FormData(form),n={...s,city:String(fd.get('city')||'').trim(),country:String(fd.get('country')||'').trim()};saveSettings(n);lastSignature='';refresh(true)};
+      form.onsubmit=e=>{e.preventDefault();const fd=new FormData(form),n={...s,city:String(fd.get('city')||'').trim(),country:String(fd.get('country')||'').trim()};delete n.latitude;delete n.longitude;saveSettings(n);lastSignature='';refresh(true)};
     });
   }
 
