@@ -4,6 +4,12 @@
   const BG_KEY='yomi-bg-v3', BG_SCOPE_KEY='yomi-bg-scope-v3', TRANS_KEY='yomi-transparency-v1', NAV_KEY='yomi-nav-visibility-v1';
   const state={client:null,project:null,course:null,learningPage:null,prayer:null,adhkarOpen:null,reopenPrayerManage:false,worshipJump:null,worshipTab:'prayer',adhkarIndex:0,stickerStatus:'',stickerDraft:null,albumStatus:'',boardView:'daily',boardCustomize:false,boardSelectedTask:null,boardTaskDetail:null,boardTaskDetailDay:null};
   const bucket='yomi-memories', urls=new Set();
+  const prayerSurahLibrary={
+    'at-tariq':{
+      title:'سورة الطارق',
+      text:'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\nوَٱلسَّمَآءِ وَٱلطَّارِقِ ١\nوَمَآ أَدْرَىٰكَ مَا ٱلطَّارِقُ ٢\nٱلنَّجْمُ ٱلثَّاقِبُ ٣\nإِن كُلُّ نَفْسٍۢ لَّمَّا عَلَيْهَا حَافِظٌۭ ٤\nفَلْيَنظُرِ ٱلْإِنسَـٰنُ مِمَّ خُلِقَ ٥\nخُلِقَ مِن مَّآءٍۢ دَافِقٍۢ ٦\nيَخْرُجُ مِنۢ بَيْنِ ٱلصُّلْبِ وَٱلتَّرَآئِبِ ٧\nإِنَّهُۥ عَلَىٰ رَجْعِهِۦ لَقَادِرٌۭ ٨\nيَوْمَ تُبْلَى ٱلسَّرَآئِرُ ٩\nفَمَا لَهُۥ مِن قُوَّةٍۢ وَلَا نَاصِرٍۢ ١٠\nوَٱلسَّمَآءِ ذَاتِ ٱلرَّجْعِ ١١\nوَٱلْأَرْضِ ذَاتِ ٱلصَّدْعِ ١٢\nإِنَّهُۥ لَقَوْلٌۭ فَصْلٌۭ ١٣\nوَمَا هُوَ بِٱلْهَزْلِ ١٤\nإِنَّهُمْ يَكِيدُونَ كَيْدًۭا ١٥\nوَأَكِيدُ كَيْدًۭا ١٦\nفَمَهِّلِ ٱلْكَـٰفِرِينَ أَمْهِلْهُمْ رُوَيْدًۢا ١٧'
+    }
+  };
   let pendingBackgroundFile=null,pendingBackgroundPreviewUrl=null,pendingPortraitFile=null,pendingPortraitPreviewUrl=null,projectClockInterval=null;
   const formatDuration=ms=>{ms=Math.max(0,Number(ms)||0);const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return String(h).padStart(2,'0')+' س : '+String(m).padStart(2,'0')+' د : '+String(sec).padStart(2,'0')+' ث'};
   const projectElapsed=p=>{const t=p.timerState||{elapsed:0,running:false,startedAt:null};return Number(t.elapsed||0)+(t.running&&t.startedAt?Math.max(0,Date.now()-Number(t.startedAt)):0)};
@@ -24,7 +30,7 @@
     data.boardSettings.defaultSize??='auto';
     data.boardSettings.cardOpacity??=92;
     data.boardSettings.labelDefaults??={title:{color:'#3f2b24',size:20,show:true},type:{color:'#6e5147',size:13,show:true},date:{color:'#6e5147',size:13,show:true},time:{color:'#6e5147',size:13,show:true},progress:{color:'#6e5147',size:13,show:true}};
-    data.prayerChecks??={};data.adhkarChecks??={};data.adhkarItemChecks??={};data.adhkarAudio??={};data.prayerWorks??=[];data.adhkarCounts??={};data.worshipDuas??=[];data.worshipDailyDhikr??={};data.worshipReminders??={};data.voluntaryPrayers??={};
+    data.prayerChecks??={};data.adhkarChecks??={};data.adhkarItemChecks??={};data.adhkarAudio??={};data.prayerWorks??=[];data.adhkarCounts??={};data.worshipDuas??=[];data.worshipDailyDhikr??={};data.worshipReminders??={};data.voluntaryPrayers??={};data.prayerSurahLinks??={};data.prayerSurahLinks['الفجر']??={};data.prayerSurahLinks['المغرب']??={};data.prayerSurahLinks['الفجر']['at-tariq']??=true;data.prayerSurahLinks['المغرب']['at-tariq']??=true;
     data.quran??={lastPage:0,log:[]};data.quran.log??=[];
     if(data.designSettings.background===null&&!data.designSettings.backgroundMigrated){
       const old=localStorage.getItem(BG_KEY);if(old){data.designSettings.background=old;Object.assign(data.designSettings,JSON.parse(localStorage.getItem(BG_SCOPE_KEY)||'{}'))}
@@ -286,7 +292,7 @@
   }
   function prayerDetails(){
     const n=state.prayer;if(!n)return '';
-    const q=data.quran,last=Number(q.lastPage)||0,logs=q.log.filter(x=>x.date===selected&&x.prayer===n),works=(data.prayerWorks||[]).filter(x=>x.prayer===n),done=works.filter(x=>x.completed?.[selected]).length,allDone=works.length>0&&done===works.length,manual=!!data.prayerChecks?.[selected]?.[n],complete=allDone||manual,pctDone=works.length?Math.round(done/works.length*100):(complete?100:0);
+    const q=data.quran,last=Number(q.lastPage)||0,logs=q.log.filter(x=>x.date===selected&&x.prayer===n),works=(data.prayerWorks||[]).filter(x=>x.prayer===n),done=works.filter(x=>x.completed?.[selected]).length,allDone=works.length>0&&done===works.length,manual=!!data.prayerChecks?.[selected]?.[n],complete=allDone||manual,pctDone=works.length?Math.round(done/works.length*100):(complete?100:0);const tariq=prayerSurahLibrary['at-tariq'],tariqAllowed=n==='الفجر'||n==='المغرب',tariqLinked=!!data.prayerSurahLinks?.[n]?.['at-tariq'];
     return '<div class="prayer-standalone">'+
       '<div class="worship-quick-nav"><button type="button" class="primary active" data-worship-jump="prayer">🕌 الصلاة</button><button type="button" class="soft" data-worship-jump="dhikr">📿 الأذكار</button></div>'+
       '<div class="panel prayer-detail-page">'+
@@ -295,6 +301,7 @@
       '<div class="prayer-section"><div class="row between"><h3>الورد القرآني</h3><span class="badge">آخر صفحة '+last+'</span></div><div class="notice">'+(last<604?'القراءة التالية تبدأ من صفحة '+(last+1):'أتممتِ الختمة ✓')+'</div>'+logs.map(x=>'<div class="prayer-log">✓ '+(x.from===x.to?'تمت قراءة صفحة '+x.to:'تمت قراءة الصفحات '+x.from+'–'+x.to)+'</div>').join('')+
       (last<604?'<form id="prayerQuran" class="row prayer-quran-form"><label class="field">قرأتِ حتى صفحة<input name="page" type="number" inputmode="numeric" min="'+(last+1)+'" max="604" step="1" value="'+(last+1)+'" required></label><button class="primary">تسجيل القراءة</button></form>':'')+
       '<p class="sub">هذا نفس الورد الموجود في «وردي القرآني»، ويكمل معك بين الصلوات والأيام.</p></div>'+
+      (tariqAllowed&&tariqLinked?'<div class="prayer-section prayer-surah-reader"><div class="row between"><div><h3>📖 '+safe(tariq.title)+'</h3><p class="sub">محفوظة عندك للقراءة المباشرة في صلاة '+safe(n)+'.</p></div><button type="button" class="soft" data-prayer-surah-unlink="at-tariq">إخفاء من هذه الصلاة</button></div><div class="prayer-surah-text">'+safe(tariq.text).replace(/\\n/g,'<br>')+'</div></div>':'')+
       '<div class="prayer-section"><div class="row between"><div><h3>الأعمال بعد الصلاة</h3><p class="sub">هون التنفيذ اليومي فقط. للإضافة والتعديل والحذف افتحي شباك إدارة الأعمال.</p></div><button type="button" class="soft" data-prayer-manage>＋ إضافة سورة أو ذكر بعد الصلاة</button></div>'+
       (works.map(x=>{const goal=Math.max(1,Number(x.target)||1),count=Math.max(0,Math.min(goal,Number(x.counts?.[selected])||(x.completed?.[selected]?goal:0)));return goal>1?'<div class="prayer-work-card prayer-work-execute"><b>'+safe(x.title)+'</b><span class="badge">'+count+' / '+goal+'</span><div class="row"><button type="button" class="primary" data-prayer-work-count="'+x.id+'" '+(count>=goal?'disabled':'')+'>+1 مرة</button><button type="button" class="soft" data-prayer-work-undo="'+x.id+'" '+(count===0?'disabled':'')+'>↶ تراجع</button></div></div>':'<label class="prayer-work-card '+(x.completed?.[selected]?'done':'')+' prayer-work-execute"><span class="prayer-work-check"><input type="checkbox" data-prayer-work="'+x.id+'" '+(x.completed?.[selected]?'checked':'')+'><span>'+safe(x.title)+'</span></span><b>'+(x.completed?.[selected]?'✓ تم الإنجاز':'بانتظار الإنجاز')+'</b></label>'}).join('')||'<div class="empty">ما أضفتِ أعمالًا لهذه الصلاة. افتحي «إدارة أعمال الصلاة» لإضافتها.</div>')+
       '<div class="row prayer-manual-row"><button type="button" class="soft" data-prayer-mark-manual="'+n+'">'+(manual?'إلغاء الإنجاز اليدوي':'تحديد الصلاة منجزة يدويًا')+'</button></div>'+
@@ -302,6 +309,7 @@
       '</div>'+
       '<dialog id="prayerManageDialog" class="prayer-manage-dialog"><div class="row between prayer-manage-head"><div><h2>إدارة أعمال صلاة '+safe(n)+'</h2><p class="sub">أضيفي أو عدلي الأعمال، وبعدها سكّري الشباك وكمّلي التنفيذ من صفحة الصلاة.</p></div><button type="button" class="soft" data-prayer-manage-close>إغلاق</button></div>'+
       '<div class="prayer-manage-list">'+(works.map(x=>'<div class="prayer-manage-item"><div class="grow"><b>'+safe(x.title)+'</b><small>'+(x.completed?.[selected]?'✓ منجز اليوم':'غير منجز اليوم')+' · 🔥 '+worshipWorkStreak(x)+' أيام استمرارية</small></div><button type="button" class="soft" data-prayer-work-grace="'+x.id+'">سماح: '+(Number(x.graceDays)||0)+' أيام</button><button type="button" class="soft" data-prayer-work-edit="'+x.id+'">تعديل</button><button type="button" class="danger" data-prayer-work-delete="'+x.id+'">حذف</button></div>').join('')||'<div class="empty">ما في أعمال مضافة بعد.</div>')+'</div>'+
+      (tariqAllowed?'<div class="prayer-saved-library"><h3>السور المحفوظة</h3><div class="item"><div class="grow"><b>'+safe(tariq.title)+'</b><small>النص محفوظ في يومي حتى لو أزلتِ ربطه بهذه الصلاة.</small></div>'+(tariqLinked?'<span class="badge">موجودة في الصلاة</span>':'<button type="button" class="soft" data-prayer-surah-link="at-tariq">إضافة للصلاة</button>')+'</div></div>':'')+
       '<form id="prayerWorkNew" class="prayer-work-new"><label class="field">عمل مرتبط بهذه الصلاة<input name="title" placeholder="مثلاً: أذكار بعد الصلاة أو سورة يس" required></label><label class="field">عدد المرات (1 = ✓ تم، أكثر من 1 = عدّاد تلقائي)<input type="number" name="target" min="1" max="1000" value="1" inputmode="numeric"></label><button class="primary">إضافة العمل</button></form>'+
       '</dialog>'+
     '</div>';
@@ -739,7 +747,9 @@
         document.querySelectorAll('[data-worship-jump]').forEach(x=>x.classList.toggle('active',x.dataset.worshipJump==='dhikr'));
       }
     });
-    const prayerManageDialog=document.getElementById('prayerManageDialog');
+    document.querySelector('[data-prayer-surah-unlink]')?.addEventListener('click',()=>{data.prayerSurahLinks??={};data.prayerSurahLinks[state.prayer]??={};data.prayerSurahLinks[state.prayer]['at-tariq']=false;save();render()});
+    document.querySelector('[data-prayer-surah-link]')?.addEventListener('click',()=>{data.prayerSurahLinks??={};data.prayerSurahLinks[state.prayer]??={};data.prayerSurahLinks[state.prayer]['at-tariq']=true;state.reopenPrayerManage=true;save();render()});
+        const prayerManageDialog=document.getElementById('prayerManageDialog');
     document.querySelector('[data-prayer-manage]')?.addEventListener('click',()=>{if(prayerManageDialog?.showModal)prayerManageDialog.showModal();else prayerManageDialog?.setAttribute('open','')});
     document.querySelector('[data-prayer-manage-close]')?.addEventListener('click',()=>prayerManageDialog?.close?.());
     prayerManageDialog?.addEventListener('click',e=>{if(e.target===prayerManageDialog)prayerManageDialog.close()});
