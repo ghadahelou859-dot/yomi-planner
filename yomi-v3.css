@@ -1362,6 +1362,20 @@ body[data-user-bg="1"],body[data-user-bg="1"]::before,.lock{background-position:
   .board-card-tools{opacity:1}
 }
 
-.prayer-surah-reader{background:rgba(255,253,248,.68);border:1px solid rgba(150,116,78,.16);border-radius:20px;padding:16px}
-.prayer-surah-text{font-family:"Amiri","Noto Naskh Arabic",serif;font-size:1.22rem;line-height:2.15;text-align:right;direction:rtl;padding:15px;border-radius:16px;background:rgba(255,255,255,.48)}
+.prayer-surah-reader{position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(255,252,245,.94),rgba(248,240,225,.88));border:1px solid rgba(177,139,82,.28);border-radius:24px;padding:18px;box-shadow:0 12px 30px rgba(91,67,40,.08)}
+.prayer-surah-reader:before{content:"";position:absolute;inset:0 auto auto 0;width:120px;height:120px;background:radial-gradient(circle,rgba(181,148,86,.12),transparent 68%);pointer-events:none}
+.prayer-surah-reader.is-read{border-color:rgba(74,128,77,.24);box-shadow:0 12px 30px rgba(67,112,70,.08)}
+.prayer-surah-head{position:relative;z-index:1;padding:2px 2px 12px}
+.prayer-surah-kicker{font-size:.82rem;font-weight:700;color:#8a6d42;margin-bottom:8px}
+.prayer-surah-head h3{font-size:1.45rem;margin:0 0 4px;color:#4b3426}
+.prayer-surah-hide{font-size:.8rem;padding:7px 10px;opacity:.82}
+.prayer-surah-text{position:relative;z-index:1;font-family:"Amiri","Noto Naskh Arabic",serif;font-size:1.25rem;line-height:2.25;text-align:right;direction:rtl;padding:18px 16px;border-radius:18px;background:rgba(255,255,255,.56);border:1px solid rgba(174,139,82,.12);color:#2f241d}
+.prayer-surah-done{width:100%;margin-top:14px;border:0;border-radius:18px;padding:13px 16px;display:flex;align-items:center;justify-content:center;gap:12px;background:linear-gradient(135deg,rgba(235,221,199,.95),rgba(244,234,217,.95));color:#5a4634;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(151,113,66,.14)}
+.prayer-surah-done:hover{transform:translateY(-1px)}
+.prayer-surah-done.done{background:linear-gradient(135deg,rgba(220,241,217,.96),rgba(235,247,230,.96));color:#2f6f3d;box-shadow:inset 0 0 0 1px rgba(69,125,73,.18)}
+.prayer-surah-done-icon{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:1.25rem;border:1px solid currentColor;background:rgba(255,255,255,.42)}
+.prayer-surah-done span:last-child{display:flex;flex-direction:column;gap:2px;text-align:right}
+.prayer-surah-done b{font-size:1rem}
+.prayer-surah-done small{font-size:.78rem;opacity:.78}
 .prayer-saved-library{margin:14px 0;padding:12px;border-radius:16px;background:rgba(255,255,255,.38)}
+@media(max-width:640px){.prayer-surah-reader{padding:14px;border-radius:20px}.prayer-surah-text{font-size:1.12rem;line-height:2.15;padding:14px 12px}.prayer-surah-head .row{align-items:flex-start}.prayer-surah-done{padding:12px}}
