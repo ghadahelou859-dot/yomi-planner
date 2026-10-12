@@ -1361,3 +1361,7 @@ body[data-user-bg="1"],body[data-user-bg="1"]::before,.lock{background-position:
   .board-free-layout{min-width:680px}
   .board-card-tools{opacity:1}
 }
+
+.prayer-surah-reader{background:rgba(255,253,248,.68);border:1px solid rgba(150,116,78,.16);border-radius:20px;padding:16px}
+.prayer-surah-text{font-family:"Amiri","Noto Naskh Arabic",serif;font-size:1.22rem;line-height:2.15;text-align:right;direction:rtl;padding:15px;border-radius:16px;background:rgba(255,255,255,.48)}
+.prayer-saved-library{margin:14px 0;padding:12px;border-radius:16px;background:rgba(255,255,255,.38)}
