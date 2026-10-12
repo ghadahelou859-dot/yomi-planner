@@ -234,9 +234,10 @@ if (ready && !window.YOMI_CLOUD_READY) {
     const result=action==='signup'?await client.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}}):await client.auth.signInWithPassword({email,password});
     if(result.error){status.textContent=result.error.message;return}
     if(!result.data.user||!result.data.session){status.textContent='راجعي بريدك لتأكيد الحساب، ثم سجّلي الدخول.';return}
-    user=result.data.user;identify();loadBase();gate.hidden=true;document.getElementById('signOutBtn').hidden=false;form.reset();await reconcile();notifyMemories();
+    user=result.data.user;identify();loadBase();gate.hidden=true;document.getElementById('signOutBtn').hidden=false;localStorage.setItem(PIN_EMAIL_KEY,email);form.reset();await reconcile();notifyMemories();window.dispatchEvent(new Event('yomi-account-ready'));
   };
   window.addEventListener('yomi-pin-unlocked',showAccount);
+  window.addEventListener('yomi-account-gate-request',showAccount);
   if(document.getElementById('lock').classList.contains('hidden'))showAccount();
   document.getElementById('offlineBtn').onclick=()=>{gate.hidden=true;paint('بيانات هذا الجهاز فقط · سجّلي الدخول لاحقًا للمزامنة')};
   syncBtn.onclick=()=>{if(!navigator.onLine){paint('بدون نت · محفوظ على هذا الجهاز');return}if(user)reconcile();else showAccount()};
