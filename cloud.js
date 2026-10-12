@@ -13,6 +13,7 @@ if (ready && !window.YOMI_CLOUD_READY) {
   syncBtn.hidden = false;
   const baseKey = 'yomi-sync-base-v2';
   const archiveKey = 'yomi-conflict-archives-v1';
+  const bootstrapArchiveKey = 'yomi-account-first-bootstrap-v1';
   let user = null, base = null, remoteUpdatedAt = null, timer = null, busy = false, conflictSnapshot = null;
   window.yomiMemoriesSession = () => user ? {client,user} : null;
   const notifyMemories = () => window.dispatchEvent(new Event('yomi-cloud-session'));
@@ -50,6 +51,16 @@ if (ready && !window.YOMI_CLOUD_READY) {
     base = structuredClone(shape(snapshot));
     remoteUpdatedAt = updatedAt;
     localStorage.setItem(baseKey, JSON.stringify({userId:user.id,data:base,updatedAt}));
+  }
+  function archiveBootstrapLocal(localCopy,remoteCopy) {
+    if(!user||same(localCopy,remoteCopy)||!nonempty(localCopy))return;
+    try{
+      const all=JSON.parse(localStorage.getItem(bootstrapArchiveKey)||'[]');
+      const record={id:crypto.randomUUID(),userId:user.id,date:new Date().toISOString(),data:localCopy};
+      const mine=all.filter(x=>x.userId===user.id);
+      if(mine.some(x=>same(x.data,localCopy)))return;
+      localStorage.setItem(bootstrapArchiveKey,JSON.stringify([record,...all].slice(0,5)));
+    }catch(e){console.error('Bootstrap archive failed',e)}
   }
   function pending() {return base ? !same(data,base) : nonempty(data)}
   function archives() {
@@ -177,17 +188,23 @@ if (ready && !window.YOMI_CLOUD_READY) {
       const local=shape(data);
       let merged;
       if(base) {
+        // Account security is account-owned; a stale device must not overwrite it.
+        if(remote.security && !same(local.security,remote.security)) local.security=structuredClone(remote.security);
+        // Normal case: merge only changes made since the last successful sync.
+        // yomiMerge flags a conflict only when the same path changed on both sides.
         const result=window.yomiMerge(base,local,remote);
         if(result.conflicts.length){backupPrompt({baseline:base,local,remote,updatedAt:row?.updated_at},result.details);return}
         merged=shape(result.value);
       } else if(!row) {
+        // First account sync: no cloud copy exists yet, so this device seeds the account.
         merged=local;
-      } else if(same(local,remote) || !nonempty(local)) {
-        merged=remote;
       } else {
-        const result=window.yomiMerge(shape(initial()),local,remote);
-        if(result.conflicts.length){backupPrompt({baseline:shape(initial()),local,remote,updatedAt:row?.updated_at},result.details);return}
-        merged=shape(result.value);
+        // Account-first bootstrap for a new/reinstalled browser.
+        // Keep any pre-existing local copy as a recoverable archive, but do not
+        // merge it blindly into the account and create artificial conflicts.
+        archiveBootstrapLocal(local,remote);
+        data=remote;saveLocal();setBase(remote,row.updated_at);renderAfterSync();paintSynced(row.updated_at);
+        return;
       }
       if(!same(local,shape(data))){paint('تعديلات جديدة · جارٍ إعادة المزامنة');return}
       if(same(merged,remote) && row) {
@@ -223,7 +240,7 @@ if (ready && !window.YOMI_CLOUD_READY) {
       const {data:{user:found},error}=await client.auth.getUser();
       if(found){user=found;identify();loadBase();gate.hidden=true;document.getElementById('signOutBtn').hidden=false;await reconcile();notifyMemories();return}
       gate.hidden=false;
-      status.textContent=error && error.name!=='AuthSessionMissingError'?'تعذّر التحقق من الحساب. تحققي من الاتصال.':'سجّلي دخولك بنفس البريد وكلمة المرور على الهاتف واللابتوب. رمز الرقمين لهذا الجهاز فقط.';
+      status.textContent=error && error.name!=='AuthSessionMissingError'?'تعذّر التحقق من الحساب. تحققي من الاتصال.':'سجّلي دخولك بنفس البريد وكلمة المرور على الهاتف واللابتوب، وبعدها استخدمي نفس رمز الـPIN.';
     } catch(e) {gate.hidden=false;status.textContent='تعذّر الاتصال بالحساب. بيانات هذا الجهاز محفوظة.';console.error('Account check failed',e)}
   }
   form.onsubmit=async event=>{
