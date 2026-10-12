@@ -30,7 +30,7 @@
     data.boardSettings.defaultSize??='auto';
     data.boardSettings.cardOpacity??=92;
     data.boardSettings.labelDefaults??={title:{color:'#3f2b24',size:20,show:true},type:{color:'#6e5147',size:13,show:true},date:{color:'#6e5147',size:13,show:true},time:{color:'#6e5147',size:13,show:true},progress:{color:'#6e5147',size:13,show:true}};
-    data.prayerChecks??={};data.adhkarChecks??={};data.adhkarItemChecks??={};data.adhkarAudio??={};data.prayerWorks??=[];data.adhkarCounts??={};data.worshipDuas??=[];data.worshipDailyDhikr??={};data.worshipReminders??={};data.voluntaryPrayers??={};data.prayerSurahLinks??={};data.prayerSurahReads??={};data.prayerSurahCounts??={};data.prayerSurahTargets??={};data.prayerSurahLinks['الفجر']??={};data.prayerSurahLinks['المغرب']??={};data.prayerSurahLinks['الفجر']['at-tariq']??=true;data.prayerSurahLinks['المغرب']['at-tariq']??=true;
+    data.prayerChecks??={};data.adhkarChecks??={};data.adhkarItemChecks??={};data.adhkarAudio??={};data.prayerWorks??=[];data.adhkarCounts??={};data.worshipDuas??=[];data.worshipDailyDhikr??={};data.worshipDailyDhikrTarget??=100;data.worshipDailyDhikrPaused??=false;data.worshipReminders??={};data.voluntaryPrayers??={};data.prayerSurahLinks??={};data.prayerSurahReads??={};data.prayerSurahCounts??={};data.prayerSurahTargets??={};data.prayerSurahLinks['الفجر']??={};data.prayerSurahLinks['المغرب']??={};data.prayerSurahLinks['الفجر']['at-tariq']??=true;data.prayerSurahLinks['المغرب']['at-tariq']??=true;
     data.quran??={lastPage:0,log:[]};data.quran.log??=[];
     if(data.designSettings.background===null&&!data.designSettings.backgroundMigrated){
       const old=localStorage.getItem(BG_KEY);if(old){data.designSettings.background=old;Object.assign(data.designSettings,JSON.parse(localStorage.getItem(BG_SCOPE_KEY)||'{}'))}
@@ -187,8 +187,9 @@
     const name=bonusDhikrList[((dayNo%bonusDhikrList.length)+bonusDhikrList.length)%bonusDhikrList.length];
     const count=Math.max(0,Number(data.worshipDailyDhikr?.[selected])||0);
     const total=Object.keys(data.worshipDailyDhikr||{}).reduce((s,d)=>s+(Math.floor(Date.parse(d+'T00:00:00Z')/86400000)%bonusDhikrList.length===dayNo%bonusDhikrList.length?Number(data.worshipDailyDhikr[d])||0:0),0);
+    const target=Math.max(1,Number(data.worshipDailyDhikrTarget)||100),paused=!!data.worshipDailyDhikrPaused;
     return '<div class="panel worship-bonus-adhkar"><h3>🌷 ذكر النية</h3>'+
-      (completed?'<p class="sub">يظهر بعد إكمال ورد الأذكار، والعدد يُحسب بشكل تراكمي.</p><div class="worship-reader-card"><h2>'+safe(name)+'</h2><p class="sub" data-bonus-totals data-other="'+(total-count)+'">ذكرتِه اليوم: '+count+' · إجماليه: '+total+'</p><button type="button" class="worship-big-counter" data-worship-bonus-tap><strong>'+count+'</strong><small>اضغطي للذكر</small></button><div class="worship-bonus-actions"><button class="soft" type="button" data-worship-bonus-undo '+(count===0?'disabled':'')+'>↶ تراجع</button><form class="worship-bonus-manual" data-worship-bonus-manual><label>إضافة عدد يدويًا<input name="count" type="number" min="1" step="1" inputmode="numeric" value="" placeholder="مثلاً 15" aria-label="عدد إضافي لذكر النية"></label><button type="submit" class="primary">+ إضافة</button></form></div></div>':
+      (completed?'<p class="sub">يظهر بعد إكمال ورد الأذكار، والعدد يُحسب بشكل تراكمي.</p><div class="worship-reader-card"><h2>'+safe(name)+'</h2><p class="sub" data-bonus-totals data-other="'+(total-count)+'">ذكرتِه اليوم: '+count+' · إجماليه: '+total+' · الهدف: '+target+(paused?' · متوقف':'')+'</p><button type="button" class="worship-big-counter" data-worship-bonus-tap '+(paused?'disabled':'')+'><strong>'+count+'</strong><small>'+(paused?'العداد متوقف':'اضغطي للذكر')+'</small></button><div class="worship-bonus-actions"><button class="soft" type="button" data-worship-bonus-undo '+(count===0||paused?'disabled':'')+'>↶ تراجع</button><form class="worship-bonus-manual" data-worship-bonus-manual><label>إضافة عدد يدويًا<input name="count" type="number" min="1" step="1" inputmode="numeric" value="" placeholder="مثلاً 15" aria-label="عدد إضافي لذكر النية" '+(paused?'disabled':'')+'></label><button type="submit" class="primary" '+(paused?'disabled':'')+'>+ إضافة</button></form></div><div class="worship-bonus-manage"><button class="soft" type="button" data-worship-bonus-correct>تصحيح المجموع</button><button class="soft" type="button" data-worship-bonus-target>تعديل الهدف</button><button class="soft" type="button" data-worship-bonus-pause>'+(paused?'استئناف':'إيقاف')+'</button><button class="danger" type="button" data-worship-bonus-delete>حذف</button></div></div>':
       '<p class="sub">يظهر «ذكر النية» بعد إكمال الأذكار المضافة من قبلك فقط.</p>')+'</div>';
   }
   function worshipSummary(){
@@ -694,6 +695,23 @@
       if(input){input.value='';input.blur()}
     });
     document.querySelector('[data-worship-bonus-undo]')?.addEventListener('click',e=>{const n=Math.max(0,(Number(data.worshipDailyDhikr[selected])||0)-1);data.worshipDailyDhikr[selected]=n;save();const card=e.currentTarget.closest('.worship-reader-card');const strong=card?.querySelector('[data-worship-bonus-tap] strong');if(strong)strong.textContent=n;const totals=card?.querySelector('[data-bonus-totals]');if(totals)totals.textContent='ذكرتِه اليوم: '+n+' · إجماليه: '+((Number(totals.dataset.other)||0)+n);e.currentTarget.disabled=n===0;const total=document.querySelector('[data-worship-total-count]');if(total)total.textContent=String((Number(total.dataset.base)||0)+n)});
+    document.querySelector('[data-worship-bonus-correct]')?.addEventListener('click',()=>{
+      const v=prompt('المجموع الصحيح لذكر النية اليوم',String(Math.max(0,Number(data.worshipDailyDhikr?.[selected])||0)));
+      if(v===null)return;const n=parseCount(v);if(!Number.isSafeInteger(n)||n<0){alert('اكتبي رقمًا صحيحًا من صفر فما فوق');return}
+      data.worshipDailyDhikr[selected]=n;save();render();
+    });
+    document.querySelector('[data-worship-bonus-target]')?.addEventListener('click',()=>{
+      const v=prompt('الهدف اليومي الجديد لذكر النية',String(Math.max(1,Number(data.worshipDailyDhikrTarget)||100)));
+      if(v===null)return;const n=parseCount(v);if(!Number.isSafeInteger(n)||n<1){alert('اكتبي رقمًا صحيحًا أكبر من صفر');return}
+      data.worshipDailyDhikrTarget=n;save();render();
+    });
+    document.querySelector('[data-worship-bonus-pause]')?.addEventListener('click',()=>{
+      data.worshipDailyDhikrPaused=!data.worshipDailyDhikrPaused;save();render();
+    });
+    document.querySelector('[data-worship-bonus-delete]')?.addEventListener('click',()=>{
+      if(!confirm('حذف سجل ذكر النية بالكامل؟'))return;
+      data.worshipDailyDhikr={};data.worshipDailyDhikrPaused=false;save();render();
+    });
     // Quran forms are inside the custom worship renderer: handle them here to avoid native form reloads.
     const saveQuranAndStay=()=>{state.worshipTab='quran';save();const scrollY=window.scrollY;render();requestAnimationFrame(()=>window.scrollTo(0,scrollY))};
     const setup=document.getElementById('quranSetup');
