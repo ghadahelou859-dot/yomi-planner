@@ -1472,3 +1472,35 @@ body[data-user-bg="1"],body[data-user-bg="1"]::before,.lock{background-position:
   }
   .dhikr-count-row .primary{grid-column:auto!important}
 }
+
+/* Dhikr Al-Niyyah full controls */
+.worship-bonus-adhkar .worship-big-counter{
+  width:330px!important;
+  height:330px!important;
+  max-width:76vw!important;
+  max-height:76vw!important;
+}
+.worship-bonus-manage{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+.worship-bonus-manage button{
+  min-height:44px;
+  padding:9px 16px;
+  border-radius:14px;
+}
+@media(max-width:720px){
+  .worship-bonus-adhkar .worship-big-counter{
+    width:290px!important;
+    height:290px!important;
+  }
+  .worship-bonus-manage{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    width:100%;
+  }
+  .worship-bonus-manage button{width:100%}
+}
