@@ -233,7 +233,7 @@ function showPin(){
   $('#pinEmail').value=email;$('#pinInput').value='';$('#pinError').textContent='';
   document.querySelector('.pin-email-field')?.classList.toggle('saved-email',!!email);
   refreshPinDots();
-  setTimeout(()=>{(email?$('#pinInput'):$('#pinEmail'))?.focus()},50);
+  // Keep the iPhone keyboard closed on the PIN screen; the visible keypad handles PIN entry.
 }
 function pinSetValue(value){
   const input=$('#pinInput');if(!input)return;
@@ -245,7 +245,7 @@ function pinSubmitIfReady(){
 }
 function pinAddDigit(digit){
   const current=pinValue();if(current.length>=4)return;
-  pinSetValue(current+String(digit));$('#pinInput')?.focus();pinSubmitIfReady();
+  pinSetValue(current+String(digit));if(document.activeElement?.id==='pinInput')document.activeElement.blur();pinSubmitIfReady();
 }
 $('#pinInput')?.addEventListener('input',e=>{
   e.target.value=String(e.target.value||'').replace(/\D/g,'').slice(0,4);
@@ -253,14 +253,14 @@ $('#pinInput')?.addEventListener('input',e=>{
   pinSubmitIfReady();
 });
 document.querySelectorAll('[data-pin-key]').forEach(btn=>btn.addEventListener('click',e=>{e.preventDefault();pinAddDigit(btn.dataset.pinKey)}));
-document.querySelector('[data-pin-back]')?.addEventListener('click',e=>{e.preventDefault();pinSetValue(pinValue().slice(0,-1));$('#pinInput')?.focus()});
-document.querySelector('[data-pin-clear]')?.addEventListener('click',e=>{e.preventDefault();pinSetValue('');$('#pinInput')?.focus()});
+document.querySelector('[data-pin-back]')?.addEventListener('click',e=>{e.preventDefault();pinSetValue(pinValue().slice(0,-1))});
+document.querySelector('[data-pin-clear]')?.addEventListener('click',e=>{e.preventDefault();pinSetValue('')});
 $('#pinForm').onsubmit=e=>{
   e.preventDefault();
   const email=$('#pinEmail').value.trim().toLowerCase(),pin=pinValue(),saved=localStorage.getItem(PIN_KEY);
   if(!/^\S+@\S+\.\S+$/.test(email)){$('#pinError').textContent='اكتبي إيميل صحيح';$('#pinEmail').focus();return}
   if(!/^[0-9]{4}$/.test(pin)){$('#pinError').textContent='رمز الدخول لازم يكون 4 أرقام';$('#pinInput').focus();return}
-  if(saved&&/^\d{4}$/.test(saved)&&pin!==saved){$('#pinError').textContent='رمز الدخول غير صحيح';pinSetValue('');$('#pinInput').focus();return}
+  if(saved&&/^\d{4}$/.test(saved)&&pin!==saved){$('#pinError').textContent='رمز الدخول غير صحيح';pinSetValue('');$('#pinInput').blur();return}
   if(!saved||/^\d{2}$/.test(saved))localStorage.setItem(PIN_KEY,pin);
   localStorage.setItem(PIN_EMAIL_KEY,email);
   const accountEmail=document.querySelector('#accountForm input[name="email"]');if(accountEmail&&!accountEmail.value)accountEmail.value=email;
