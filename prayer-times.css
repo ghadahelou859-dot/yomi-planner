@@ -11,3 +11,7 @@
 .prayer-times-note,.prayer-times-loading,.prayer-times-error{margin-top:10px;font-size:.82rem;opacity:.78}
 .prayer-times-settings{margin-top:12px;padding-top:12px;border-top:1px dashed rgba(126,92,72,.2)}
 @media(max-width:760px){.prayer-times-grid{grid-template-columns:repeat(2,minmax(110px,1fr))}.prayer-time:last-child{grid-column:1/-1}.prayer-times-head{align-items:flex-start}}
+.prayer-next-countdown{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:12px 14px;border-radius:16px;background:rgba(187,146,92,.13);border:1px solid rgba(187,146,92,.22)}
+.prayer-next-countdown span{opacity:.72}
+.prayer-next-countdown b{font-size:1.05rem}
+.prayer-next-countdown strong{font-variant-numeric:tabular-nums}
