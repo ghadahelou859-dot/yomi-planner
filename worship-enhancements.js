@@ -1,6 +1,7 @@
 /* عبادتي UX + أعمالي enhancements */
 (() => {
   let busy=false;
+  const TAB_KEY='yomi-worship-enhancement-tab-v1';
 
   const safe=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const day=()=>typeof selected==='string'?selected:new Date().toISOString().slice(0,10);
@@ -112,7 +113,7 @@
       const existing=data.worshipWorks.find(x=>String(x.id)===idv);
       if(existing)Object.assign(existing,patch);
       else data.worshipWorks.push({id:'ww-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7),...patch,counts:{},completed:{},paused:false});
-      save();render();
+      sessionStorage.setItem(TAB_KEY,'works');save();render();
     });
 
     const adjust=(idv,dir)=>{
@@ -122,13 +123,13 @@
       const before=count(w,d);
       let n=dir>0?(goal===1?1:Math.min(goal,before+step)):Math.max(0,before-step);
       w.counts[d]=n;if(n>=goal)w.completed[d]=true;else delete w.completed[d];
-      save();render();
+      sessionStorage.setItem(TAB_KEY,'works');save();render();
     };
     panel.querySelectorAll('[data-work-plus]').forEach(b=>b.onclick=()=>adjust(b.dataset.workPlus,1));
     panel.querySelectorAll('[data-work-minus]').forEach(b=>b.onclick=()=>adjust(b.dataset.workMinus,-1));
     panel.querySelectorAll('[data-work-edit]').forEach(b=>b.onclick=()=>{const w=data.worshipWorks.find(x=>String(x.id)===String(b.dataset.workEdit));if(w)openForm(w)});
-    panel.querySelectorAll('[data-work-pause]').forEach(b=>b.onclick=()=>{const w=data.worshipWorks.find(x=>String(x.id)===String(b.dataset.workPause));if(!w)return;w.paused=!w.paused;save();render()});
-    panel.querySelectorAll('[data-work-delete]').forEach(b=>b.onclick=()=>{if(!confirm('حذف هذا العمل وكل سجله؟'))return;data.worshipWorks=data.worshipWorks.filter(x=>String(x.id)!==String(b.dataset.workDelete));save();render()});
+    panel.querySelectorAll('[data-work-pause]').forEach(b=>b.onclick=()=>{const w=data.worshipWorks.find(x=>String(x.id)===String(b.dataset.workPause));if(!w)return;w.paused=!w.paused;sessionStorage.setItem(TAB_KEY,'works');save();render()});
+    panel.querySelectorAll('[data-work-delete]').forEach(b=>b.onclick=()=>{if(!confirm('حذف هذا العمل وكل سجله؟'))return;data.worshipWorks=data.worshipWorks.filter(x=>String(x.id)!==String(b.dataset.workDelete));sessionStorage.setItem(TAB_KEY,'works');save();render()});
   }
 
   function improveDhikr(section){
@@ -145,6 +146,38 @@
       if(launch)launch.insertAdjacentElement('afterend',bonus);else section.prepend(bonus);
       bonus.classList.add('featured-bonus-dhikr');
     }
+  }
+
+  function activateRequestedWorshipTab(root){
+    const wanted=sessionStorage.getItem(TAB_KEY);if(!wanted)return;
+    const btn=root.querySelector('[data-worship-tab="'+wanted+'"]');
+    const sections=[...root.querySelectorAll('[data-worship-section]')];
+    if(!btn||!sections.length)return;
+    root.querySelectorAll('[data-worship-tab]').forEach(b=>{const on=b===btn;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on))});
+    sections.forEach(s=>s.hidden=s.dataset.worshipSection!==wanted);
+    sessionStorage.removeItem(TAB_KEY);
+    requestAnimationFrame(()=>root.querySelector('[data-worship-section="'+wanted+'"]')?.scrollIntoView({block:'start'}));
+  }
+
+  function renderHomeWorks(){
+    if(typeof data==='undefined')return;
+    ensure();
+    const root=document.getElementById('view');
+    if(!root||document.getElementById('worshipWorksTodayHome'))return;
+    const navHome=document.querySelector('#nav button[data-page="home"].active');
+    const bodyPage=document.body.dataset.yomiPage;
+    if(!navHome&&bodyPage!=='home')return;
+    const d=day(),items=data.worshipWorks.filter(w=>due(w,d));
+    if(!items.length)return;
+    const panel=document.createElement('div');panel.className='panel worship-home-works';panel.id='worshipWorksTodayHome';
+    panel.innerHTML='<div class="row between"><div><h3>✨ أعمالي اليوم</h3><p class="sub">من صفحة عبادتي</p></div><button type="button" class="soft" data-open-worship-works>فتح أعمالي</button></div>'+
+      items.map(w=>'<div class="item"><div class="grow"><b>'+safe(w.title)+'</b><small>'+safe(w.type)+' · '+(done(w,d)?'✓ تم اليوم':count(w,d)+' / '+Math.max(1,Number(w.target)||1)+' '+safe(w.unit||'مرة'))+'</small></div><span class="badge">'+(done(w,d)?'✓':'○')+'</span></div>').join('');
+    const first=root.firstElementChild;
+    if(first)first.insertAdjacentElement('afterend',panel);else root.prepend(panel);
+    panel.querySelector('[data-open-worship-works]')?.addEventListener('click',()=>{
+      sessionStorage.setItem(TAB_KEY,'works');
+      document.querySelector('#nav button[data-page="worship"]')?.click();
+    });
   }
 
   function improveHeader(root){
@@ -170,8 +203,10 @@
     try{
       if(typeof data==='undefined')return;
       ensure();
-      const root=document.getElementById('view'),tabs=root?.querySelector('.worship-tabs');if(!root||!tabs)return;
-      if(tabs.dataset.worshipEnhanced==='1')return;
+      const root=document.getElementById('view');if(!root)return;
+      renderHomeWorks();
+      const tabs=root.querySelector('.worship-tabs');if(!tabs)return;
+      if(tabs.dataset.worshipEnhanced==='1'){activateRequestedWorshipTab(root);return}
       tabs.dataset.worshipEnhanced='1';
       improveHeader(root);
       const works=root.querySelector('[data-worship-section="works"]');
@@ -183,6 +218,7 @@
         renderWorksPanel(works);
       }
       if(adhkar)improveDhikr(adhkar);
+      activateRequestedWorshipTab(root);
     } finally {busy=false}
   }
 
