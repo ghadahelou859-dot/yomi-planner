@@ -1421,3 +1421,54 @@ body[data-user-bg="1"],body[data-user-bg="1"]::before,.lock{background-position:
 /* Dhikr Al-Niyyah */
 .worship-bonus-adhkar>h3{display:flex;align-items:center;gap:7px}
 .worship-bonus-adhkar .worship-reader-card{border-radius:22px}
+
+/* Dhikr counter — classic circular style */
+.dhikr-count-row{
+  grid-template-columns:190px minmax(150px,220px) minmax(120px,180px)!important;
+  gap:18px!important;
+  align-items:center!important;
+}
+.dhikr-plus{
+  width:168px!important;
+  height:168px!important;
+  min-width:168px!important;
+  min-height:168px!important;
+  border-radius:50%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  font-size:2rem!important;
+  font-weight:800!important;
+  line-height:1!important;
+  padding:0!important;
+  margin:auto!important;
+  background:linear-gradient(180deg,#c35a22,#9f431c)!important;
+  color:#fff!important;
+  border:3px solid rgba(255,255,255,.9)!important;
+  box-shadow:0 12px 26px rgba(132,62,27,.2), inset 0 0 0 1px rgba(91,46,25,.16)!important;
+}
+.dhikr-plus:hover{transform:translateY(-1px)}
+.dhikr-number-field{align-self:center!important}
+.dhikr-number-field input{min-height:56px!important;border-radius:14px!important}
+.dhikr-count-row>.primary{
+  min-height:56px!important;
+  border-radius:14px!important;
+  font-weight:800!important;
+}
+@media(max-width:720px){
+  .dhikr-count-row{
+    grid-template-columns:1fr!important;
+    justify-items:center!important;
+  }
+  .dhikr-plus{
+    width:148px!important;
+    height:148px!important;
+    min-width:148px!important;
+    min-height:148px!important;
+  }
+  .dhikr-number-field,
+  .dhikr-count-row>.primary{
+    width:min(100%,320px)!important;
+  }
+  .dhikr-count-row .primary{grid-column:auto!important}
+}
