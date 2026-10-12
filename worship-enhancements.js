@@ -171,6 +171,8 @@
       if(typeof data==='undefined')return;
       ensure();
       const root=document.getElementById('view'),tabs=root?.querySelector('.worship-tabs');if(!root||!tabs)return;
+      if(tabs.dataset.worshipEnhanced==='1')return;
+      tabs.dataset.worshipEnhanced='1';
       improveHeader(root);
       const works=root.querySelector('[data-worship-section="works"]');
       const prayer=root.querySelector('[data-worship-section="prayer"]');
