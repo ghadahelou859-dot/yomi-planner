@@ -243,24 +243,26 @@ if (ready && !window.YOMI_CLOUD_READY) {
   async function showAccount(mode) {
     if(mode)accountGateMode=mode;
     if(!navigator.onLine){gate.hidden=false;status.textContent='يلزم اتصال بالإنترنت لتسجيل الدخول للحساب. بعد تسجيل الدخول يمكن للتطبيق حفظ تعديلاتك محليًا لحين رجوع الاتصال.';return}
-    if(user){gate.hidden=true;await reconcile();notifyMemories();finishAccountGate(user.email);return}
+    if(user){const phone=form?.elements?.phone;if(phone&&!phone.value)phone.value=user.user_metadata?.phone||data.accountProfile?.phone||'';gate.hidden=true;await reconcile();notifyMemories();finishAccountGate(user.email);return}
     status.textContent='جارٍ التحقق من الحساب…';
     try {
       const {data:{user:found},error}=await client.auth.getUser();
-      if(found){user=found;identify();loadBase();gate.hidden=true;document.getElementById('signOutBtn').hidden=false;await reconcile();notifyMemories();finishAccountGate(found.email);return}
+      if(found){user=found;identify();loadBase();const phone=form?.elements?.phone;if(phone&&!phone.value)phone.value=found.user_metadata?.phone||data.accountProfile?.phone||'';gate.hidden=true;document.getElementById('signOutBtn').hidden=false;await reconcile();notifyMemories();finishAccountGate(found.email);return}
       gate.hidden=false;
       status.textContent=error && error.name!=='AuthSessionMissingError'?'تعذّر التحقق من الحساب. تحققي من الاتصال.':'سجّلي بنفس البريد وكلمة المرور المستخدمة على أجهزتك. بيانات يومي ستظهر تلقائيًا بعد الدخول.';
     } catch(e) {gate.hidden=false;status.textContent='تعذّر الاتصال بالحساب. بيانات هذا الجهاز محفوظة.';console.error('Account check failed',e)}
   }
   form.onsubmit=async event=>{
     event.preventDefault();
-    const email=form.elements.email.value.trim(),password=form.elements.password.value;
+    const email=form.elements.email.value.trim().toLowerCase(),phone=form.elements.phone.value.trim(),password=form.elements.password.value;
     status.textContent='جارٍ التحقق…';
+    if(!/^\+?[0-9][0-9\s-]{7,14}$/.test(phone)){status.textContent='اكتبي رقم تلفون صحيح';return}
+    const normalizedPhone=phone.replace(/[\s-]/g,'');
     const action=event.submitter?.value||'login';
-    const result=action==='signup'?await client.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}}):await client.auth.signInWithPassword({email,password});
+    const result=action==='signup'?await client.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname,data:{phone:normalizedPhone}}}):await client.auth.signInWithPassword({email,password});
     if(result.error){status.textContent=result.error.message;return}
     if(!result.data.user||!result.data.session){status.textContent='راجعي بريدك لتأكيد الحساب، ثم سجّلي الدخول.';return}
-    user=result.data.user;identify();loadBase();gate.hidden=true;document.getElementById('signOutBtn').hidden=false;localStorage.setItem(pinEmailKey,email);form.reset();await reconcile();notifyMemories();finishAccountGate(email);
+    user=result.data.user;identify();loadBase();gate.hidden=true;document.getElementById('signOutBtn').hidden=false;localStorage.setItem(pinEmailKey,email);data.accountProfile??={};data.accountProfile.email=email;data.accountProfile.phone=normalizedPhone;saveLocal();if(user.user_metadata?.phone!==normalizedPhone){const upd=await client.auth.updateUser({data:{phone:normalizedPhone}});if(upd.error)console.warn('Phone metadata update failed',upd.error)}form.reset();await reconcile();notifyMemories();finishAccountGate(email);
   };
   window.addEventListener('yomi-pin-unlocked',()=>{if(user&&navigator.onLine)reconcile();});
   window.addEventListener('yomi-account-gate-request',e=>showAccount(e.detail?.mode||'login'));
