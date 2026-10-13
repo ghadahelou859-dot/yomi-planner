@@ -1504,3 +1504,33 @@ body[data-user-bg="1"],body[data-user-bg="1"]::before,.lock{background-position:
   }
   .worship-bonus-manage button{width:100%}
 }
+
+/* Custom dhikr manual ordering */
+.dhikr-manage-card{position:relative;transition:transform .16s ease,box-shadow .16s ease,opacity .16s ease}
+.dhikr-drag-handle{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  margin:0 0 10px;
+  padding:7px 11px;
+  border-radius:12px;
+  border:1px dashed rgba(125,83,58,.28);
+  background:rgba(255,250,242,.72);
+  color:#76513d;
+  font-weight:700;
+  cursor:grab;
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.dhikr-drag-handle:active{cursor:grabbing}
+.dhikr-drag-handle span{font-size:.82rem}
+.dhikr-manage-card.dhikr-dragging{
+  opacity:.78;
+  transform:scale(.992);
+  box-shadow:0 16px 34px rgba(91,58,38,.18);
+  z-index:20;
+}
+@media(max-width:720px){
+  .dhikr-drag-handle{width:100%;justify-content:center;min-height:42px}
+}
