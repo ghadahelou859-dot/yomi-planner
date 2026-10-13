@@ -169,7 +169,11 @@
   }
   function specialDateTarget(x,base=today()){
     if(!x?.date)return '';
-    return x.yearly?base.slice(0,4)+'-'+String(x.date).slice(5):x.date;
+    if(!x.yearly)return x.date;
+    const md=String(x.date).slice(5),year=Number(base.slice(0,4));
+    let candidate=String(year)+'-'+md;
+    if(candidate<base)candidate=String(year+1)+'-'+md;
+    return candidate;
   }
   function specialDateCount(x){
     const target=specialDateTarget(x),diff=target?daysBetween(today(),target):0,abs=Math.abs(diff),mode=x.countMode||'auto';
@@ -178,16 +182,23 @@
     if(mode==='elapsed')return diff<0?'مرّ '+abs+' '+(abs===1?'يوم':'أيام'):diff===0?'اليوم':'يبدأ بعد '+diff+' '+(diff===1?'يوم':'أيام');
     return diff===0?'اليوم':diff>0?'باقي '+diff+' '+(diff===1?'يوم':'أيام'):'مرّ '+abs+' '+(abs===1?'يوم':'أيام');
   }
+  function specialDateDistance(x){
+    const target=specialDateTarget(x);return target?Math.abs(daysBetween(today(),target)):Number.MAX_SAFE_INTEGER;
+  }
   function specialDateManager(){
-    const dates=[...(data.importantDates||[])].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
-    const modeOptions=x=>[['days','عدد الأيام فقط'],['countdown','عدّ تنازلي'],['elapsed','عدد الأيام التي مرّت']].map(([k,v])=>'<option value="'+k+'" '+((x?.countMode||'days')===k?'selected':'')+'>'+v+'</option>').join('');
-    return '<div class="panel special-date-manager"><div class="row between"><div><h3>✨ الأيام المميزة</h3><p class="sub">الإضافة والإخفاء والتعديل كلها من هون. صفحة «يومي» للعرض فقط.</p></div></div>'+
+    const dates=[...(data.importantDates||[])].sort((a,b)=>specialDateDistance(a)-specialDateDistance(b)||(a.date||'').localeCompare(b.date||''));
+    const modeOptions=x=>[['auto','تلقائي حسب التاريخ'],['days','عدد الأيام فقط'],['countdown','عدّ تنازلي'],['elapsed','عدد الأيام التي مرّت']].map(([k,v])=>'<option value="'+k+'" '+((x?.countMode||'auto')===k?'selected':'')+'>'+v+'</option>').join('');
+    const shadeVal=x=>Math.max(10,Math.min(75,Number(x?.bgShade??38)));
+    return '<div class="panel special-date-manager"><div class="row between"><div><h3>✨ الأيام المميزة</h3><p class="sub">الإضافة والإخفاء والتعديل كلها من هون. صفحة «يومي» للعرض فقط، والأقرب يظهر أولًا.</p></div></div>'+
       '<details class="special-date-new" open><summary>＋ إضافة يوم مميز</summary><form id="v3SpecialPlannerNew"><div class="row"><label class="field">اسم اليوم<input name="title" required maxlength="100" placeholder="مثلاً: عيد ميلادي"></label><label class="field">التاريخ<input name="date" type="date" value="'+selected+'" required></label><label class="field">الرمز<input name="sticker" maxlength="8" value="⭐"></label></div>'+
-      '<div class="row"><label class="field">طريقة العد<select name="countMode">'+modeOptions({countMode:'days'})+'</select></label><label class="field">يتكرر كل سنة<select name="yearly"><option value="0">لا</option><option value="1">نعم</option></select></label><label class="field">يظهر في يومي<select name="showHome"><option value="1">نعم</option><option value="0">لا</option></select></label></div>'+
-      '<label class="field">صورة خلفية اختيارية<input name="background" type="file" accept="image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp"></label><p class="sub" data-v3-special-new-status>إذا ما اخترتي صورة، تظهر البطاقة من ثيم التطبيق.</p><button class="primary">حفظ اليوم المميز</button></form></details>'+
-      '<div class="special-date-manage-list">'+(dates.map(x=>'<details class="special-date-manage-item"><summary><span>'+safe(x.sticker||'⭐')+' '+safe(x.title)+'</span><small>'+safe(x.date?dateLabel(x.date):'')+' · '+safe(specialDateCount(x))+' · '+(x.showHome===false?'مخفي من يومي':'ظاهر في يومي')+'</small></summary><form class="v3-special-edit" data-v3-special-edit="'+x.id+'"><div class="row"><label class="field">الاسم<input name="title" value="'+safe(x.title||'')+'" required></label><label class="field">التاريخ<input name="date" type="date" value="'+safe(x.date||'')+'" required></label><label class="field">الرمز<input name="sticker" maxlength="8" value="'+safe(x.sticker||'⭐')+'"></label></div><div class="row"><label class="field">طريقة العد<select name="countMode">'+modeOptions(x)+'</select></label><label class="field">يتكرر كل سنة<select name="yearly"><option value="0" '+(!x.yearly?'selected':'')+'>لا</option><option value="1" '+(x.yearly?'selected':'')+'>نعم</option></select></label><label class="field">يظهر في يومي<select name="showHome"><option value="1" '+(x.showHome!==false?'selected':'')+'>نعم</option><option value="0" '+(x.showHome===false?'selected':'')+'>لا</option></select></label></div>'+
+      '<div class="row"><label class="field">طريقة العد<select name="countMode">'+modeOptions({countMode:'auto'})+'</select></label><label class="field">يتكرر كل سنة<select name="yearly"><option value="0">لا</option><option value="1">نعم</option></select></label><label class="field">يظهر في يومي<select name="showHome"><option value="1">نعم</option><option value="0">لا</option></select></label></div>'+
+      '<label class="field">صورة خلفية اختيارية<input name="background" type="file" accept="image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp"></label><div class="special-date-file-preview" data-v3-special-new-preview hidden></div>'+
+      '<label class="field special-date-shade-control">تعتيم الصورة <b data-v3-special-new-shade-value>38%</b><input name="bgShade" type="range" min="10" max="75" step="1" value="38"></label><p class="sub" data-v3-special-new-status>إذا ما اخترتي صورة، تظهر البطاقة من ثيم التطبيق.</p><button class="primary">حفظ اليوم المميز</button></form></details>'+
+      '<div class="special-date-manage-list">'+(dates.map(x=>'<details class="special-date-manage-item"><summary><span>'+safe(x.sticker||'⭐')+' '+safe(x.title)+'</span><small>'+safe(x.date?dateLabel(x.date):'')+' · '+safe(specialDateCount(x))+' · '+(x.yearly?'يتكرر سنويًا · ':'')+(x.showHome===false?'مخفي من يومي':'ظاهر في يومي')+'</small></summary><form class="v3-special-edit" data-v3-special-edit="'+x.id+'"><div class="row"><label class="field">الاسم<input name="title" value="'+safe(x.title||'')+'" required></label><label class="field">التاريخ<input name="date" type="date" value="'+safe(x.date||'')+'" required></label><label class="field">الرمز<input name="sticker" maxlength="8" value="'+safe(x.sticker||'⭐')+'"></label></div><div class="row"><label class="field">طريقة العد<select name="countMode">'+modeOptions(x)+'</select></label><label class="field">يتكرر كل سنة<select name="yearly"><option value="0" '+(!x.yearly?'selected':'')+'>لا</option><option value="1" '+(x.yearly?'selected':'')+'>نعم</option></select></label><label class="field">يظهر في يومي<select name="showHome"><option value="1" '+(x.showHome!==false?'selected':'')+'>نعم</option><option value="0" '+(x.showHome===false?'selected':'')+'>لا</option></select></label></div>'+
       (x.backgroundMedia?'<div class="special-date-bg-preview" data-v3-media="'+safe(x.backgroundMedia.path||x.backgroundMedia.local||'')+'"></div>':'')+
-      '<label class="field">تغيير صورة الخلفية<input name="background" type="file" accept="image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp"></label><div class="row"><button class="primary">حفظ التعديل</button>'+(x.backgroundMedia?'<button type="button" class="soft" data-v3-special-bg-remove="'+x.id+'">إزالة الصورة</button>':'')+'<button type="button" class="'+(x.showHome===false?'primary':'soft')+'" data-v3-special-toggle="'+x.id+'">'+(x.showHome===false?'إظهار في يومي':'إخفاء من يومي')+'</button><button type="button" class="danger" data-v3-special-delete="'+x.id+'">حذف</button></div><p class="sub" data-v3-special-edit-status></p></form></details>').join('')||'<div class="empty">ما أضفتِ أيام مميزة بعد.</div>')+'</div></div>';
+      '<label class="field">تغيير صورة الخلفية<input name="background" type="file" accept="image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp"></label><div class="special-date-file-preview" data-v3-special-edit-preview hidden></div>'+
+      '<label class="field special-date-shade-control">تعتيم الصورة <b data-v3-special-edit-shade-value>'+shadeVal(x)+'%</b><input name="bgShade" type="range" min="10" max="75" step="1" value="'+shadeVal(x)+'"></label>'+
+      '<div class="row"><button class="primary">حفظ التعديل</button>'+(x.backgroundMedia?'<button type="button" class="soft" data-v3-special-bg-remove="'+x.id+'">إزالة الصورة</button>':'')+'<button type="button" class="'+(x.showHome===false?'primary':'soft')+'" data-v3-special-toggle="'+x.id+'">'+(x.showHome===false?'إظهار في يومي':'إخفاء من يومي')+'</button><button type="button" class="danger" data-v3-special-delete="'+x.id+'">حذف</button></div><p class="sub" data-v3-special-edit-status></p></form></details>').join('')||'<div class="empty">ما أضفتِ أيام مميزة بعد.</div>')+'</div></div>';
   }
   function planner(){
     const month=monthKey(selected),first=month+'-01',days=new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate(),pad=(new Date(first+'T12:00:00Z').getUTCDay()+6)%7,rows=plannerRows(month),cells=[];
@@ -487,10 +498,10 @@
   }
 
   function specialDateHome(){
-    const visible=(data.importantDates||[]).filter(x=>x.showHome!==false);
+    const visible=(data.importantDates||[]).filter(x=>x.showHome!==false).sort((a,b)=>specialDateDistance(a)-specialDateDistance(b)||(a.date||'').localeCompare(b.date||''));
     const cards=visible.map(x=>{
-      const target=specialDateTarget(x),bg=x.backgroundMedia&&(x.backgroundMedia.path||x.backgroundMedia.local);
-      return '<article class="special-home-display '+(bg?'has-bg':'')+'">'+(bg?'<div class="special-home-bg" data-v3-media="'+safe(bg)+'"></div><div class="special-home-shade"></div>':'')+'<div class="special-home-content"><div><span class="special-home-kicker">✨ اليوم المميز</span><h3>'+safe(x.title)+'</h3><small>'+safe(target?dateLabel(target):'')+'</small></div><div class="special-home-count"><b>'+safe(specialDateCount(x))+'</b></div></div></article>'
+      const target=specialDateTarget(x),bg=x.backgroundMedia&&(x.backgroundMedia.path||x.backgroundMedia.local),shade=Math.max(10,Math.min(75,Number(x.bgShade??38)))/100;
+      return '<article class="special-home-display '+(bg?'has-bg':'')+'">'+(bg?'<div class="special-home-bg" data-v3-media="'+safe(bg)+'"></div><div class="special-home-shade" style="opacity:'+shade+'"></div>':'')+'<div class="special-home-content"><div><span class="special-home-kicker">✨ اليوم المميز</span><h3>'+safe(x.title)+'</h3><small>'+safe(target?dateLabel(target):'')+(x.yearly?' · يتكرر سنويًا':'')+'</small></div><div class="special-home-count"><b>'+safe(specialDateCount(x))+'</b></div></div></article>'
     }).join('');
     return '<div class="v3-special-home">'+(cards||'<div class="panel special-date-card"><h3>✨ اليوم المميز</h3><div class="empty">ما في يوم مميز ظاهر حاليًا.</div></div>')+'</div>'
   }
@@ -1274,6 +1285,23 @@
     document.querySelectorAll('[data-v3-special-hide]').forEach(b=>b.onclick=()=>{const x=data.importantDates.find(v=>v.id===b.dataset.v3SpecialHide);if(x){x.showHome=false;save();render()}});
     document.querySelector('[data-v3-special-show-all]')?.addEventListener('click',()=>{for(const x of data.importantDates||[])x.showHome=true;save();render()});
     const specialNew=$('#v3SpecialPlannerNew');
+    const bindSpecialImagePreview=(form,previewSelector,statusSelector,shadeValueSelector)=>{
+      if(!form)return;
+      const input=form.elements.background,preview=form.querySelector(previewSelector),status=form.querySelector(statusSelector),shade=form.elements.bgShade,shadeLabel=form.querySelector(shadeValueSelector);
+      const updateShade=()=>{if(shadeLabel)shadeLabel.textContent=Math.round(Number(shade?.value||38))+'%'};
+      shade?.addEventListener('input',updateShade);updateShade();
+      input?.addEventListener('click',()=>{window.yomiFilePickerActive=true});
+      input?.addEventListener('change',()=>{
+        window.yomiFilePickerActive=false;
+        const file=input.files?.[0]||null;
+        if(!preview)return;
+        preview.innerHTML='';
+        if(!file){preview.hidden=true;if(status)status.textContent='إذا ما اخترتي صورة، تظهر البطاقة من ثيم التطبيق.';return}
+        const url=URL.createObjectURL(file),img=document.createElement('img');img.src=url;img.alt='معاينة خلفية اليوم المميز';img.onload=()=>URL.revokeObjectURL(url);img.onerror=()=>URL.revokeObjectURL(url);preview.appendChild(img);preview.hidden=false;
+        if(status)status.textContent='✓ تم اختيار الصورة. اضغطي حفظ اليوم المميز.';
+      });
+    };
+    bindSpecialImagePreview(specialNew,'[data-v3-special-new-preview]','[data-v3-special-new-status]','[data-v3-special-new-shade-value]');
     if(specialNew)specialNew.onsubmit=async e=>{
       e.preventDefault();
       const f=new FormData(specialNew),st=specialNew.querySelector('[data-v3-special-new-status]'),title=String(f.get('title')||'').trim(),date=String(f.get('date')||'');
@@ -1282,36 +1310,29 @@
         if(st)st.textContent='جارٍ الحفظ…';
         const file=specialNew.elements.background?.files?.[0]||null;
         const backgroundMedia=file?await saveImage(file,{max:1600,q:.8}):null;
-        data.importantDates.push({id:id(),title,date,sticker:String(f.get('sticker')||'⭐').trim()||'⭐',yearly:f.get('yearly')==='1',showHome:f.get('showHome')!=='0',countMode:String(f.get('countMode')||'days'),backgroundMedia});
+        data.importantDates.push({id:id(),title,date,sticker:String(f.get('sticker')||'⭐').trim()||'⭐',yearly:f.get('yearly')==='1',showHome:f.get('showHome')!=='0',countMode:String(f.get('countMode')||'auto'),bgShade:Math.max(10,Math.min(75,Number(f.get('bgShade')||38))),backgroundMedia});
         save();render();
-      }catch(err){console.error('Special day save failed',err);if(st)st.textContent='تعذّر حفظ اليوم المميز أو الصورة.'}
+      }catch(err){console.error('Special day save failed',err);if(st)st.textContent='تعذّر حفظ الصورة. جرّبي صورة JPG أو PNG أصغر.'}
     };
-    specialNew?.elements.background?.addEventListener('click',()=>{window.yomiFilePickerActive=true});
-    document.querySelectorAll('.v3-special-edit').forEach(form=>form.onsubmit=async e=>{
-      e.preventDefault();
-      const x=data.importantDates.find(v=>v.id===form.dataset.v3SpecialEdit);if(!x)return;
-      const f=new FormData(form),st=form.querySelector('[data-v3-special-edit-status]');
-      try{
-        if(st)st.textContent='جارٍ الحفظ…';
-        const file=form.elements.background?.files?.[0]||null;
-        if(file){if(x.backgroundMedia?.local)await del(x.backgroundMedia.local).catch(()=>{});x.backgroundMedia=await saveImage(file,{max:1600,q:.8})}
-        x.title=String(f.get('title')||'').trim();x.date=String(f.get('date')||'');x.sticker=String(f.get('sticker')||'⭐').trim()||'⭐';x.countMode=String(f.get('countMode')||'days');x.yearly=f.get('yearly')==='1';x.showHome=f.get('showHome')!=='0';
-        if(!x.title||!x.date){if(st)st.textContent='الاسم والتاريخ مطلوبان.';return}
-        save();render();
-      }catch(err){console.error('Special day update failed',err);if(st)st.textContent='تعذّر حفظ التعديل.'}
+    document.querySelectorAll('.v3-special-edit').forEach(form=>{
+      bindSpecialImagePreview(form,'[data-v3-special-edit-preview]','[data-v3-special-edit-status]','[data-v3-special-edit-shade-value]');
+      form.onsubmit=async e=>{
+        e.preventDefault();
+        const x=data.importantDates.find(v=>v.id===form.dataset.v3SpecialEdit);if(!x)return;
+        const f=new FormData(form),st=form.querySelector('[data-v3-special-edit-status]');
+        try{
+          if(st)st.textContent='جارٍ الحفظ…';
+          const file=form.elements.background?.files?.[0]||null;
+          if(file){if(x.backgroundMedia?.local)await del(x.backgroundMedia.local).catch(()=>{});x.backgroundMedia=await saveImage(file,{max:1600,q:.8})}
+          x.title=String(f.get('title')||'').trim();x.date=String(f.get('date')||'');x.sticker=String(f.get('sticker')||'⭐').trim()||'⭐';x.countMode=String(f.get('countMode')||'auto');x.yearly=f.get('yearly')==='1';x.showHome=f.get('showHome')!=='0';x.bgShade=Math.max(10,Math.min(75,Number(f.get('bgShade')||38)));
+          if(!x.title||!x.date){if(st)st.textContent='الاسم والتاريخ مطلوبان.';return}
+          save();render();
+        }catch(err){console.error('Special day update failed',err);if(st)st.textContent='تعذّر حفظ الصورة أو التعديل. جرّبي صورة أصغر.'}
+      };
     });
-    document.querySelectorAll('.v3-special-edit input[type="file"]').forEach(input=>input.addEventListener('click',()=>{window.yomiFilePickerActive=true}));
     document.querySelectorAll('[data-v3-special-toggle]').forEach(b=>b.onclick=()=>{const x=data.importantDates.find(v=>v.id===b.dataset.v3SpecialToggle);if(x){x.showHome=x.showHome===false;save();render()}});
     document.querySelectorAll('[data-v3-special-bg-remove]').forEach(b=>b.onclick=async()=>{const x=data.importantDates.find(v=>v.id===b.dataset.v3SpecialBgRemove);if(!x)return;if(x.backgroundMedia?.local)await del(x.backgroundMedia.local).catch(()=>{});x.backgroundMedia=null;save();render()});
     document.querySelectorAll('[data-v3-special-delete]').forEach(b=>b.onclick=async()=>{const x=data.importantDates.find(v=>v.id===b.dataset.v3SpecialDelete);if(!x||!confirm('حذف هذا اليوم المميز؟'))return;if(x.backgroundMedia?.local)await del(x.backgroundMedia.local).catch(()=>{});data.importantDates=data.importantDates.filter(v=>v.id!==x.id);save();render()});
-    const specialHomeForm=$('#v3SpecialNewHome');
-    document.querySelector('[data-v3-special-add]')?.addEventListener('click',()=>{
-      if(!specialHomeForm)return;
-      specialHomeForm.hidden=!specialHomeForm.hidden;
-      if(!specialHomeForm.hidden)specialHomeForm.elements.title?.focus();
-    });
-    document.querySelector('[data-v3-special-add-cancel]')?.addEventListener('click',()=>{if(specialHomeForm){specialHomeForm.hidden=true;specialHomeForm.reset();if(specialHomeForm.elements.date)specialHomeForm.elements.date.value=selected;if(specialHomeForm.elements.sticker)specialHomeForm.elements.sticker.value='⭐'}});
-    if(specialHomeForm)specialHomeForm.onsubmit=e=>{e.preventDefault();const f=new FormData(specialHomeForm),title=String(f.get('title')||'').trim(),date=String(f.get('date')||'');if(!title||!date)return;data.importantDates??=[];data.importantDates.push({id:id(),title,date,sticker:String(f.get('sticker')||'⭐').trim()||'⭐',yearly:f.get('yearly')==='1',showHome:true});save();render()};
     const dp=$('#v3DebtPerson');if(dp)dp.onsubmit=e=>{e.preventDefault();const f=new FormData(dp);data.debtPeople.push({id:id(),name:f.get('name').trim(),transactions:[]});save();render()};
     document.querySelectorAll('[data-v3-debt]').forEach(f=>f.onsubmit=e=>{e.preventDefault();const p=data.debtPeople.find(x=>x.id===f.dataset.v3Debt),d=new FormData(f),a=Number(d.get('amount')),t=d.get('type'),delta={owed:a,owe:-a,received:-a,paid:a}[t],label={owed:'مبلغ مستحق لي',owe:'مبلغ مستحق عليّ',received:'استلام دفعة',paid:'دفع دفعة'}[t];p.transactions.push({id:id(),date:d.get('date'),delta,label,note:d.get('note').trim()});save();render()})
   }
