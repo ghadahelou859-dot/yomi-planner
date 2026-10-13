@@ -308,8 +308,8 @@
     const rows=allRows.filter(x=>belongs(x.date));
     const periodTotal=rows.reduce((s,x)=>s+x.count,0);
     const grandTotal=allRows.reduce((s,x)=>s+x.count,0);
-    return '<div class="panel worship-bonus-report"><div class="row between"><div><h3>🌷 تقرير ذكر النية</h3><p class="sub">سجل مستقل محفوظ يومًا بيوم.</p></div><div class="stat">إجمالي الفترة<b>'+periodTotal.toLocaleString('en-US')+'</b></div></div>'+
-      (rows.length?'<div class="table-wrap"><table><thead><tr><th>التاريخ</th><th>الذكر</th><th>عدد اليوم</th><th>المجموع التراكمي</th></tr></thead><tbody>'+
+    return '<div class="panel worship-bonus-report"><div class="row between"><div><h3>🌷 ذكر النية — السجل اليومي</h3><p class="sub">محفوظ تلقائيًا حسب كل يوم، ويظهر هنا فقط ضمن التقارير.</p></div><div class="stat">إجمالي الفترة<b>'+periodTotal.toLocaleString('en-US')+'</b><small>'+rows.length+' يوم</small></div></div>'+
+      (rows.length?'<div class="table-wrap"><table><thead><tr><th>التاريخ</th><th>اسم الذكر</th><th>عدد اليوم</th><th>المجموع التراكمي</th></tr></thead><tbody>'+
         rows.slice().reverse().map(x=>'<tr><td>'+safe(dateLabel(x.date))+'</td><td>'+safe(x.name)+'</td><td><b>'+x.count.toLocaleString('en-US')+'</b></td><td>'+x.running.toLocaleString('en-US')+'</td></tr>').join('')+
         '</tbody></table></div><p class="sub">الإجمالي الكلي لكل الأيام: <b>'+grandTotal.toLocaleString('en-US')+'</b></p>':
         '<div class="empty">ما في ذكر نية مسجّل ضمن فترة التقرير الحالية.</div>')+
