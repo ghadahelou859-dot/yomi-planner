@@ -10,7 +10,7 @@ if (ready && !window.YOMI_CLOUD_READY) {
   const badge = document.getElementById('cloudBadge');
   const identity = document.getElementById('accountIdentity');
   const syncBtn = document.getElementById('syncBtn');
-  syncBtn.hidden = false;
+  syncBtn.hidden = true;
   const baseKey = 'yomi-sync-base-v2';
   const archiveKey = 'yomi-conflict-archives-v1';
   const bootstrapArchiveKey = 'yomi-account-first-bootstrap-v1';
@@ -24,8 +24,8 @@ if (ready && !window.YOMI_CLOUD_READY) {
   const nonempty = d => ['tasks','achievements','expenses','incomes','debts','reminders','notes','periods','restDays','dhikrs','waterEntries','readings','journal','habits','routines','timerSessions','budgets','bills','projects','savings','careLogs','diary','memories','subscriptions','givingPayments','appIdeas','calendarEvents','importantDates','clients','learningSpaces','weightEntries','debtPeople','fastingLog','prayerWorks'].some(k => d[k]?.length) || Object.keys(d.adhkarChecks||{}).length>0 || Object.keys(d.prayerChecks||{}).length>0 || !!d.designSettings?.background || !!d.designSettings?.backgroundMedia || !!d.designSettings?.stickers?.length || !!d.cyclePeriodLength || !!d.cycleSettings?.minDays || !!d.waterGoal || !!d.quran?.lastPage || !!d.quran?.log?.length || !!d.quran?.tracks?.length || !!d.quran?.extraLogs?.length || Number(d.givingRates?.salary ?? 5)!==5 || Number(d.givingRates?.work ?? 15)!==15;
   const paint = s => {badge.hidden = false;badge.textContent = s};
   const paintSynced = updatedAt => {
-    const time = updatedAt && new Intl.DateTimeFormat('ar-PS', {hour:'numeric',minute:'2-digit',timeZone:'Asia/Jerusalem'}).format(new Date(updatedAt));
-    paint('✓ محفوظ في الحساب' + (time ? ' · آخر مزامنة ' + time : ''));
+    badge.hidden = true;
+    badge.textContent = '';
   };
   const identify = () => {identity.hidden=!user;identity.textContent=user?'الحساب: '+user.email:''};
   const saveLocal = () => localStorage.setItem(KEY, JSON.stringify(data));
@@ -242,14 +242,14 @@ if (ready && !window.YOMI_CLOUD_READY) {
   }
   async function showAccount(mode) {
     if(mode)accountGateMode=mode;
-    if(!navigator.onLine){gate.hidden=true;paint('بدون نت · محفوظ على هذا الجهاز');return}
+    if(!navigator.onLine){gate.hidden=false;status.textContent='يلزم اتصال بالإنترنت لتسجيل الدخول للحساب. بعد تسجيل الدخول يمكن للتطبيق حفظ تعديلاتك محليًا لحين رجوع الاتصال.';return}
     if(user){gate.hidden=true;await reconcile();notifyMemories();finishAccountGate(user.email);return}
     status.textContent='جارٍ التحقق من الحساب…';
     try {
       const {data:{user:found},error}=await client.auth.getUser();
       if(found){user=found;identify();loadBase();gate.hidden=true;document.getElementById('signOutBtn').hidden=false;await reconcile();notifyMemories();finishAccountGate(found.email);return}
       gate.hidden=false;
-      status.textContent=error && error.name!=='AuthSessionMissingError'?'تعذّر التحقق من الحساب. تحققي من الاتصال.':'سجّلي دخولك بنفس البريد وكلمة المرور. بعدها سيظهر رمز الـPIN المرتبط بهذا الحساب.';
+      status.textContent=error && error.name!=='AuthSessionMissingError'?'تعذّر التحقق من الحساب. تحققي من الاتصال.':'سجّلي بنفس البريد وكلمة المرور المستخدمة على أجهزتك. بيانات يومي ستظهر تلقائيًا بعد الدخول.';
     } catch(e) {gate.hidden=false;status.textContent='تعذّر الاتصال بالحساب. بيانات هذا الجهاز محفوظة.';console.error('Account check failed',e)}
   }
   form.onsubmit=async event=>{
@@ -262,12 +262,11 @@ if (ready && !window.YOMI_CLOUD_READY) {
     if(!result.data.user||!result.data.session){status.textContent='راجعي بريدك لتأكيد الحساب، ثم سجّلي الدخول.';return}
     user=result.data.user;identify();loadBase();gate.hidden=true;document.getElementById('signOutBtn').hidden=false;localStorage.setItem(pinEmailKey,email);form.reset();await reconcile();notifyMemories();finishAccountGate(email);
   };
-  window.addEventListener('yomi-pin-unlocked',()=>showAccount());
+  window.addEventListener('yomi-pin-unlocked',()=>{if(user&&navigator.onLine)reconcile();});
   window.addEventListener('yomi-account-gate-request',e=>showAccount(e.detail?.mode||'login'));
-  if(document.getElementById('lock').classList.contains('hidden'))showAccount();
-  document.getElementById('offlineBtn').onclick=()=>{gate.hidden=true;paint('بيانات هذا الجهاز فقط · سجّلي الدخول لاحقًا للمزامنة')};
-  syncBtn.onclick=()=>{if(!navigator.onLine){paint('بدون نت · محفوظ على هذا الجهاز');return}if(user)reconcile();else showAccount()};
-  window.addEventListener('online',()=>{if(user)reconcile();else showAccount()});
+  showAccount('login');
+  syncBtn.onclick=()=>{if(user&&navigator.onLine)reconcile()};
+  window.addEventListener('online',()=>{if(user)reconcile();else showAccount('login')});
   window.addEventListener('focus',()=>{if(window.yomiFilePickerActive){setTimeout(()=>{window.yomiFilePickerActive=false},600);return}if(user&&navigator.onLine)reconcile()});
   window.addEventListener('pageshow',()=>{if(window.yomiFilePickerActive)return;if(user&&navigator.onLine)reconcile()});
   document.addEventListener('visibilitychange',()=>{if(window.yomiFilePickerActive)return;if(document.visibilityState==='visible'&&user&&navigator.onLine)reconcile()});
