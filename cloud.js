@@ -256,9 +256,51 @@ if (ready && !window.YOMI_CLOUD_READY) {
     const email=form.elements.email.value.trim().toLowerCase();
     if(!/^\S+@\S+\.\S+$/.test(email)){status.textContent='اكتبي بريدك الإلكتروني أولًا';form.elements.email.focus();return}
     status.textContent='جارٍ إرسال رابط إعادة التعيين…';
-    const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
-    status.textContent=error?error.message:'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.';
+    const redirectTo=location.origin+location.pathname+'?recover=1';
+    const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo});
+    status.textContent=error?error.message:'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني. افتحي الرابط من نفس المتصفح.';
   });
+
+  const passwordResetDialog=document.getElementById('passwordResetDialog');
+  const passwordResetForm=document.getElementById('passwordResetForm');
+  const passwordResetError=document.getElementById('passwordResetError');
+
+  function openPasswordReset(){
+    if(gate)gate.hidden=true;
+    document.getElementById('lock')?.classList.add('hidden');
+    if(passwordResetError)passwordResetError.textContent='';
+    passwordResetForm?.reset();
+    if(passwordResetDialog&&!passwordResetDialog.open)passwordResetDialog.showModal();
+  }
+
+  passwordResetForm?.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const f=new FormData(e.currentTarget);
+    const password=String(f.get('password')||'');
+    const confirmPassword=String(f.get('confirmPassword')||'');
+    if(password.length<8){passwordResetError.textContent='كلمة المرور لازم تكون 8 أحرف على الأقل';return}
+    if(password!==confirmPassword){passwordResetError.textContent='تأكيد كلمة المرور غير مطابق';return}
+    passwordResetError.textContent='جارٍ حفظ كلمة المرور…';
+    const {data:updateData,error}=await client.auth.updateUser({password});
+    if(error){passwordResetError.textContent=error.message;return}
+    user=updateData.user||user;
+    identify();loadBase();
+    passwordResetDialog.close();
+    try{history.replaceState({},document.title,location.pathname)}catch{}
+    await reconcile();
+    notifyMemories();
+    accountGateMode='reset-pin';
+    finishAccountGate(user?.email||'');
+  });
+
+  client.auth.onAuthStateChange((event,session)=>{
+    if(session?.user&&!user){user=session.user;identify();loadBase();document.getElementById('signOutBtn').hidden=false}
+    if(event==='PASSWORD_RECOVERY')openPasswordReset();
+  });
+
+  if(new URLSearchParams(location.search).get('recover')==='1'){
+    client.auth.getSession().then(({data})=>{if(data?.session?.user){user=data.session.user;identify();loadBase();document.getElementById('signOutBtn').hidden=false;openPasswordReset()}});
+  }
   form.onsubmit=async event=>{
     event.preventDefault();
     const email=form.elements.email.value.trim().toLowerCase(),password=form.elements.password.value;
