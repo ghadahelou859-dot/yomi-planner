@@ -256,7 +256,7 @@ if (ready && !window.YOMI_CLOUD_READY) {
     const email=form.elements.email.value.trim().toLowerCase();
     if(!/^\S+@\S+\.\S+$/.test(email)){status.textContent='اكتبي بريدك الإلكتروني أولًا';form.elements.email.focus();return}
     status.textContent='جارٍ إرسال رابط إعادة التعيين…';
-    const redirectTo=location.origin+location.pathname+'?recover=1';
+    const redirectTo='https://ghadahelou859-dot.github.io/yomi-planner/?recover=1';
     const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo});
     status.textContent=error?error.message:'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني. افتحي الرابط من نفس المتصفح.';
   });
