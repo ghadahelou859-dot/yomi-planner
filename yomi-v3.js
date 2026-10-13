@@ -30,7 +30,7 @@
     data.boardSettings.defaultSize??='auto';
     data.boardSettings.cardOpacity??=92;
     data.boardSettings.labelDefaults??={title:{color:'#3f2b24',size:20,show:true},type:{color:'#6e5147',size:13,show:true},date:{color:'#6e5147',size:13,show:true},time:{color:'#6e5147',size:13,show:true},progress:{color:'#6e5147',size:13,show:true}};
-    data.prayerChecks??={};data.adhkarChecks??={};data.adhkarItemChecks??={};data.adhkarAudio??={};data.prayerWorks??=[];data.adhkarCounts??={};data.dhikrOrder??={};data.worshipDuas??=[];data.worshipDailyDhikr??={};data.worshipDailyDhikrTarget??=100;data.worshipDailyDhikrPaused??=false;data.worshipReminders??={};data.voluntaryPrayers??={};data.prayerSurahLinks??={};data.prayerSurahReads??={};data.prayerSurahCounts??={};data.prayerSurahTargets??={};data.prayerSurahLinks['الفجر']??={};data.prayerSurahLinks['المغرب']??={};data.prayerSurahLinks['الفجر']['at-tariq']??=true;data.prayerSurahLinks['المغرب']['at-tariq']??=true;
+    data.prayerChecks??={};data.adhkarChecks??={};data.adhkarItemChecks??={};data.adhkarAudio??={};data.prayerWorks??=[];data.adhkarCounts??={};data.worshipDuas??=[];data.worshipDailyDhikr??={};data.worshipDailyDhikrTarget??=100;data.worshipDailyDhikrPaused??=false;data.worshipReminders??={};data.voluntaryPrayers??={};data.prayerSurahLinks??={};data.prayerSurahReads??={};data.prayerSurahCounts??={};data.prayerSurahTargets??={};data.prayerSurahLinks['الفجر']??={};data.prayerSurahLinks['المغرب']??={};data.prayerSurahLinks['الفجر']['at-tariq']??=true;data.prayerSurahLinks['المغرب']['at-tariq']??=true;
     data.quran??={lastPage:0,log:[]};data.quran.log??=[];
     if(data.designSettings.background===null&&!data.designSettings.backgroundMigrated){
       const old=localStorage.getItem(BG_KEY);if(old){data.designSettings.background=old;Object.assign(data.designSettings,JSON.parse(localStorage.getItem(BG_SCOPE_KEY)||'{}'))}
@@ -45,15 +45,22 @@
       for(const s of p.timeSessions||[])if(!data.timerSessions.some(t=>t.source==='clientProject'&&t.sourceId===s.id))data.timerSessions.push({id:id(),taskId:'client:'+p.id,title:'مشروع عميل · '+p.title,date:s.date||today(),seconds:Math.max(0,Math.round(Number(s.duration||0)/1000)),source:'clientProject',sourceId:s.id,clientProjectId:p.id});
     }}
   }
-  function orderedDhikrs(list){
-    const arr=[...(list||[])];
-    arr.forEach((x,i)=>{if(!Number.isFinite(Number(data.dhikrOrder?.[x.id])))data.dhikrOrder[x.id]=i});
-    return arr.sort((a,b)=>(Number(data.dhikrOrder[a.id])||0)-(Number(data.dhikrOrder[b.id])||0));
+  function dhikrPriority(x){
+    const t=String(x?.title||'').trim().replace(/[ًٌٍَُِّْـ]/g,'');
+    if((t.includes('الصلاة')||t.includes('صل'))&&t.includes('النبي'))return 0;
+    if(t.includes('استغفار')||t.includes('استغفر'))return 1;
+    if(t.includes('لا اله الا الله وحده لا شريك له'))return 2;
+    return 99;
   }
-  function saveDhikrOrder(ids){
-    data.dhikrOrder??={};
-    ids.forEach((id,i)=>{data.dhikrOrder[id]=i});
-    save();
+  function orderedDhikrs(list){
+    const source=data.dhikrs||[],arr=[...(list||[])];
+    return arr.sort((a,b)=>{
+      const ac=dhikrCount(a,selected)>=dhikrTargetOn(a,selected),bc=dhikrCount(b,selected)>=dhikrTargetOn(b,selected);
+      if(ac!==bc)return Number(ac)-Number(bc);
+      const ap=dhikrPriority(a),bp=dhikrPriority(b);
+      if(ap!==bp)return ap-bp;
+      return source.indexOf(a)-source.indexOf(b);
+    });
   }
   const cash=n=>Number(n||0).toLocaleString('en-US')+' ₪';
   const projectPaid=p=>sum((p.payments||[]).map(x=>Number(x.amount)||0));
@@ -217,7 +224,7 @@
     adhkarDaily()+quran()+ '<div class="panel"><div class="row between"><h3>الصيام</h3>'+(tips.length?'<span class="fast-tip">🌙 تذكير: '+safe(tips.join(' · '))+'</span>':'')+'</div><form id="v3Fast" class="row"><label class="field">نوع الصيام<select name="type">'+['قضاء رمضان','نفل','نذر','كفارة','لوجه الله تعالى'].map(v=>'<option '+(fast?.type===v?'selected':'')+'>'+v+'</option>').join('')+'</select></label><label class="field">التاريخ<input name="date" type="date" value="'+selected+'"></label><label class="field">ملاحظة<input name="note" value="'+safe(fast?.note||'')+'"></label><button class="primary">'+(fast?'تحديث':'تسجيل')+'</button></form>'+(fast?'<div class="notice">مسجّل: '+safe(fast.type)+' <button class="soft" data-v3-fast-del="'+fast.id+'">حذف</button></div>':'')+'<details><summary>تذكيرات صيام النفل</summary><div class="fasting-prefs"><label><input type="checkbox" data-v3-pref="mondayThursday" '+(data.fastingPrefs.mondayThursday?'checked':'')+'> الاثنين والخميس</label><label><input type="checkbox" data-v3-pref="whiteDays" '+(data.fastingPrefs.whiteDays?'checked':'')+'> الأيام البيض</label><label><input type="checkbox" data-v3-pref="arafah" '+(data.fastingPrefs.arafah?'checked':'')+'> عرفة</label><label><input type="checkbox" data-v3-pref="ashura" '+(data.fastingPrefs.ashura?'checked':'')+'> عاشوراء</label></div></details></div>'+
     '<div class="panel worship-dhikr-panel" id="worshipDhikrSection"><div class="row between"><div><h3>أذكاري</h3><p class="sub">الإضافة والتعديل والحذف من هون فقط.</p></div><strong>مجموع اليوم: '+sum((data.dhikrs||[]).map(x=>dhikrCount(x,selected)))+'</strong></div>'+
       '<form id="v3DhikrNew" class="dhikr-new-form"><label class="field">الذكر<input name="title" required placeholder="مثلاً: سبحان الله"></label><label class="field">الهدف اليومي<input name="target" type="number" inputmode="numeric" min="1" step="1" required value="33"></label><label class="field">يبدأ يوم<input name="start" type="date" required value="'+selected+'"></label><label class="field">ينتهي يوم (اختياري)<input name="end" type="date"></label><button class="primary">إضافة ذكر</button></form>'+
-      (orderedDhikrs(dh).map(x=>'<div class="dhikr-manage-card" data-custom-dhikr-card="'+x.id+'"><button type="button" class="dhikr-drag-handle" data-dhikr-drag="'+x.id+'" aria-label="اسحبي لترتيب الذكر">☰ <span>اسحبي للترتيب</span></button><div class="dhikr-copy"><b>'+safe(x.title)+'</b><small>'+dhikrCount(x,selected)+' / '+dhikrTargetOn(x,selected)+' اليوم'+(dhikrCount(x,selected)>=dhikrTargetOn(x,selected)?' · ✓ مكتمل':'')+'</small><div class="bar"><i style="width:'+Math.min(100,pct(dhikrCount(x,selected),dhikrTargetOn(x,selected)))+'%"></i></div></div><div class="dhikr-count-row"><button class="dhikr-plus" data-v3-dhikr="'+x.id+'">+1</button><label class="field dhikr-number-field">إضافة عدد<input type="number" inputmode="numeric" min="1" step="1" placeholder="مثلاً 40" data-v3-dhikr-amount="'+x.id+'"></label><button class="primary" data-v3-dhikr-add="'+x.id+'">إضافة</button></div><div class="dhikr-manage-actions"><button class="soft" data-v3-dhikr-edit="'+x.id+'">تصحيح المجموع</button><button class="soft" data-v3-dhikr-target="'+x.id+'">تعديل الهدف</button><button class="soft" data-v3-dhikr-stop="'+x.id+'">إيقاف</button><button class="danger" data-v3-dhikr-del="'+x.id+'">حذف</button></div></div>').join('')||'<div class="empty">أضيفي أول ذكر من هون.</div>')+
+      (orderedDhikrs(dh).map(x=>'<div class="dhikr-manage-card" data-custom-dhikr-card="'+x.id+'"><div class="dhikr-copy"><b>'+safe(x.title)+'</b><small>'+dhikrCount(x,selected)+' / '+dhikrTargetOn(x,selected)+' اليوم'+(dhikrCount(x,selected)>=dhikrTargetOn(x,selected)?' · ✓ مكتمل':'')+'</small><div class="bar"><i style="width:'+Math.min(100,pct(dhikrCount(x,selected),dhikrTargetOn(x,selected)))+'%"></i></div></div><div class="dhikr-count-row"><button class="dhikr-plus" data-v3-dhikr="'+x.id+'">+1</button><label class="field dhikr-number-field">إضافة عدد<input type="number" inputmode="numeric" min="1" step="1" placeholder="مثلاً 40" data-v3-dhikr-amount="'+x.id+'"></label><button class="primary" data-v3-dhikr-add="'+x.id+'">إضافة</button></div><div class="dhikr-manage-actions"><button class="soft" data-v3-dhikr-edit="'+x.id+'">تصحيح المجموع</button><button class="soft" data-v3-dhikr-target="'+x.id+'">تعديل الهدف</button><button class="soft" data-v3-dhikr-stop="'+x.id+'">إيقاف</button><button class="danger" data-v3-dhikr-del="'+x.id+'">حذف</button></div></div>').join('')||'<div class="empty">أضيفي أول ذكر من هون.</div>')+
     '</div>'+bonusDhikrPanel()+ '<div class="panel worship-dua-panel"><h3>أدعيتي</h3><form id="worshipDuaNew" class="row"><label class="field grow">أضيفي دعاءً خاصًا<input name="text" required></label><button class="primary">إضافة</button></form>'+data.worshipDuas.map((d,i)=>'<div class="item"><span class="grow">'+safe(d.text)+'</span><button type="button" class="soft" data-worship-dua-check="'+i+'">'+(d.read?.[selected]?'✓ تمت القراءة':'○ قرأت الدعاء')+'</button><button type="button" class="soft" data-worship-dua-del="'+i+'">حذف</button></div>').join('')+'</div>'+worshipReminderPanel()
   }
   const dailyAdhkarText={
@@ -848,7 +855,10 @@
       if(card){
         const small=card.querySelector('.dhikr-copy small');if(small)small.textContent=n+' / '+target+' اليوم'+(done?' · ✓ مكتمل':'');
         const bar=card.querySelector('.bar i');if(bar)bar.style.width=Math.min(100,Math.round(n/Math.max(1,target)*100))+'%';
-        // Keep the user's manual dhikr order unchanged when counts update.
+        const all=[...root.querySelectorAll('[data-custom-dhikr-card]')];
+        const ordered=orderedDhikrs(all.map(el=>data.dhikrs.find(v=>String(v.id)===el.dataset.customDhikrCard)).filter(Boolean));
+        const parent=card.parentElement;
+        ordered.forEach(z=>{const el=all.find(v=>v.dataset.customDhikrCard===String(z.id));if(el)parent.appendChild(el)});
       }
       const heading=root?.querySelector('.row.between > strong');
       if(heading)heading.textContent='مجموع اليوم: '+(data.dhikrs||[]).reduce((s,z)=>s+dhikrCount(z,selected),0);
@@ -858,28 +868,12 @@
     document.querySelectorAll('[data-v3-dhikr]').forEach(b=>b.onclick=()=>{const x=data.dhikrs.find(z=>z.id===b.dataset.v3Dhikr);if(x)updateCustomDhikr(x,dhikrCount(x,selected)+1)});
 
     document.querySelectorAll('[data-v3-dhikr-many]').forEach(b=>b.onclick=()=>{const x=data.dhikrs.find(z=>z.id===b.dataset.v3DhikrMany),v=prompt('كم مرة بدك تضيفي؟','10');if(v===null)return;const n=parseCount(v);if(!Number.isSafeInteger(n)||n<1)return;updateCustomDhikr(x,dhikrCount(x,selected)+n)});
-    const dn=$('#v3DhikrNew');if(dn)dn.onsubmit=e=>{e.preventDefault();const f=new FormData(dn),start=f.get('start'),end=f.get('end'),target=Number(f.get('target'));if(end&&end<start){alert('تاريخ النهاية لازم يكون بعد البداية');return}if(!Number.isSafeInteger(target)||target<1){alert('اكتبي هدفًا صحيحًا بالأرقام');return}{const newId=id(),nextOrder=Math.max(-1,...Object.values(data.dhikrOrder||{}).map(Number).filter(Number.isFinite))+1;data.dhikrs.push({id:newId,title:f.get('title').trim(),target,start,end,counts:{}});data.dhikrOrder[newId]=nextOrder;save();render()}};
+    const dn=$('#v3DhikrNew');if(dn)dn.onsubmit=e=>{e.preventDefault();const f=new FormData(dn),start=f.get('start'),end=f.get('end'),target=Number(f.get('target'));if(end&&end<start){alert('تاريخ النهاية لازم يكون بعد البداية');return}if(!Number.isSafeInteger(target)||target<1){alert('اكتبي هدفًا صحيحًا بالأرقام');return}data.dhikrs.push({id:id(),title:f.get('title').trim(),target,start,end,counts:{}});save();render()};
     document.querySelectorAll('[data-v3-dhikr-add]').forEach(b=>b.onclick=()=>{const x=data.dhikrs.find(z=>z.id===b.dataset.v3DhikrAdd),input=document.querySelector('[data-v3-dhikr-amount="'+b.dataset.v3DhikrAdd+'"]'),n=Number(input?.value);if(!Number.isSafeInteger(n)||n<1){input?.focus();return}updateCustomDhikr(x,dhikrCount(x,selected)+n)});
     document.querySelectorAll('[data-v3-dhikr-edit]').forEach(b=>b.onclick=()=>{const x=data.dhikrs.find(z=>z.id===b.dataset.v3DhikrEdit),v=prompt('المجموع الصحيح لليوم',String(dhikrCount(x,selected)));if(v===null)return;const n=parseCount(v);if(!Number.isSafeInteger(n)||n<0){alert('اكتبي رقمًا صحيحًا من صفر فما فوق');return}x.counts??={};x.counts[selected]=n;save();render()});
     document.querySelectorAll('[data-v3-dhikr-target]').forEach(b=>b.onclick=()=>{const x=data.dhikrs.find(z=>z.id===b.dataset.v3DhikrTarget),v=prompt('الهدف اليومي الجديد',String(dhikrTargetOn(x,selected)));if(v===null)return;const n=parseCount(v);if(!Number.isSafeInteger(n)||n<1){alert('اكتبي رقمًا صحيحًا أكبر من صفر');return}x.initialTarget??=x.target;x.targetHistory??=[];x.targetHistory=x.targetHistory.filter(item=>item.from!==selected);x.targetHistory.push({from:selected,target:n});x.targetHistory.sort((a,b)=>a.from.localeCompare(b.from));x.target=n;save();render()});
     document.querySelectorAll('[data-v3-dhikr-stop]').forEach(b=>b.onclick=()=>{const x=data.dhikrs.find(z=>z.id===b.dataset.v3DhikrStop);if(x&&confirm('إيقاف هذا الذكر من اليوم؟')){x.stopped=selected;save();render()}});
-    document.querySelectorAll('[data-v3-dhikr-del]').forEach(b=>b.onclick=()=>{if(confirm('حذف هذا الذكر وكل سجله؟')){const did=b.dataset.v3DhikrDel;data.dhikrs=data.dhikrs.filter(x=>x.id!==did);if(data.dhikrOrder)delete data.dhikrOrder[did];save();render()}});
-    function persistDhikrDomOrder(){
-      const root=document.getElementById('worshipDhikrSection');if(!root)return;
-      saveDhikrOrder([...root.querySelectorAll('[data-custom-dhikr-card]')].map(el=>el.dataset.customDhikrCard));
-    }
-    document.querySelectorAll('[data-dhikr-drag]').forEach(handle=>{
-      const card=handle.closest('[data-custom-dhikr-card]');if(!card)return;
-      handle.draggable=true;
-      handle.addEventListener('dragstart',e=>{card.classList.add('dhikr-dragging');e.dataTransfer?.setData('text/plain',card.dataset.customDhikrCard);if(e.dataTransfer)e.dataTransfer.effectAllowed='move'});
-      handle.addEventListener('dragend',()=>{card.classList.remove('dhikr-dragging');persistDhikrDomOrder()});
-      card.addEventListener('dragover',e=>{e.preventDefault();const root=card.parentElement,drag=root.querySelector('.dhikr-dragging');if(!drag||drag===card)return;const r=card.getBoundingClientRect();root.insertBefore(drag,e.clientY<r.top+r.height/2?card:card.nextSibling)});
-      let active=false;
-      handle.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')return;active=true;card.classList.add('dhikr-dragging');handle.setPointerCapture?.(e.pointerId);e.preventDefault()});
-      handle.addEventListener('pointermove',e=>{if(!active)return;e.preventDefault();const root=card.parentElement,cards=[...root.querySelectorAll('[data-custom-dhikr-card]:not(.dhikr-dragging)')];const target=cards.find(el=>{const r=el.getBoundingClientRect();return e.clientY<r.top+r.height/2});target?root.insertBefore(card,target):root.appendChild(card)});
-      const finish=()=>{if(!active)return;active=false;card.classList.remove('dhikr-dragging');persistDhikrDomOrder()};
-      handle.addEventListener('pointerup',finish);handle.addEventListener('pointercancel',finish);
-    });
+    document.querySelectorAll('[data-v3-dhikr-del]').forEach(b=>b.onclick=()=>{if(confirm('حذف هذا الذكر وكل سجله؟')){data.dhikrs=data.dhikrs.filter(x=>x.id!==b.dataset.v3DhikrDel);save();render()}});
     const ff=$('#v3Fast');if(ff)ff.onsubmit=e=>{e.preventDefault();const f=new FormData(ff),d=f.get('date'),o=data.fastingLog.find(x=>x.date===d),r={id:o?.id||id(),date:d,type:f.get('type'),note:f.get('note').trim()};o?Object.assign(o,r):data.fastingLog.push(r);selected=d;save();render()};
     document.querySelectorAll('[data-v3-fast-del]').forEach(b=>b.onclick=()=>{data.fastingLog=data.fastingLog.filter(x=>x.id!==b.dataset.v3FastDel);save();render()});
     document.querySelectorAll('[data-v3-pref]').forEach(x=>x.onchange=()=>{data.fastingPrefs[x.dataset.v3Pref]=x.checked;save();render()});
