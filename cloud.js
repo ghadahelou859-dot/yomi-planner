@@ -14,7 +14,8 @@ if (ready && !window.YOMI_CLOUD_READY) {
   const baseKey = 'yomi-sync-base-v2';
   const archiveKey = 'yomi-conflict-archives-v1';
   const bootstrapArchiveKey = 'yomi-account-first-bootstrap-v1';
-  let user = null, base = null, remoteUpdatedAt = null, timer = null, busy = false, conflictSnapshot = null;
+  let user = null, base = null, remoteUpdatedAt = null, timer = null, busy = false, conflictSnapshot = null, accountGateMode = 'login';
+  const pinEmailKey='yomi-pin-email-v1';
   window.yomiMemoriesSession = () => user ? {client,user} : null;
   const notifyMemories = () => window.dispatchEvent(new Event('yomi-cloud-session'));
   const conflictDialog = document.getElementById('conflictDialog');
@@ -232,15 +233,23 @@ if (ready && !window.YOMI_CLOUD_READY) {
   }
   function schedule() {clearTimeout(timer);timer=setTimeout(()=>{timer=null;reconcile()},900)}
   save = () => {saveLocal();paint(!navigator.onLine?'بدون نت · محفوظ على هذا الجهاز':user?'جارٍ المزامنة…':'محفوظ على هذا الجهاز · سجّلي الدخول للمزامنة');if(user&&navigator.onLine)schedule()};
-  async function showAccount() {
+  function finishAccountGate(email=''){
+    gate.hidden=true;
+    if(email)localStorage.setItem(pinEmailKey,String(email).toLowerCase());
+    const type=accountGateMode==='reset-pin'?'yomi-account-pin-reset-ready':'yomi-account-ready';
+    window.dispatchEvent(new CustomEvent(type,{detail:{email:user?.email||email||''}}));
+    accountGateMode='login';
+  }
+  async function showAccount(mode) {
+    if(mode)accountGateMode=mode;
     if(!navigator.onLine){gate.hidden=true;paint('بدون نت · محفوظ على هذا الجهاز');return}
-    if(user){gate.hidden=true;await reconcile();return}
+    if(user){gate.hidden=true;await reconcile();notifyMemories();finishAccountGate(user.email);return}
     status.textContent='جارٍ التحقق من الحساب…';
     try {
       const {data:{user:found},error}=await client.auth.getUser();
-      if(found){user=found;identify();loadBase();gate.hidden=true;document.getElementById('signOutBtn').hidden=false;await reconcile();notifyMemories();return}
+      if(found){user=found;identify();loadBase();gate.hidden=true;document.getElementById('signOutBtn').hidden=false;await reconcile();notifyMemories();finishAccountGate(found.email);return}
       gate.hidden=false;
-      status.textContent=error && error.name!=='AuthSessionMissingError'?'تعذّر التحقق من الحساب. تحققي من الاتصال.':'سجّلي دخولك بنفس البريد وكلمة المرور على الهاتف واللابتوب، وبعدها استخدمي نفس رمز الـPIN.';
+      status.textContent=error && error.name!=='AuthSessionMissingError'?'تعذّر التحقق من الحساب. تحققي من الاتصال.':'سجّلي دخولك بنفس البريد وكلمة المرور. بعدها سيظهر رمز الـPIN المرتبط بهذا الحساب.';
     } catch(e) {gate.hidden=false;status.textContent='تعذّر الاتصال بالحساب. بيانات هذا الجهاز محفوظة.';console.error('Account check failed',e)}
   }
   form.onsubmit=async event=>{
@@ -251,10 +260,10 @@ if (ready && !window.YOMI_CLOUD_READY) {
     const result=action==='signup'?await client.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}}):await client.auth.signInWithPassword({email,password});
     if(result.error){status.textContent=result.error.message;return}
     if(!result.data.user||!result.data.session){status.textContent='راجعي بريدك لتأكيد الحساب، ثم سجّلي الدخول.';return}
-    user=result.data.user;identify();loadBase();gate.hidden=true;document.getElementById('signOutBtn').hidden=false;localStorage.setItem(PIN_EMAIL_KEY,email);form.reset();await reconcile();notifyMemories();window.dispatchEvent(new Event('yomi-account-ready'));
+    user=result.data.user;identify();loadBase();gate.hidden=true;document.getElementById('signOutBtn').hidden=false;localStorage.setItem(pinEmailKey,email);form.reset();await reconcile();notifyMemories();finishAccountGate(email);
   };
-  window.addEventListener('yomi-pin-unlocked',showAccount);
-  window.addEventListener('yomi-account-gate-request',showAccount);
+  window.addEventListener('yomi-pin-unlocked',()=>showAccount());
+  window.addEventListener('yomi-account-gate-request',e=>showAccount(e.detail?.mode||'login'));
   if(document.getElementById('lock').classList.contains('hidden'))showAccount();
   document.getElementById('offlineBtn').onclick=()=>{gate.hidden=true;paint('بيانات هذا الجهاز فقط · سجّلي الدخول لاحقًا للمزامنة')};
   syncBtn.onclick=()=>{if(!navigator.onLine){paint('بدون نت · محفوظ على هذا الجهاز');return}if(user)reconcile();else showAccount()};
