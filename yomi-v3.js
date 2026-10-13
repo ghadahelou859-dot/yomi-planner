@@ -293,6 +293,28 @@
       rows.map(x=>'<div class="stat">'+safe(x.name)+'<b>'+x.count+' يوم</b></div>').join('')+
       '<div class="stat">الثلاثة مكتملة<b>'+all+' يوم</b></div><div class="stat">أيام فيها أذكار مسجّلة<b>'+any+' يوم</b></div></div></div>';
   }
+  function bonusDhikrReportPanel(){
+    const allDays=Object.keys(data.worshipDailyDhikr||{})
+      .filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&Math.max(0,Number(data.worshipDailyDhikr[d])||0)>0)
+      .sort();
+    let running=0;
+    const allRows=allDays.map(d=>{
+      const count=Math.max(0,Number(data.worshipDailyDhikr[d])||0);
+      running+=count;
+      const dayNo=Math.floor(Date.parse(d+'T00:00:00Z')/86400000);
+      const name=bonusDhikrList[((dayNo%bonusDhikrList.length)+bonusDhikrList.length)%bonusDhikrList.length];
+      return {date:d,name,count,running};
+    });
+    const rows=allRows.filter(x=>belongs(x.date));
+    const periodTotal=rows.reduce((s,x)=>s+x.count,0);
+    const grandTotal=allRows.reduce((s,x)=>s+x.count,0);
+    return '<div class="panel worship-bonus-report"><div class="row between"><div><h3>🌷 تقرير ذكر النية</h3><p class="sub">سجل مستقل محفوظ يومًا بيوم.</p></div><div class="stat">إجمالي الفترة<b>'+periodTotal.toLocaleString('en-US')+'</b></div></div>'+
+      (rows.length?'<div class="table-wrap"><table><thead><tr><th>التاريخ</th><th>الذكر</th><th>عدد اليوم</th><th>المجموع التراكمي</th></tr></thead><tbody>'+
+        rows.slice().reverse().map(x=>'<tr><td>'+safe(dateLabel(x.date))+'</td><td>'+safe(x.name)+'</td><td><b>'+x.count.toLocaleString('en-US')+'</b></td><td>'+x.running.toLocaleString('en-US')+'</td></tr>').join('')+
+        '</tbody></table></div><p class="sub">الإجمالي الكلي لكل الأيام: <b>'+grandTotal.toLocaleString('en-US')+'</b></p>':
+        '<div class="empty">ما في ذكر نية مسجّل ضمن فترة التقرير الحالية.</div>')+
+      '</div>';
+  }
   function worshipWorkStreak(work){
     const allowed=Math.max(0,Math.min(30,Number(work.graceDays)||0));
     const dateStr=selected;
@@ -1245,7 +1267,7 @@
     if(page==='home'){document.querySelectorAll('.special-date-card').forEach(x=>x.remove());$('#view').insertAdjacentHTML('afterbegin',specialDateHome()+homeExtra());attach()}
     if(page==='cycle'){$('#view').insertAdjacentHTML('beforeend',cycleExtra());attach()}
     if(page==='finance'){document.querySelector('.y2-debts')?.remove();$('#view').insertAdjacentHTML('beforeend',debtExtra());attach()}
-    if(page==='reports'){$('#view').insertAdjacentHTML('beforeend',adhkarReportPanel())}
+    if(page==='reports'){$('#view').insertAdjacentHTML('beforeend',adhkarReportPanel()+bonusDhikrReportPanel())}
     stickers();paint()
   };
   window.addEventListener('yomi-pin-unlocked',()=>{stickers();paint()});
