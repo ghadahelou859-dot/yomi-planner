@@ -252,6 +252,13 @@ if (ready && !window.YOMI_CLOUD_READY) {
       status.textContent=error && error.name!=='AuthSessionMissingError'?'تعذّر التحقق من الحساب. تحققي من الاتصال.':'سجّلي بنفس البريد وكلمة المرور المستخدمة على أجهزتك. بيانات يومي ستظهر تلقائيًا بعد الدخول.';
     } catch(e) {gate.hidden=false;status.textContent='تعذّر الاتصال بالحساب. بيانات هذا الجهاز محفوظة.';console.error('Account check failed',e)}
   }
+  document.getElementById('forgotPasswordBtn')?.addEventListener('click',async()=>{
+    const email=form.elements.email.value.trim().toLowerCase();
+    if(!/^\S+@\S+\.\S+$/.test(email)){status.textContent='اكتبي بريدك الإلكتروني أولًا';form.elements.email.focus();return}
+    status.textContent='جارٍ إرسال رابط إعادة التعيين…';
+    const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+    status.textContent=error?error.message:'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.';
+  });
   form.onsubmit=async event=>{
     event.preventDefault();
     const email=form.elements.email.value.trim().toLowerCase(),password=form.elements.password.value;
