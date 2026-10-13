@@ -249,7 +249,7 @@ if (ready && !window.YOMI_CLOUD_READY) {
       const {data:{user:found},error}=await client.auth.getUser();
       if(found){user=found;identify();loadBase();gate.hidden=true;document.getElementById('signOutBtn').hidden=false;await reconcile();notifyMemories();finishAccountGate(found.email);return}
       gate.hidden=false;
-      status.textContent=error && error.name!=='AuthSessionMissingError'?'تعذّر التحقق من الحساب. تحققي من الاتصال.':'سجّلي بنفس البريد وكلمة المرور المستخدمة على أجهزتك. بيانات يومي ستظهر تلقائيًا بعد الدخول.';
+      status.textContent=error && error.name!=='AuthSessionMissingError'?'تعذّر التحقق من الحساب. تحققي من الاتصال.':'سجّلي بنفس البريد وكلمة مرور الحساب. بعد الدخول، رمز PIN يفتح التطبيق فقط ولا يغيّر كلمة مرور الحساب.';
     } catch(e) {gate.hidden=false;status.textContent='تعذّر الاتصال بالحساب. بيانات هذا الجهاز محفوظة.';console.error('Account check failed',e)}
   }
   const sessionPasswordDialog=document.getElementById('sessionPasswordDialog');
@@ -290,7 +290,7 @@ if (ready && !window.YOMI_CLOUD_READY) {
     status.textContent='جارٍ إرسال رابط إعادة التعيين…';
     const redirectTo='https://ghadahelou859-dot.github.io/yomi-planner/?recover=1';
     const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo});
-    status.textContent=error?error.message:'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني. افتحي الرابط من نفس المتصفح.';
+    status.textContent=error?error.message:'تم إرسال رابط إعادة تعيين كلمة مرور الحساب. بعد تغييرها سيبقى رمز PIN منفصلًا لفتح التطبيق.';
   });
 
   const passwordResetDialog=document.getElementById('passwordResetDialog');
@@ -321,7 +321,7 @@ if (ready && !window.YOMI_CLOUD_READY) {
     try{history.replaceState({},document.title,location.pathname)}catch{}
     await reconcile();
     notifyMemories();
-    accountGateMode='reset-pin';
+    accountGateMode='login';
     finishAccountGate(user?.email||'');
   });
 
