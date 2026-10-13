@@ -1550,3 +1550,65 @@ body[data-user-bg="1"],body[data-user-bg="1"]::before,.lock{background-position:
     bottom:calc(78px + env(safe-area-inset-bottom))!important;
   }
 }
+
+
+/* الأيام المميزة: العرض في يومي والإدارة من التقويم */
+.v3-special-home{display:grid;gap:12px}
+.special-home-display{
+  position:relative;
+  min-height:210px;
+  overflow:hidden;
+  border-radius:24px;
+  border:1px solid rgba(126,96,78,.16);
+  background:linear-gradient(135deg,rgba(239,225,211,.96),rgba(221,201,184,.96));
+  box-shadow:0 12px 30px rgba(62,43,50,.10);
+}
+.special-home-bg,.special-home-bg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.special-home-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(28,22,25,.10),rgba(28,22,25,.52))}
+.special-home-content{
+  position:relative;
+  z-index:2;
+  min-height:210px;
+  padding:24px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:18px;
+}
+.special-home-content h3{margin:4px 0;font-size:1.55rem}
+.special-home-content small{display:block;color:#755f68}
+.special-home-kicker{font-size:.86rem;font-weight:800;color:#775c66}
+.special-home-count{
+  flex:0 0 auto;
+  max-width:48%;
+  padding:13px 16px;
+  border-radius:18px;
+  background:rgba(255,255,255,.56);
+  border:1px solid rgba(255,255,255,.65);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  text-align:center;
+}
+.special-home-count b{font-size:1.2rem;line-height:1.25}
+.special-home-display.has-bg .special-home-content,
+.special-home-display.has-bg .special-home-content small,
+.special-home-display.has-bg .special-home-kicker{color:#fff}
+.special-home-display.has-bg .special-home-count{background:rgba(20,16,18,.30);color:#fff;border-color:rgba(255,255,255,.38)}
+
+.special-date-manager details{border:1px solid rgba(126,96,78,.14);border-radius:16px;background:rgba(255,255,255,.36);margin-top:10px;overflow:hidden}
+.special-date-manager summary{cursor:pointer;padding:13px 14px;font-weight:800}
+.special-date-manage-item summary{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.special-date-manage-item summary small{font-weight:500;color:#806d75;text-align:left}
+.special-date-manager form{padding:14px;border-top:1px solid rgba(126,96,78,.10)}
+.special-date-bg-preview{width:100%;max-width:420px;height:160px;border-radius:16px;overflow:hidden;margin:10px 0;background:#eee}
+.special-date-bg-preview img{width:100%;height:100%;object-fit:cover}
+
+@media(max-width:720px){
+  .special-home-display,.special-home-content{min-height:190px}
+  .special-home-content{padding:18px;align-items:flex-end}
+  .special-home-content h3{font-size:1.28rem}
+  .special-home-count{max-width:52%;padding:11px 13px}
+  .special-home-count b{font-size:1.02rem}
+  .special-date-manage-item summary{align-items:flex-start;flex-direction:column}
+  .special-date-manager .field{min-width:100%}
+}
