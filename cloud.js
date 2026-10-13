@@ -252,6 +252,38 @@ if (ready && !window.YOMI_CLOUD_READY) {
       status.textContent=error && error.name!=='AuthSessionMissingError'?'تعذّر التحقق من الحساب. تحققي من الاتصال.':'سجّلي بنفس البريد وكلمة المرور المستخدمة على أجهزتك. بيانات يومي ستظهر تلقائيًا بعد الدخول.';
     } catch(e) {gate.hidden=false;status.textContent='تعذّر الاتصال بالحساب. بيانات هذا الجهاز محفوظة.';console.error('Account check failed',e)}
   }
+  const sessionPasswordDialog=document.getElementById('sessionPasswordDialog');
+  const sessionPasswordForm=document.getElementById('sessionPasswordForm');
+  const sessionPasswordError=document.getElementById('sessionPasswordError');
+  document.getElementById('sessionPasswordBtn')?.addEventListener('click',async()=>{
+    if(sessionPasswordError)sessionPasswordError.textContent='جارٍ التحقق من الجلسة المحفوظة…';
+    const {data:{session},error}=await client.auth.getSession();
+    if(error||!session?.user){
+      if(sessionPasswordError)sessionPasswordError.textContent='';
+      status.textContent='ما في جلسة حساب محفوظة على هذا الجهاز. استخدمي استرجاع الإيميل بعد انتهاء حد الإرسال.';
+      return;
+    }
+    user=session.user;identify();loadBase();
+    if(sessionPasswordError)sessionPasswordError.textContent='';
+    sessionPasswordForm?.reset();
+    if(sessionPasswordDialog&&!sessionPasswordDialog.open)sessionPasswordDialog.showModal();
+  });
+  document.getElementById('sessionPasswordCancel')?.addEventListener('click',()=>sessionPasswordDialog?.close());
+  sessionPasswordForm?.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const f=new FormData(e.currentTarget);
+    const password=String(f.get('password')||'');
+    const confirmPassword=String(f.get('confirmPassword')||'');
+    if(password.length<8){sessionPasswordError.textContent='كلمة المرور لازم تكون 8 أحرف على الأقل';return}
+    if(password!==confirmPassword){sessionPasswordError.textContent='تأكيد كلمة المرور غير مطابق';return}
+    sessionPasswordError.textContent='جارٍ حفظ كلمة المرور…';
+    const {data:updateData,error}=await client.auth.updateUser({password});
+    if(error){sessionPasswordError.textContent=error.message;return}
+    user=updateData.user||user;identify();loadBase();
+    sessionPasswordDialog.close();
+    await reconcile();notifyMemories();finishAccountGate(user.email||'');
+  });
+
   document.getElementById('forgotPasswordBtn')?.addEventListener('click',async()=>{
     const email=form.elements.email.value.trim().toLowerCase();
     if(!/^\S+@\S+\.\S+$/.test(email)){status.textContent='اكتبي بريدك الإلكتروني أولًا';form.elements.email.focus();return}
