@@ -283,7 +283,7 @@ $('#pinInput')?.addEventListener('input',e=>{
   refreshPinDots();$('#pinError').textContent='';
 });
 document.querySelectorAll('[data-pin-key]').forEach(btn=>btn.addEventListener('click',e=>{e.preventDefault();pinAddDigit(btn.dataset.pinKey)}));
-document.addEventListener('keydown',e=>{if($('#lock')?.classList.contains('hidden'))return;if(e.target?.closest?.('#passwordResetDialog,#sessionPasswordDialog'))return;if(/^\d$/.test(e.key)){e.preventDefault();pinAddDigit(e.key)}else if(e.key==='Backspace'){e.preventDefault();pinSetValue(pinValue().slice(0,-1))}else if(e.key==='Escape'){e.preventDefault();pinSetValue('')}}); /* yomi-hidden-pin-keyboard */
+document.addEventListener('keydown',e=>{if($('#lock')?.classList.contains('hidden'))return;if(e.target?.closest?.('#passwordResetDialog,#sessionPasswordDialog,#pinResetDialog'))return;if(/^\d$/.test(e.key)){e.preventDefault();pinAddDigit(e.key)}else if(e.key==='Backspace'){e.preventDefault();pinSetValue(pinValue().slice(0,-1))}else if(e.key==='Escape'){e.preventDefault();pinSetValue('')}}); /* yomi-hidden-pin-keyboard */
 document.querySelector('[data-pin-back]')?.addEventListener('click',e=>{e.preventDefault();pinSetValue(pinValue().slice(0,-1))});
 document.querySelector('[data-pin-clear]')?.addEventListener('click',e=>{e.preventDefault();pinSetValue('')});
 async function pinDigest(pin,salt){
