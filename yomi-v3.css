@@ -1612,3 +1612,20 @@ body[data-user-bg="1"],body[data-user-bg="1"]::before,.lock{background-position:
   .special-date-manage-item summary{align-items:flex-start;flex-direction:column}
   .special-date-manager .field{min-width:100%}
 }
+
+
+/* معاينة صورة اليوم المميز + تعتيم */
+.special-date-file-preview{
+  width:100%;
+  max-width:420px;
+  height:180px;
+  border-radius:16px;
+  overflow:hidden;
+  margin:10px 0;
+  background:rgba(255,255,255,.45);
+  border:1px solid rgba(126,96,78,.14);
+}
+.special-date-file-preview[hidden]{display:none}
+.special-date-file-preview img{width:100%;height:100%;object-fit:cover;display:block}
+.special-date-shade-control{max-width:420px}
+.special-date-shade-control input[type="range"]{width:100%}
