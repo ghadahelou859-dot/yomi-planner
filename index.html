@@ -208,7 +208,35 @@ function streakAt(day=today()){
  return {count,missed};
 }
 
-function nav(){ $('#nav').innerHTML=pages.map(([k,v])=>`<button class="${page===k?'active':''}" data-page="${k}">${v}</button>`).join('');$('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>{page=b.dataset.page;render()})}function datePicker(){return `<label class="field">التاريخ<input id="dateSelect" type="date" value="${selected}"></label>`}function periodTabs(){return `<div class="tabs">${[['daily','يومي'],['monthly','شهري'],['yearly','سنوي']].map(([k,v])=>`<button class="tab ${range===k?'active':''}" data-range="${k}">${v}</button>`).join('')}</div>`}function common(){return `<div class="row between">${periodTabs()}${datePicker()}</div>`}function attachCommon(){const d=$('#dateSelect');if(d)d.onchange=e=>{selected=e.target.value||today();render()};document.querySelectorAll('[data-range]').forEach(b=>b.onclick=()=>{range=b.dataset.range;render()})}function tasksStats(r=range){return taskCounts(r)}
+function nav(){
+  const el=$('#nav'),mobile=window.matchMedia('(max-width:720px)').matches;
+  document.getElementById('yomiMobileMoreSheet')?.remove();
+  el.classList.toggle('yomi-mobile-main-nav',mobile);
+  const openPage=k=>{if(!k)return;page=k;window.scrollTo({top:0,behavior:'auto'});render()};
+  if(!mobile){
+    el.innerHTML=pages.map(([k,v])=>`<button class="${page===k?'active':''}" data-page="${k}">${v}</button>`).join('');
+    el.querySelectorAll('button[data-page]').forEach(b=>b.onclick=()=>openPage(b.dataset.page));
+    return;
+  }
+  const primary=pages.slice(0,4),morePages=pages.slice(4),moreActive=morePages.some(([k])=>k===page);
+  el.innerHTML=primary.map(([k,v])=>`<button class="${page===k?'active':''}" data-page="${k}">${v}</button>`).join('')+
+    `<button type="button" class="yomi-mobile-more-btn ${moreActive?'active':''}" id="yomiMobileMoreBtn" aria-expanded="false">المزيد ⋯</button>`;
+  el.querySelectorAll('button[data-page]').forEach(b=>b.onclick=()=>openPage(b.dataset.page));
+  const sheet=document.createElement('div');
+  sheet.id='yomiMobileMoreSheet';sheet.className='yomi-mobile-more-sheet';sheet.hidden=true;
+  sheet.innerHTML='<div class="yomi-mobile-more-sheet-grid">'+morePages.map(([k,v])=>`<button type="button" class="${page===k?'active':''}" data-more-page="${k}">${v}</button>`).join('')+'</div>';
+  document.body.appendChild(sheet);
+  sheet.querySelectorAll('[data-more-page]').forEach(b=>b.onclick=()=>openPage(b.dataset.morePage));
+  const moreBtn=document.getElementById('yomiMobileMoreBtn');
+  moreBtn.onclick=e=>{e.preventDefault();e.stopPropagation();sheet.hidden=!sheet.hidden;moreBtn.setAttribute('aria-expanded',String(!sheet.hidden))};
+  if(!window.yomiMoreOutsideBound){
+    window.yomiMoreOutsideBound=true;
+    document.addEventListener('click',e=>{
+      const s=document.getElementById('yomiMobileMoreSheet'),m=document.getElementById('yomiMobileMoreBtn');
+      if(s&&!s.hidden&&!s.contains(e.target)&&!m?.contains(e.target)){s.hidden=true;m?.setAttribute('aria-expanded','false')}
+    });
+  }
+}function datePicker(){return `<label class="field">التاريخ<input id="dateSelect" type="date" value="${selected}"></label>`}function periodTabs(){return `<div class="tabs">${[['daily','يومي'],['monthly','شهري'],['yearly','سنوي']].map(([k,v])=>`<button class="tab ${range===k?'active':''}" data-range="${k}">${v}</button>`).join('')}</div>`}function common(){return `<div class="row between">${periodTabs()}${datePicker()}</div>`}function attachCommon(){const d=$('#dateSelect');if(d)d.onchange=e=>{selected=e.target.value||today();render()};document.querySelectorAll('[data-range]').forEach(b=>b.onclick=()=>{range=b.dataset.range;render()})}function tasksStats(r=range){return taskCounts(r)}
 function plant(){const rest=data.restDays.includes(selected);const [completed,totalToday]=taskCounts('daily');const percent=pct(completed,totalToday);const steps=monthSteps(selected);const stage=steps<3?1:steps<8?2:steps<16?3:4;return `<div class="plant"><img class="plant-image" src="assets/plant-${stage}.webp" alt="وردة الأناناس: مرحلة ${stage} من 4"><div class="plant-copy"><h3>وردة الأناناس</h3><div class="plant-note">${rest?'اليوم راحة، ووردتك بخير':'كل خطوة بتسقي وردتك، وبإمكانك تبدئي من جديد كل يوم'}</div><div class="sub">${steps} خطوة هذا الشهر · مرحلة ${stage} من 4</div></div><div class="progress-ring" style="background:conic-gradient(#bd925a ${percent}%,#eaded0 ${percent}%)" role="img" aria-label="إنجاز اليوم ${percent} بالمئة"><span>${rest?'راحة':percent+'٪'}</span></div></div>`}
 function donut(entries,center,caption,formatter=n=>String(n)){
  const palette=['#a8738b','#bb925c','#749485','#746b99','#c98570','#7f96ad','#a6a067','#aa7797'];
@@ -499,99 +527,6 @@ window.addEventListener('offline',()=>{let badge=$('#cloudBadge');badge.hidden=f
   .yomi-mobile-more-sheet,.yomi-mobile-more-btn{display:none!important}
 }
 </style>
-<script id="yomi-mobile-more-nav-script">
-(()=>{
-  const nav=document.getElementById('nav');
-  if(!nav)return;
-  const mq=window.matchMedia('(max-width:720px)');
-  let applying=false;
 
-  function closeMore(){
-    const sheet=document.getElementById('yomiMobileMoreSheet');
-    if(sheet)sheet.hidden=true;
-    nav.querySelector('.yomi-mobile-more-btn')?.setAttribute('aria-expanded','false');
-  }
-
-  function openPage(key){
-    if(!key)return;
-    try{
-      page=key;
-      closeMore();
-      window.scrollTo({top:0,behavior:'auto'});
-      render();
-    }catch(err){console.error('Yomi mobile more navigation failed',err)}
-  }
-
-  function apply(){
-    if(applying)return;
-    applying=true;
-    try{
-      document.getElementById('yomiMobileMoreSheet')?.remove();
-      nav.querySelector('.yomi-mobile-more-btn')?.remove();
-      nav.querySelectorAll('[data-yomi-more-hidden]').forEach(b=>b.removeAttribute('data-yomi-more-hidden'));
-      nav.classList.remove('yomi-mobile-main-nav');
-
-      if(!mq.matches)return;
-
-      const buttons=[...nav.querySelectorAll(':scope > button[data-page]')];
-      if(buttons.length<=5)return;
-
-      nav.classList.add('yomi-mobile-main-nav');
-      const visibleCount=4;
-      const hiddenButtons=buttons.slice(visibleCount);
-      hiddenButtons.forEach(b=>b.dataset.yomiMoreHidden='1');
-
-      const more=document.createElement('button');
-      more.type='button';
-      more.className='yomi-mobile-more-btn';
-      more.textContent='المزيد ⋯';
-      more.setAttribute('aria-expanded','false');
-      if(hiddenButtons.some(b=>b.classList.contains('active')))more.classList.add('active');
-      nav.appendChild(more);
-
-      const sheet=document.createElement('div');
-      sheet.id='yomiMobileMoreSheet';
-      sheet.className='yomi-mobile-more-sheet';
-      sheet.hidden=true;
-      const grid=document.createElement('div');
-      grid.className='yomi-mobile-more-sheet-grid';
-
-      hiddenButtons.forEach(source=>{
-        const b=document.createElement('button');
-        b.type='button';
-        b.textContent=source.textContent;
-        b.dataset.morePage=source.dataset.page;
-        if(source.classList.contains('active'))b.classList.add('active');
-        b.addEventListener('click',()=>openPage(b.dataset.morePage));
-        grid.appendChild(b);
-      });
-      sheet.appendChild(grid);
-      document.body.appendChild(sheet);
-
-      more.addEventListener('click',e=>{
-        e.preventDefault();
-        e.stopPropagation();
-        sheet.hidden=!sheet.hidden;
-        more.setAttribute('aria-expanded',String(!sheet.hidden));
-      });
-    }finally{applying=false}
-  }
-
-  let queued=false;
-  const queueApply=()=>{
-    if(queued)return;
-    queued=true;
-    requestAnimationFrame(()=>{queued=false;apply()});
-  };
-  new MutationObserver(queueApply).observe(nav,{childList:true});
-  mq.addEventListener?.('change',queueApply);
-  document.addEventListener('click',e=>{
-    const sheet=document.getElementById('yomiMobileMoreSheet');
-    const more=nav.querySelector('.yomi-mobile-more-btn');
-    if(sheet&&!sheet.hidden&&!sheet.contains(e.target)&&!more?.contains(e.target))closeMore();
-  });
-  queueApply();
-})();
-</script>
 </body></html>
 
