@@ -471,7 +471,9 @@
       const count=diff===0?'اليوم':diff>0?'باقي '+diff+' يوم':'مرّ '+Math.abs(diff)+' يوم';
       return '<div class="special-home-row"><span class="big-sticker">'+safe(x.sticker||'⭐')+'</span><div class="grow"><b>'+safe(x.title)+'</b><small>'+safe(target?dateLabel(target):'')+' · '+count+'</small></div><button class="soft" data-v3-special-hide="'+x.id+'">إخفاء من يومي</button></div>'
     }).join('');
-    return '<div class="panel special-date-card v3-special-home"><div class="row between"><h3>✨ اليوم المميز</h3>'+(hidden.length?'<button class="soft" data-v3-special-show-all>إرجاع المخفي ('+hidden.length+')</button>':'')+'</div>'+(cards||'<div class="empty">ما في تاريخ مميز ظاهر حاليًا.'+(hidden.length?' اضغطي «إرجاع المخفي».':'')+'</div>')+'</div>'
+    return '<div class="panel special-date-card v3-special-home"><div class="row between"><h3>✨ اليوم المميز</h3><div class="row"><button type="button" class="primary" data-v3-special-add>＋ إضافة يوم مميز</button>'+(hidden.length?'<button class="soft" data-v3-special-show-all>إرجاع المخفي ('+hidden.length+')</button>':'')+'</div></div>'+
+      '<form id="v3SpecialNewHome" class="special-date-add-form" hidden><div class="row"><label class="field">اسم اليوم<input name="title" required maxlength="100" placeholder="مثلاً: عيد ميلادي"></label><label class="field">التاريخ<input name="date" type="date" value="'+selected+'" required></label><label class="field">الرمز<input name="sticker" maxlength="8" value="⭐" placeholder="⭐"></label><label class="field">يتكرر كل سنة<select name="yearly"><option value="0">لا</option><option value="1">نعم</option></select></label></div><div class="row"><button class="primary">حفظ اليوم المميز</button><button type="button" class="soft" data-v3-special-add-cancel>إلغاء</button></div></form>'+
+      (cards||'<div class="empty">ما في تاريخ مميز ظاهر حاليًا.'+(hidden.length?' اضغطي «إرجاع المخفي».':'')+'</div>')+'</div>'
   }
 
   function homeExtra(){
@@ -1252,6 +1254,14 @@
     document.querySelectorAll('[data-v3-period-del]').forEach(b=>b.onclick=()=>{if(confirm('حذف هذا التسجيل؟')){data.periods=data.periods.filter(x=>x.id!==b.dataset.v3PeriodDel);save();render()}});
     document.querySelectorAll('[data-v3-special-hide]').forEach(b=>b.onclick=()=>{const x=data.importantDates.find(v=>v.id===b.dataset.v3SpecialHide);if(x){x.showHome=false;save();render()}});
     document.querySelector('[data-v3-special-show-all]')?.addEventListener('click',()=>{for(const x of data.importantDates||[])x.showHome=true;save();render()});
+    const specialHomeForm=$('#v3SpecialNewHome');
+    document.querySelector('[data-v3-special-add]')?.addEventListener('click',()=>{
+      if(!specialHomeForm)return;
+      specialHomeForm.hidden=!specialHomeForm.hidden;
+      if(!specialHomeForm.hidden)specialHomeForm.elements.title?.focus();
+    });
+    document.querySelector('[data-v3-special-add-cancel]')?.addEventListener('click',()=>{if(specialHomeForm){specialHomeForm.hidden=true;specialHomeForm.reset();if(specialHomeForm.elements.date)specialHomeForm.elements.date.value=selected;if(specialHomeForm.elements.sticker)specialHomeForm.elements.sticker.value='⭐'}});
+    if(specialHomeForm)specialHomeForm.onsubmit=e=>{e.preventDefault();const f=new FormData(specialHomeForm),title=String(f.get('title')||'').trim(),date=String(f.get('date')||'');if(!title||!date)return;data.importantDates??=[];data.importantDates.push({id:id(),title,date,sticker:String(f.get('sticker')||'⭐').trim()||'⭐',yearly:f.get('yearly')==='1',showHome:true});save();render()};
     const dp=$('#v3DebtPerson');if(dp)dp.onsubmit=e=>{e.preventDefault();const f=new FormData(dp);data.debtPeople.push({id:id(),name:f.get('name').trim(),transactions:[]});save();render()};
     document.querySelectorAll('[data-v3-debt]').forEach(f=>f.onsubmit=e=>{e.preventDefault();const p=data.debtPeople.find(x=>x.id===f.dataset.v3Debt),d=new FormData(f),a=Number(d.get('amount')),t=d.get('type'),delta={owed:a,owe:-a,received:-a,paid:a}[t],label={owed:'مبلغ مستحق لي',owe:'مبلغ مستحق عليّ',received:'استلام دفعة',paid:'دفع دفعة'}[t];p.transactions.push({id:id(),date:d.get('date'),delta,label,note:d.get('note').trim()});save();render()})
   }
