@@ -540,5 +540,27 @@ window.addEventListener('offline',()=>{let badge=$('#cloudBadge');badge.hidden=f
 }
 </style>
 
+<script id="yomi-surah-click-delegation-v1">
+(function(){
+ document.addEventListener('click',function(event){
+  const btn=event.target.closest('#pickSurahBtn');
+  if(!btn)return;
+  event.preventDefault();event.stopImmediatePropagation();
+  try{
+   const book=data.quran||(data.quran={lastPage:0,log:[]});
+   book.surahWards=Array.isArray(book.surahWards)?book.surahWards:[];
+   if(!book.surahWards.some(x=>!x.completed)){
+    const used=new Set(book.surahWards.map(x=>x.name));
+    const remaining=YOMI_SURAHS.filter(x=>!used.has(x.name));
+    if(!remaining.length){alert('أنجزتِ جميع السور');return}
+    const picked=remaining[Math.floor(Math.random()*remaining.length)];
+    book.surahWards.push({id:id(),name:picked.name,start:picked.start,end:picked.end,lastPage:picked.start-1,completed:false});
+    save();
+   }
+   render();
+  }catch(e){console.error('Surah picker',e);alert('تعذر فتح السورة: '+(e.message||e))}
+ },true);
+})();
+</script>
 </body></html>
 
