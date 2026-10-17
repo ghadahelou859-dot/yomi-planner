@@ -438,6 +438,8 @@ document.getElementById('pinResetForm')?.addEventListener('submit',async e=>{
 });
 const YOMI_IDLE_LOCK_MS=5*60*1000;
 let yomiLastActivity=Date.now(),yomiHiddenAt=null;
+// Quran saves are active interactions, not idle time. Keep the unlocked session alive.
+document.addEventListener('submit',e=>{if(e.target?.id==='fivePagesForm'||e.target?.id==='quranForm'||e.target?.id==='surahWardAdd'){yomiLastActivity=Date.now();yomiHiddenAt=null}},true);
 function markYomiActivity(){if($('#lock')?.classList.contains('hidden'))yomiLastActivity=Date.now()}
 function lockYomiForIdle(){
   if(!$('#lock')?.classList.contains('hidden'))return;
@@ -446,11 +448,11 @@ function lockYomiForIdle(){
 ['click','pointerdown','keydown','touchstart','scroll'].forEach(ev=>document.addEventListener(ev,markYomiActivity,{passive:true,capture:true}));
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden){yomiHiddenAt=Date.now();return}
-  if(yomiHiddenAt&&Date.now()-yomiHiddenAt>=YOMI_IDLE_LOCK_MS)lockYomiForIdle();
+  if(yomiHiddenAt&&Date.now()-yomiHiddenAt>=YOMI_IDLE_LOCK_MS&&Date.now()-yomiLastActivity>=YOMI_IDLE_LOCK_MS)lockYomiForIdle();
   else markYomiActivity();
   yomiHiddenAt=null;
 });
-setInterval(()=>{if($('#lock')?.classList.contains('hidden')&&Date.now()-yomiLastActivity>=YOMI_IDLE_LOCK_MS)lockYomiForIdle()},15000);
+setInterval(()=>{if(document.hidden)return;if($('#lock')?.classList.contains('hidden')&&Date.now()-yomiLastActivity>=YOMI_IDLE_LOCK_MS)lockYomiForIdle()},15000);
 showPin();
 window.addEventListener('offline',()=>{let badge=$('#cloudBadge');badge.hidden=false;badge.textContent='بدون نت · الحفظ على الجهاز'});async function resumeCloud(){if(window.YOMI_CLOUD_READY||window.yomiCloudLoading||!navigator.onLine)return;window.yomiCloudLoading=true;const badge=$('#cloudBadge');badge.hidden=false;badge.textContent='رجع النت · جارٍ وصل الحساب…';try{if(!window.YOMI_SUPABASE_CONFIG)await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='./supabase-config.js?v=2';script.onload=resolve;script.onerror=reject;document.head.append(script)});await import('./cloud.js?v=29&reconnect='+Date.now());if(!window.YOMI_CLOUD_READY)badge.textContent='تعذّر وصل الحساب · بياناتك محفوظة على هذا الجهاز'}catch(error){console.error('Cloud reconnect failed',error);badge.textContent='تعذّر وصل الحساب · بياناتك محفوظة على هذا الجهاز'}finally{window.yomiCloudLoading=false}}window.addEventListener('online',resumeCloud);window.addEventListener('focus',()=>{if(window.yomiFilePickerActive){setTimeout(()=>{window.yomiFilePickerActive=false},600);return}resumeCloud()});if(!navigator.onLine){let badge=$('#cloudBadge');badge.hidden=false;badge.textContent='بدون نت · الحفظ على الجهاز'};if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>Promise.all(rs.map(r=>r.unregister()))).catch(()=>{});if('caches' in window)caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('yomi-shell-')).map(k=>caches.delete(k)))).catch(()=>{});}
 </script><script src="timer.js?v=4"></script><script src="merge.js"></script><script src="features.js?v=3"></script><script src="memories.js?v=5"></script><script src="planner-extras.js?v=3"></script><script src="yomi-v2.js?v=3"></script><script src="yomi-v3.js?v=66"></script><script src="louhati-free.js?v=3"></script><script src="theme.js?v=5"></script><script src="prayer-times.js?v=5"></script><script src="worship-enhancements.js?v=4"></script><script src="experience.js?v=10"></script><script src="autumn-preview.js?v=3"></script><script src="supabase-config.js" onerror="void 0"></script><script type="module" src="cloud.js?v=29"></script><script id="yomi-settings-compact-script">
