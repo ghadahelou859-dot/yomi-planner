@@ -186,7 +186,7 @@ function quran(){
  <div class="item"><div class="grow"><b>الورد اليومي · 5 صفحات</b><small>آخر صفحة: ${Number(book.fivePages?.lastPage)||0} من 604 ${book.fivePages?.lastPage===604?'🎉 مبارك، أتممتِ ختمة الخمس صفحات!':''}</small></div>
  ${Number(book.fivePages?.lastPage||0)<604?`<form id="fivePagesForm" class="row"><label class="field">الصفحة التي وصلتي لها<input name="page" type="number" min="${Number(book.fivePages?.lastPage||0)+1}" max="${Math.min(604,Number(book.fivePages?.lastPage||0)+5)}" value="${Math.min(604,Number(book.fivePages?.lastPage||0)+5)}" required></label><button class="primary">تسجيل القراءة</button></form>`:`<button id="fivePagesRestart" class="soft">بدء ختمة جديدة</button>`}</div>
  <div class="item"><div class="grow"><b>سورة أختارها لكِ · ${(book.surahWards||[]).filter(x=>x.completed).length} من 114 سورة مكتملة</b><small>سورة مفاجئة من السور غير المنجزة، وصفحة واحدة كل يوم. عند الغياب تبقى الصفحة نفسها.</small></div></div>
- ${(()=>{const active=(book.surahWards||[]).find(x=>!x.completed);if(!active)return (book.surahWards||[]).filter(x=>x.completed).length>=114?'<div class="notice">🎉 مبارك! أنجزتِ جميع السور الـ114.</div>':'<button type="button" class="primary" id="pickSurahBtn">✨ اختاري لي سورة مفاجئة</button>';const next=Math.min(active.end,Number(active.lastPage)+1);const doneToday=active.lastReadDate===selected;const total=active.end-active.start+1,done=Math.max(0,Number(active.lastPage)-active.start+1);return `<div class="item"><div class="grow"><b>سورة ${safe(active.name)}</b><small>صفحة اليوم: ${next} · السورة من صفحة ${active.start} إلى ${active.end} (مصحف المدينة) · أنجزتِ ${done} من ${total} صفحات</small></div><button type="button" class="primary" data-surah-next="${safe(active.id)}" ${doneToday?'disabled':''}>${doneToday?'✓ تم ورد اليوم':'✓ تمت قراءة صفحة اليوم'}</button></div>`})()}
+ ${(()=>{const active=(book.surahWards||[]).find(x=>!x.completed);if(!active)return (book.surahWards||[]).filter(x=>x.completed).length>=114?'<div class="notice">🎉 مبارك! أنجزتِ جميع السور الـ114.</div>':'<button type="button" class="primary" id="pickSurahBtn" onclick="window.yomiPickSurahNow && window.yomiPickSurahNow();return false;">✨ اختاري لي سورة مفاجئة</button>';const next=Math.min(active.end,Number(active.lastPage)+1);const doneToday=active.lastReadDate===selected;const total=active.end-active.start+1,done=Math.max(0,Number(active.lastPage)-active.start+1);return `<div class="item"><div class="grow"><b>سورة ${safe(active.name)}</b><small>صفحة اليوم: ${next} · السورة من صفحة ${active.start} إلى ${active.end} (مصحف المدينة) · أنجزتِ ${done} من ${total} صفحات</small></div><button type="button" class="primary" data-surah-next="${safe(active.id)}" ${doneToday?'disabled':''}>${doneToday?'✓ تم ورد اليوم':'✓ تمت قراءة صفحة اليوم'}</button></div>`})()}
  ${(book.surahWards||[]).filter(x=>x.completed).length?'<p class="sub">السور المنجزة: '+(book.surahWards||[]).filter(x=>x.completed).map(x=>safe(x.name)).join('، ')+'</p>':''}
  ${(book.surahWards||[]).filter(x=>x.completed).length>=114?'<button type="button" id="surahCycleRestart" class="soft">بدء دورة جديدة</button>':''}
  <div class="notice">سجل الختمات: ${(book.khatmaHistory||[]).map(x=>safe(x.title)+' ('+safe(x.date)+')').join(' · ')||'لا توجد ختمات مسجلة بعد'}</div></div>
@@ -540,6 +540,24 @@ window.addEventListener('offline',()=>{let badge=$('#cloudBadge');badge.hidden=f
 }
 </style>
 
+<script id="yomi-surah-direct-v2">
+window.yomiPickSurahNow=function(){
+ try{
+  var book=data.quran||(data.quran={lastPage:0,log:[]});
+  if(!Array.isArray(book.surahWards))book.surahWards=[];
+  var active=book.surahWards.find(function(x){return !x.completed});
+  if(!active){
+   var used=new Set(book.surahWards.map(function(x){return x.name}));
+   var available=YOMI_SURAHS.filter(function(x){return !used.has(x.name)});
+   if(!available.length){alert('أنجزتِ جميع السور');return}
+   var picked=available[Math.floor(Math.random()*available.length)];
+   book.surahWards.push({id:id(),name:picked.name,start:picked.start,end:picked.end,lastPage:picked.start-1,completed:false});
+   save();
+  }
+  render();
+ }catch(err){alert('خطأ اختيار السورة: '+err.message)}
+};
+</script>
 <script id="yomi-surah-click-delegation-v1">
 (function(){
  document.addEventListener('click',function(event){
