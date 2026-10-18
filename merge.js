@@ -31,6 +31,10 @@
         return [...new Set([...baseline,...r,...l])]
           .filter(x => baseline.includes(x) ? l.includes(x) && r.includes(x) : l.includes(x) || r.includes(x));
       }
+      // A stale empty prayer list must not erase prayers saved in the account.
+      // This is intentionally narrow: only the worshipDuas collection.
+      if (path === 'data.worshipDuas' && Array.isArray(l) && Array.isArray(r) &&
+          l.length === 0 && r.length > 0) return r;
       // Preserve additions from either device in lists without record IDs.
       // Only applies when neither side removed an existing baseline entry.
       if (Array.isArray(l) && Array.isArray(r) && Array.isArray(b) &&
