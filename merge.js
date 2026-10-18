@@ -32,6 +32,9 @@
         }
         return result;
       }
+      // Presentation-only preferences should not block content synchronization.
+      // Prefer the account preference when both devices changed it.
+      if (/^data\.designSettings\.(applyAll|audioMode)$/.test(path)) return r;
       conflicts.push(path);
       details.push({path,local:l,remote:r});
       return choices[path] === 'remote' ? r : l;
