@@ -197,7 +197,26 @@ if (ready && !window.YOMI_CLOUD_READY) {
         // Normal case: merge only changes made since the last successful sync.
         // yomiMerge flags a conflict only when the same path changed on both sides.
         const result=window.yomiMerge(base,local,remote);
-        if(result.conflicts.length){backupPrompt({baseline:base,local,remote,updatedAt:row?.updated_at},result.details);return}
+        if(result.conflicts.length){
+          const oldTasks=Array.isArray(local.tasks)&&Array.isArray(remote.tasks)&&local.tasks.length<=15&&remote.tasks.length>=38;
+          const oldDhikrs=Array.isArray(local.dhikrs)&&Array.isArray(remote.dhikrs)&&local.dhikrs.length<=12&&remote.dhikrs.length>=19;
+          const subset=(a,b)=>a.every(x=>x?.id&&b.some(y=>y?.id===x.id));
+          if(row&&oldTasks&&oldDhikrs&&subset(local.tasks,remote.tasks)&&subset(local.dhikrs,remote.dhikrs)){
+            const snapshot={local,remote,updatedAt:row.updated_at};
+            if(await ensureCloudBackup(snapshot)&&same(local,shape(data))){
+              data=structuredClone(remote);
+              saveLocal();
+              setBase(remote,row.updated_at);
+              conflictSnapshot=null;
+              if(conflictDialog.open)conflictDialog.close();
+              renderAfterSync();
+              paintSynced(row.updated_at);
+              return;
+            }
+          }
+          backupPrompt({baseline:base,local,remote,updatedAt:row?.updated_at},result.details);
+          return;
+        }
         merged=shape(result.value);
       } else if(!row) {
         // First account sync: no cloud copy exists yet, so this device seeds the account.
