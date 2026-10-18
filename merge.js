@@ -24,6 +24,14 @@
         return [...new Set([...baseline,...r,...l])]
           .filter(x => baseline.includes(x) ? l.includes(x) && r.includes(x) : l.includes(x) || r.includes(x));
       }
+      // Preserve additions from either device in lists without record IDs.
+      // Only applies when neither side removed an existing baseline entry.
+      if (Array.isArray(l) && Array.isArray(r) && Array.isArray(b) &&
+          b.every(x => l.some(y => same(x,y)) && r.some(y => same(x,y)))) {
+        const merged = [...r];
+        for (const item of l) if (!merged.some(x => same(x,item))) merged.push(item);
+        return merged;
+      }
       if (plain(l) && plain(r) && (b === undefined || plain(b))) {
         const result = {};
         for (const k of new Set([...Object.keys(b || {}), ...Object.keys(r), ...Object.keys(l)])) {
