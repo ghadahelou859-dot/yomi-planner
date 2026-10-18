@@ -15,6 +15,8 @@ if (ready && !window.YOMI_CLOUD_READY) {
   const archiveKey = 'yomi-conflict-archives-v1';
   const bootstrapArchiveKey = 'yomi-account-first-bootstrap-v1';
   let user = null, base = null, remoteUpdatedAt = null, timer = null, busy = false, conflictSnapshot = null, accountGateMode = 'login';
+  let retryDelay = 1500;
+  const retrySync = () => {if(!user || !navigator.onLine || conflictSnapshot) return;clearTimeout(timer);timer=setTimeout(()=>{timer=null;reconcile()},retryDelay);retryDelay=Math.min(retryDelay*2,30000)};
   const pinEmailKey='yomi-pin-email-v1';
   window.yomiMemoriesSession = () => user ? {client,user} : null;
   const notifyMemories = () => window.dispatchEvent(new Event('yomi-cloud-session'));
@@ -26,6 +28,7 @@ if (ready && !window.YOMI_CLOUD_READY) {
   const paintSynced = updatedAt => {
     badge.hidden = true;
     badge.textContent = '';
+    retryDelay=1500;
   };
   const identify = () => {identity.hidden=!user;identity.textContent=user?'الحساب: '+user.email:''};
   const saveLocal = () => localStorage.setItem(KEY, JSON.stringify(data));
@@ -207,29 +210,29 @@ if (ready && !window.YOMI_CLOUD_READY) {
         data=remote;saveLocal();setBase(remote,row.updated_at);renderAfterSync();paintSynced(row.updated_at);
         return;
       }
-      if(!same(local,shape(data))){paint('تعديلات جديدة · جارٍ إعادة المزامنة');return}
+      if(!same(local,shape(data))){paint('تعديلات جديدة · جارٍ إعادة المزامنة');retrySync();return}
       if(same(merged,remote) && row) {
         data=merged;saveLocal();setBase(merged,row.updated_at);renderAfterSync();paintSynced(row.updated_at);
         return;
       }
       const {data:latest,error:checkError}=await client.from('yomi_state').select('payload,updated_at').eq('user_id',user.id).maybeSingle();
       if(checkError)throw checkError;
-      if((latest?.updated_at||null)!==(row?.updated_at||null)){paint('تحديث من جهاز آخر · جارٍ إعادة المزامنة');return}
-      if(!same(local,shape(data))){paint('تعديلات جديدة · جارٍ إعادة المزامنة');return}
+      if((latest?.updated_at||null)!==(row?.updated_at||null)){paint('تحديث من جهاز آخر · جارٍ إعادة المزامنة');retrySync();return}
+      if(!same(local,shape(data))){paint('تعديلات جديدة · جارٍ إعادة المزامنة');retrySync();return}
       // Conditional update prevents another device's newer snapshot from being overwritten.
       const write={payload:merged,updated_at:new Date().toISOString()};
       const {data:saved,error:writeError}=row
         ? await client.from('yomi_state').update(write).eq('user_id',user.id).eq('updated_at',row.updated_at).select('updated_at').maybeSingle()
         : await client.from('yomi_state').insert({user_id:user.id,...write}).select('updated_at').maybeSingle();
       if(writeError)throw writeError;
-      if(!saved){paint('تحديث من جهاز آخر · جارٍ إعادة المزامنة');schedule();return}
+      if(!saved){paint('تحديث من جهاز آخر · جارٍ إعادة المزامنة');retrySync();return}
       // If another edit occurred during the write, keep that local edit and sync again.
       const changedDuringWrite=!same(local,shape(data));
       if(!changedDuringWrite){data=merged;saveLocal()}
       setBase(merged,saved.updated_at);renderAfterSync();
       if(changedDuringWrite)paint('جارٍ مزامنة تعديل أحدث…');else paintSynced(saved.updated_at);
-    } catch(e) {paint('تعذّرت المزامنة · محفوظ على هذا الجهاز');console.error('Sync failed',e)}
-    finally {busy=false;if(user && navigator.onLine && pending() && badge.textContent.includes('جارٍ')) schedule()}
+    } catch(e) {paint('تعذّرت المزامنة · محفوظ على هذا الجهاز · إعادة المحاولة تلقائيًا');console.error('Sync failed',e);retrySync()}
+    finally {busy=false;if(user && navigator.onLine && pending() && badge.textContent.includes('جارٍ') && !timer) schedule()}
   }
   function schedule() {clearTimeout(timer);timer=setTimeout(()=>{timer=null;reconcile()},900)}
   save = () => {saveLocal();paint(!navigator.onLine?'بدون نت · محفوظ على هذا الجهاز':user?'جارٍ المزامنة…':'محفوظ على هذا الجهاز · سجّلي الدخول للمزامنة');if(user&&navigator.onLine)schedule()};
@@ -351,7 +354,7 @@ if (ready && !window.YOMI_CLOUD_READY) {
   window.addEventListener('focus',()=>{if(window.yomiFilePickerActive){setTimeout(()=>{window.yomiFilePickerActive=false},600);return}if(user&&navigator.onLine)reconcile()});
   window.addEventListener('pageshow',()=>{if(window.yomiFilePickerActive)return;if(user&&navigator.onLine)reconcile()});
   document.addEventListener('visibilitychange',()=>{if(window.yomiFilePickerActive)return;if(document.visibilityState==='visible'&&user&&navigator.onLine)reconcile()});
-  setInterval(()=>{if(document.visibilityState==='visible'&&user&&navigator.onLine)reconcile()},60000);
+  setInterval(()=>{if(document.visibilityState==='visible'&&user&&navigator.onLine)reconcile()},15000);
   document.getElementById('signOutBtn').onclick=async()=>{
     await client.auth.signOut();window.dispatchEvent(new Event('yomi-signed-out'));notifyMemories();
     user=null;identify();base=null;conflictSnapshot=null;if(conflictDialog.open)conflictDialog.close();localStorage.removeItem(baseKey);data=initial();saveLocal();render();
