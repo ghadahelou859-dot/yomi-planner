@@ -1,7 +1,14 @@
 // Three-way merge of the last synced snapshot and the two device copies.
 // A conflict is returned instead of silently replacing either user's edit.
 (function (root) {
-  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  // Object key insertion order is not a data change.
+  const canonical = value => {
+    if (Array.isArray(value)) return value.map(canonical);
+    if (value && typeof value === 'object')
+      return Object.fromEntries(Object.keys(value).sort().map(k => [k, canonical(value[k])]));
+    return value;
+  };
+  const same = (a, b) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
   const plain = x => x && typeof x === 'object' && !Array.isArray(x);
   function merge(base, local, remote, choices = {}) {
     const conflicts = [];
