@@ -51,6 +51,13 @@
         }
         return result;
       }
+      // Dhikr counters must never be lost merely because another device
+      // lacks a counter key. Keep the higher recorded count on conflict.
+      if (/^data\.adhkarCounts(?:\.|$)/.test(path) &&
+          [b,l,r].every(v => v === undefined || v === null || (typeof v === 'number' && Number.isFinite(v)))) {
+        const numbers=[l,r].filter(v => typeof v === 'number' && Number.isFinite(v));
+        return numbers.length ? Math.max(...numbers) : undefined;
+      }
       // Presentation-only preferences should not block content synchronization.
       // Prefer the account preference when both devices changed it.
       if (/^data\.designSettings\.(applyAll|audioMode)$/.test(path)) return r;
