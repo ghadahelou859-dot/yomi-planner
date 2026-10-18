@@ -203,7 +203,7 @@ if (ready && !window.YOMI_CLOUD_READY) {
           const subset=(a,b)=>a.every(x=>x?.id&&b.some(y=>y?.id===x.id));
           if(row&&oldTasks&&oldDhikrs&&subset(local.tasks,remote.tasks)&&subset(local.dhikrs,remote.dhikrs)){
             const snapshot={local,remote,updatedAt:row.updated_at};
-            if(await ensureCloudBackup(snapshot)&&same(local,shape(data))){
+            if(await ensureCloudBackup(snapshot)&&same({...local,security:data.security},shape(data))){
               data=structuredClone(remote);
               saveLocal();
               setBase(remote,row.updated_at);
